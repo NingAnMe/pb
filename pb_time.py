@@ -268,7 +268,7 @@ def is_day_timestamp_and_lon(timestamp, lon):
 
 
 @contextmanager
-def time_block(flag, on=True):
+def time_block(flag, swich=True):
     """
     计算一个代码块的运行时间
     :param flag: 标签
@@ -279,7 +279,7 @@ def time_block(flag, on=True):
     try:
         yield
     finally:
-        if on is True:
+        if swich is True:
             time_end = time.clock()
             all_time = time_end - time_start
             print "{} time: {}".format(flag, all_time)
