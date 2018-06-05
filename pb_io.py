@@ -159,6 +159,40 @@ def copy_attrs_h5py(pre_object, out_object):
         out_object.attrs[akey] = pre_object.attrs[akey]
 
 
+def read_dataset_hdf5(file_path, set_name):
+    """
+    读取 hdf5 文件，返回一个 numpy 多维数组
+    :param file_path: (unicode)文件路径
+    :param set_name: (str or list)表的名字
+    :return: 如果传入的表名字是一个字符串，返回 numpy.ndarray
+             如果传入的表名字是一个列表，返回一个字典，key 是表名字，
+             value 是 numpy.ndarry
+    """
+    if isinstance(set_name, str):
+        if os.path.isfile(file_path):
+            file_h5py = h5py.File(file_path, 'r')
+            data = file_h5py.get(set_name)[:]
+            dataset = np.array(data)
+            file_h5py.close()
+            return dataset
+        else:
+            raise ValueError('value error: file_path')
+    elif isinstance(set_name, list):
+        datasets = {}
+        if os.path.isfile(file_path):
+            file_h5py = h5py.File(file_path, 'r')
+            for name in set_name:
+                data = file_h5py.get(name)[:]
+                dataset = np.array(data)
+                datasets[name] = dataset
+            file_h5py.close()
+            return datasets
+        else:
+            raise ValueError('value error: file_path')
+    else:
+        raise ValueError('value error: set_name')
+
+
 if __name__ == '__main__':
     pass
 
