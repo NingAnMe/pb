@@ -148,6 +148,17 @@ def is_none(*args):
     return has_none
 
 
+def copy_attrs_h5py(pre_object, out_object):
+    """
+    复制 file、dataset 或者 group 的属性
+    :param pre_object: 被复制属性的 dataset 或者 group
+    :param out_object: 复制属性的 dataset 或者 group
+    :return:
+    """
+    for akey in pre_object.attrs.keys():
+        out_object.attrs[akey] = pre_object.attrs[akey]
+
+
 if __name__ == '__main__':
     pass
 
