@@ -14,6 +14,8 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import math
 
+from contextlib import contextmanager
+
 def run(date_s, date_e):
     while date_s <= date_e:
         print 'Test:', date_s
@@ -264,6 +266,25 @@ def is_day_timestamp_and_lon(timestamp, lon):
     else:
         return False
 
+
+@contextmanager
+def time_block(flag, on=True):
+    """
+    计算一个代码块的运行时间
+    :param flag: 标签
+    :param on: 是否开启
+    :return:
+    """
+    time_start = time.clock()
+    try:
+        yield
+    finally:
+        if on is True:
+            time_end = time.clock()
+            all_time = time_end - time_start
+            print "{} time: {}".format(flag, all_time)
+
+
 if __name__ == '__main__':
 
     print time.gmtime(1.52419264E9)
@@ -271,6 +292,6 @@ if __name__ == '__main__':
     print aa
     print lonIsday('20180420', '10:35:30', 20)
     print datetime.fromtimestamp(1.52396134e+09)
-    pass
 
-
+    with time_block("Test time_block"):
+        print "kaishi"
