@@ -268,7 +268,7 @@ def is_day_timestamp_and_lon(timestamp, lon):
 
 
 @contextmanager
-def time_block(flag, swich=True):
+def time_block(flag, switch=True):
     """
     计算一个代码块的运行时间
     :param flag: 标签
@@ -285,6 +285,22 @@ def time_block(flag, swich=True):
             print "{} time: {}".format(flag, all_time)
 
 
+def get_ymd(in_file):
+    """
+    从输入文件中获取 ymd
+    :param in_file:
+    :return:
+    """
+    if not isinstance(in_file, str):
+        return
+    m = re.match(r".*(\d{8})", in_file)
+
+    if m is None:
+        return
+    else:
+        return m.groups()[0]
+
+
 if __name__ == '__main__':
 
     print time.gmtime(1.52419264E9)
@@ -295,3 +311,5 @@ if __name__ == '__main__':
 
     with time_block("Test time_block"):
         print "kaishi"
+
+    print get_ymd("/adfaf/afdff/20180101.hdf")
