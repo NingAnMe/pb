@@ -301,6 +301,22 @@ def get_ymd(in_file):
         return m.groups()[0]
 
 
+def get_hm(in_file):
+    """
+    从输入文件中获取 hm
+    :param in_file:
+    :return:
+    """
+    if not isinstance(in_file, str):
+        return
+    m = re.match(r".*_(\d{4})_", in_file)
+
+    if m is None:
+        return
+    else:
+        return m.groups()[0]
+
+
 def get_dsl(ymd, launch_date):
     """
     根据文件名和发射时间获取相差的天数
