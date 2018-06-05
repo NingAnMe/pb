@@ -301,6 +301,20 @@ def get_ymd(in_file):
         return m.groups()[0]
 
 
+def get_dsl(ymd, launch_date):
+    """
+    根据文件名和发射时间获取相差的天数
+    :param ymd: (str)
+    :param launch_date: (str)卫星发射时间 YYYYMMDD
+    :return: (int)
+    """
+    date1 = ymd2date(ymd)
+    date2 = ymd2date(launch_date)
+    delta = date1 - date2
+    dsl = delta.days
+    return dsl
+
+
 if __name__ == '__main__':
 
     print time.gmtime(1.52419264E9)
