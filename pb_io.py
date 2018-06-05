@@ -193,6 +193,17 @@ def read_dataset_hdf5(file_path, set_name):
         raise ValueError('value error: set_name')
 
 
+def attrs2dict(attrs):
+    """
+    将一个 HDF5 attr 类转为 Dict 类
+    :return:
+    """
+    d = {}
+    for k, v in attrs.items():
+        d[k] = v
+    return d
+
+
 if __name__ == '__main__':
     pass
 
