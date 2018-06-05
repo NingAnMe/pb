@@ -1,0 +1,3 @@
+"""
+Sat Data Class
+"""
