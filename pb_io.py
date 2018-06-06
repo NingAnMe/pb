@@ -204,6 +204,52 @@ def attrs2dict(attrs):
     return d
 
 
+class Config(object):
+    """
+    加载配置文件
+    """
+
+    def __init__(self, config_file):
+        """
+        初始化
+        """
+        self.error = False
+
+        self.config_file = config_file  # config 文件路径
+        self.config_data = None  # 加载到的配置数据
+
+    def load_yaml_file(self):
+        """
+        加载 yaml 文件内容
+        :return:
+        """
+        if not os.path.isfile(self.config_file):
+            print "File is not exist: {}".format(self.config_file)
+            return None
+        try:
+            with open(self.config_file, 'r') as stream:
+                self.config_data = yaml.load(stream)
+        except Exception as why:
+            print why
+            self.error = True
+            print "Load config file error.".format(self.config_file)
+
+    def load_cfg_file(self):
+        """
+        加载 config 文件内容
+        :return:
+        """
+        if not os.path.isfile(self.config_file):
+            print "File is not exist: {}".format(self.config_file)
+            return None
+        try:
+            self.config_data = ConfigObj(self.config_file)
+        except Exception as why:
+            print why
+            self.error = True
+            print "Load config file error.".format(self.config_file)
+
+
 if __name__ == '__main__':
     pass
 
