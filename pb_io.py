@@ -3,6 +3,7 @@ import os
 import re
 import errno
 import yaml
+from configobj import ConfigObj
 from datetime import datetime
 
 __description__ = u'IO处理的函数'
