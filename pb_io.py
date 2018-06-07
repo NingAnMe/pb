@@ -3,6 +3,8 @@ import os
 import re
 import errno
 import yaml
+import h5py
+import numpy as np
 from configobj import ConfigObj
 from datetime import datetime
 
