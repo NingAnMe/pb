@@ -247,7 +247,6 @@ class Config(object):
         """
         with open(self.config_file, 'r') as stream:
             self.config_data = yaml.load(stream)
-            print self.config_data
 
     def load_cfg_file(self):
         """
@@ -255,7 +254,6 @@ class Config(object):
         :return:
         """
         self.config_data = ConfigObj(self.config_file)
-        print self.config_data
 
     def load_config_data(self):
         """
@@ -286,15 +284,12 @@ if __name__ == '__main__':
 
 #     path_replace_ymd('/abc/%YYYY/%MM%DD/%JJJ', '20180101')
 #     path1 = "E:/projects/ocrs/cfg/global.cfg"
-    path2 = "E:/projects/ocrs/cfsg/FY3B+MERSI.yaml"
+#     path2 = "E:/projects/ocrs/cfg/FY3B+MERSI.yaml"
     # c = Config(path1)
-    c = Config(path2)
+    # c = Config(path2)
     # print c.error
-    print c.__dict__.keys()
-    print c.config_data
-    print c.error
     # l = c.__dict__.keys()
     # l = sorted(l)
     # for k in l:
-        # print k, ":", c.__dict__[k]
-        # print k
+    #     print k, ":", c.__dict__[k]
+    #     print k
