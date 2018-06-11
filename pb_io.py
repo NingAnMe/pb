@@ -221,36 +221,63 @@ class Config(object):
         self.config_file = config_file  # config 文件路径
         self.config_data = None  # 加载到的配置数据
 
+        # load config file
+        self.load_config_file()
+        # load config data
+        self.load_config_data()
+
+    def load_config_file(self):
+        """
+        尝试加载配置文件
+        :return:
+        """
+        try:
+            self.load_yaml_file()
+        except Exception:
+            try:
+                self.load_cfg_file()
+            except Exception:
+                self.error = True
+                print "Load config file error.".format(self.config_file)
+
     def load_yaml_file(self):
         """
         加载 yaml 文件内容
         :return:
         """
-        if not os.path.isfile(self.config_file):
-            print "File is not exist: {}".format(self.config_file)
-            return None
-        try:
-            with open(self.config_file, 'r') as stream:
-                self.config_data = yaml.load(stream)
-        except Exception as why:
-            print why
-            self.error = True
-            print "Load config file error.".format(self.config_file)
+        with open(self.config_file, 'r') as stream:
+            self.config_data = yaml.load(stream)
+            print self.config_data
 
     def load_cfg_file(self):
         """
         加载 config 文件内容
         :return:
         """
-        if not os.path.isfile(self.config_file):
-            print "File is not exist: {}".format(self.config_file)
-            return None
-        try:
-            self.config_data = ConfigObj(self.config_file)
-        except Exception as why:
-            print why
-            self.error = True
-            print "Load config file error.".format(self.config_file)
+        self.config_data = ConfigObj(self.config_file)
+        print self.config_data
+
+    def load_config_data(self):
+        """
+        读取配置数据
+        :return:
+        """
+        self._load_config_data(self.config_data)
+
+    def _load_config_data(self, config_data, prefix=""):
+        """
+        读取配置数据，动态创建属性值
+        :return:
+        """
+        if self.error:
+            return
+        for k in config_data:
+            data = config_data[k]
+            attr = prefix + k.lower()
+            self.__dict__[attr] = data
+            if isinstance(data, dict):
+                next_prefix = attr + "_"
+                self._load_config_data(data, prefix=next_prefix)
 
 
 if __name__ == '__main__':
@@ -258,3 +285,13 @@ if __name__ == '__main__':
 
 
 #     path_replace_ymd('/abc/%YYYY/%MM%DD/%JJJ', '20180101')
+#     path1 = "E:/projects/ocrs/cfg/global.cfg"
+    path2 = "E:/projects/ocrs/cfg/FY3B+MERSI.yaml"
+    # c = Config(path1)
+    c = Config(path2)
+    print c.__dict__.keys()
+    l = c.__dict__.keys()
+    l = sorted(l)
+    for k in l:
+        # print k, ":", c.__dict__[k]
+        print k
