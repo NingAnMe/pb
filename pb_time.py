@@ -279,7 +279,7 @@ def time_block(flag, switch=True):
     try:
         yield
     finally:
-        if swich is True:
+        if switch is True:
             time_end = time.clock()
             all_time = time_end - time_start
             print "{} time: {}".format(flag, all_time)
@@ -293,7 +293,7 @@ def get_ymd(in_file):
     """
     if not isinstance(in_file, str):
         return
-    m = re.match(r".*(\d{8})", in_file)
+    m = re.match(r".*_(\d{8})_", in_file)
 
     if m is None:
         return
