@@ -1,12 +1,15 @@
 # coding: utf-8
 import os
 import re
+import random
 import errno
 import yaml
 import h5py
 import numpy as np
+import time
 from configobj import ConfigObj
 from datetime import datetime
+from contextlib import contextmanager
 
 __description__ = u'IO处理的函数'
 __author__ = 'wangpeng'
@@ -278,6 +281,36 @@ class Config(object):
                 self._load_config_data(data, prefix=next_prefix)
 
 
+@contextmanager
+def progress_lock(max_wait_time=5):
+    try:
+        sleep_time = 0
+        lock = "progress.lock"
+        while True:
+            if os.path.isfile(lock):
+                if sleep_time > max_wait_time:
+                    try:
+                        os.remove(lock)
+                        break
+                    except:
+                        continue
+                else:
+                    random_number = random.random() * 0.1
+                    sleep_time += random_number
+
+                time.sleep(random_number)
+            else:
+                break
+            print sleep_time
+        with open(lock, "w"):
+            pass
+        yield
+    finally:
+        try:
+            os.remove(lock)
+        except:
+            pass
+
 if __name__ == '__main__':
     pass
 
@@ -293,3 +326,8 @@ if __name__ == '__main__':
     # for k in l:
         # print k, ":", c.__dict__[k]
         # print k
+
+    # with file_lock():
+    #     print "1111"
+    for i in xrange(100):
+        print random.random() * 0.1
