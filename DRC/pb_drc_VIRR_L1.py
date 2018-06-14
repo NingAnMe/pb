@@ -1,17 +1,20 @@
 # coding: utf-8
 
+import os
+import h5py
+import numpy as np
+from datetime import datetime
+from PB import pb_name, pb_sat
+
 '''
 Created on 2017年9月7日
 
 @author: wangpeng
 '''
 
-import os, h5py
-import numpy as np
-from datetime import datetime
-from PB import  pb_name, pb_sat
 
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+
 
 class CLASS_VIRR_L1():
 
@@ -48,10 +51,10 @@ class CLASS_VIRR_L1():
         self.VIS_Coeff = []
 
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
-        self.WN = {'CH_03':2673.796, 'CH_04':925.925, 'CH_05':833.333}
+        self.WN = {'CH_03': 2673.796, 'CH_04': 925.925, 'CH_05': 833.333}
         # 红外转tbb的修正系数，固定值
-        self.TeA = {'CH_03':1, 'CH_04':1, 'CH_05':1 }
-        self.TeB = {'CH_03':0, 'CH_04':0, 'CH_05':0}
+        self.TeA = {'CH_03': 1, 'CH_04': 1, 'CH_05': 1}
+        self.TeB = {'CH_03': 0, 'CH_04': 0, 'CH_05': 0}
 
         # 所有通道的中心波数和对应的响应值 ，SRF
         self.waveNum = {}
@@ -75,10 +78,12 @@ class CLASS_VIRR_L1():
                 h5File_R = h5py.File(L1File, 'r')
                 ary_ch3 = h5File_R.get('/Data/EV_Emissive')[:]
                 ary_ch7 = h5File_R.get('/Data/EV_RefSB')[:]
-                ary_offsets = h5File_R.get('/Data/Emissive_Radiance_Offsets')[:]
+                ary_offsets = h5File_R.get(
+                    '/Data/Emissive_Radiance_Offsets')[:]
                 ary_scales = h5File_R.get('/Data/Emissive_Radiance_Scales')[:]
                 ary_ref_cal = h5File_R.attrs['RefSB_Cal_Coefficients']
-                ary_Nonlinear = h5File_R.attrs['Prelaunch_Nonlinear_Coefficients']
+                ary_Nonlinear = h5File_R.attrs[
+                    'Prelaunch_Nonlinear_Coefficients']
 
             except Exception as e:
                 print str(e)
@@ -122,7 +127,8 @@ class CLASS_VIRR_L1():
                 ary_offsets = h5File_R.get('/Emissive_Radiance_Offsets')[:]
                 ary_scales = h5File_R.get('/Emissive_Radiance_Scales')[:]
                 ary_ref_cal = h5File_R.attrs['RefSB_Cal_Coefficients']
-                ary_Nonlinear = h5File_R.attrs['Prelaunch_Nonlinear_Coefficients']
+                ary_Nonlinear = h5File_R.attrs[
+                    'Prelaunch_Nonlinear_Coefficients']
                 ary_satz = h5File_R.get('/SensorZenith')[:]
                 ary_sata = h5File_R.get('/SensorAzimuth')[:]
                 ary_sunz = h5File_R.get('/SolarZenith')[:]
@@ -144,13 +150,14 @@ class CLASS_VIRR_L1():
             finally:
                 h5File_R.close()
 
-
-        #####################  通道的中心波数和光谱响应
+        # 通道的中心波数和光谱响应
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
-            srfFile = os.path.join(MainPath, 'SRF', '%s_%s_SRF_CH%02d_Pub.txt' % (self.sat, self.sensor, (i + 1)))
-            dictWave = np.loadtxt(srfFile, dtype={'names': ('num', 'rad'), 'formats': ('f4', 'f4')})
-            if BandName in  ['CH_03' , 'CH_04' , 'CH_05']:
+            srfFile = os.path.join(
+                MainPath, 'SRF', '%s_%s_SRF_CH%02d_Pub.txt' % (self.sat, self.sensor, (i + 1)))
+            dictWave = np.loadtxt(
+                srfFile, dtype={'names': ('num', 'rad'), 'formats': ('f4', 'f4')})
+            if BandName in ['CH_03', 'CH_04', 'CH_05']:
                 waveNum = 10 ** 4 / dictWave['num'][::-1]
             else:
                 waveNum = 10 ** 7 / dictWave['num'][::-1]
@@ -202,14 +209,16 @@ class CLASS_VIRR_L1():
                 DN[idx] = ary_ch3[k][idx]
                 self.DN[BandName] = DN
 
-                Rad[idx] = DN[idx] * ary_scales[idx[0], k] + ary_offsets[idx[0], k]
+                Rad[idx] = DN[idx] * ary_scales[idx[0], k] + \
+                    ary_offsets[idx[0], k]
                 k0 = ary_Nonlinear[3 * k]
                 k1 = ary_Nonlinear[3 * k + 1] + 1
                 k2 = ary_Nonlinear[3 * k + 2]
                 Rad = Rad ** 2 * k2 + Rad * k1 + k0
                 self.Rad[BandName] = Rad
 
-                Tbb = pb_sat.planck_r2t(Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
+                Tbb = pb_sat.planck_r2t(
+                    Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
                 self.Tbb[BandName] = Tbb
 
                 # 亮温存放无效值用nan填充
@@ -259,7 +268,8 @@ class CLASS_VIRR_L1():
         if self.LandCover == []:
             self.LandCover = ary_LandCover_idx
         else:
-            self.LandCover = np.concatenate((self.LandCover, ary_LandCover_idx))
+            self.LandCover = np.concatenate(
+                (self.LandCover, ary_LandCover_idx))
 
         # 海陆掩码
         ary_LandSeaMask_idx = np.full(dshape, np.nan)
@@ -269,7 +279,8 @@ class CLASS_VIRR_L1():
         if self.LandSeaMask == []:
             self.LandSeaMask = ary_LandSeaMask_idx
         else:
-            self.LandSeaMask = np.concatenate((self.LandSeaMask, ary_LandSeaMask_idx))
+            self.LandSeaMask = np.concatenate(
+                (self.LandSeaMask, ary_LandSeaMask_idx))
 
         # 经纬度
         ary_lon_idx = np.full(dshape, np.nan)
@@ -296,7 +307,8 @@ class CLASS_VIRR_L1():
         if self.satAzimuth == []:
             self.satAzimuth = ary_sata_idx / 100.
         else:
-            self.satAzimuth = np.concatenate((self.satAzimuth, ary_sata_idx / 100.))
+            self.satAzimuth = np.concatenate(
+                (self.satAzimuth, ary_sata_idx / 100.))
 
         ary_satz_idx = np.full(dshape, np.nan)
         condition = np.logical_and(ary_satz > 0, ary_satz < 18000)
@@ -304,7 +316,8 @@ class CLASS_VIRR_L1():
         if self.satZenith == []:
             self.satZenith = ary_satz_idx / 100.
         else:
-            self.satZenith = np.concatenate((self.satZenith, ary_satz_idx / 100.))
+            self.satZenith = np.concatenate(
+                (self.satZenith, ary_satz_idx / 100.))
 
         # 太阳方位角 天顶角
         ary_suna_idx = np.full(dshape, np.nan)
@@ -314,7 +327,8 @@ class CLASS_VIRR_L1():
         if self.sunAzimuth == []:
             self.sunAzimuth = ary_suna_idx / 100.
         else:
-            self.sunAzimuth = np.concatenate((self.sunAzimuth, ary_suna_idx / 100.))
+            self.sunAzimuth = np.concatenate(
+                (self.sunAzimuth, ary_suna_idx / 100.))
 
         ary_sunz_idx = np.full(dshape, np.nan)
         condition = np.logical_and(ary_sunz > 0, ary_sunz < 18000)
@@ -323,7 +337,8 @@ class CLASS_VIRR_L1():
         if self.sunZenith == []:
             self.sunZenith = ary_sunz_idx / 100.
         else:
-            self.sunZenith = np.concatenate((self.sunZenith, ary_sunz_idx / 100.))
+            self.sunZenith = np.concatenate(
+                (self.sunZenith, ary_sunz_idx / 100.))
 
 if __name__ == '__main__':
     T1 = datetime.now()
@@ -335,4 +350,3 @@ if __name__ == '__main__':
     T2 = datetime.now()
     print 'times:', (T2 - T1).total_seconds()
     print virr.Rad['CH_03'][1000, 1000]
-

@@ -1,24 +1,30 @@
 # coding: utf-8
 
+import os
+import sys
+import h5py
+import time
+import numpy as np
+from PB import pb_sat
+from PB.pb_time import fy3_ymd2seconds
+
 '''
 Created on 2017年9月7日
 
 @author: wangpeng
 '''
 
-import os, h5py, time
-import numpy as np
-from PB import  pb_sat
-from PB.pb_time import fy3_ymd2seconds
 
 # 获取类py文件所在的目录
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+
 
 class CLASS_MERSI_L1():
 
     '''
     1km的mersi2数据类
     '''
+
     def __init__(self):
 
         # 定标使用
@@ -50,14 +56,13 @@ class CLASS_MERSI_L1():
         self.VIS_Coeff = []
 
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
-        self.WN = {'CH_05':869.565}
+        self.WN = {'CH_05': 869.565}
         # 红外转tbb的修正系数，固定值
-        self.TeA = {'CH_05':1}
-        self.TeB = {'CH_05':0}
+        self.TeA = {'CH_05': 1}
+        self.TeB = {'CH_05': 0}
         # 所有通道的中心波数和对应的响应值 ，SRF
         self.waveNum = {}
         self.waveRad = {}
-
 
     def Load(self, L1File):
         ipath = os.path.dirname(L1File)
@@ -80,6 +85,8 @@ class CLASS_MERSI_L1():
                 return
             finally:
                 h5File_R.close()
+
+                print sys.getsizeof(ary_ch1) / 1024. / 1024.
 
             try:
                 # 读取GEO文件
@@ -128,11 +135,13 @@ class CLASS_MERSI_L1():
             finally:
                 h5File_R.close()
 
-        #####################  通道的中心波数和光谱响应
+        # 通道的中心波数和光谱响应
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
-            srfFile = os.path.join(MainPath, 'SRF', '%s_%s_SRF_CH%02d_Pub.txt' % (self.sat, self.sensor, (i + 1)))
-            dictWave = np.loadtxt(srfFile, dtype={'names': ('num', 'rad'), 'formats': ('f4', 'f4')})
+            srfFile = os.path.join(
+                MainPath, 'SRF', '%s_%s_SRF_CH%02d_Pub.txt' % (self.sat, self.sensor, (i + 1)))
+            dictWave = np.loadtxt(
+                srfFile, dtype={'names': ('num', 'rad'), 'formats': ('f4', 'f4')})
             waveNum = 10 ** 7 / dictWave['num'][::-1]
             waveRad = dictWave['rad'][::-1]
             self.waveNum[BandName] = waveNum
@@ -161,7 +170,7 @@ class CLASS_MERSI_L1():
         # 可见
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
-            if i < 4 :
+            if i < 4:
                 DN = np.full(dshape, np.nan)
                 idx = np.logical_and(ary_ch1[i] < 10000, ary_ch1[i] >= 0)
                 DN[idx] = ary_ch1[i][idx]
@@ -192,7 +201,8 @@ class CLASS_MERSI_L1():
                 self.Rad[BandName] = Rad
 
                 # tbb
-                Tbb = pb_sat.planck_r2t(Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
+                Tbb = pb_sat.planck_r2t(
+                    Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
                 self.Tbb[BandName] = Tbb
 
 #                 CA = interpolate.InterpolatedUnivariateSpline(LutAry['%02d' % (i + 1)], LutAry['TBB'])(DN[idx])
@@ -242,7 +252,8 @@ class CLASS_MERSI_L1():
         if self.LandCover == []:
             self.LandCover = ary_LandCover_idx
         else:
-            self.LandCover = np.concatenate((self.LandCover, ary_LandCover_idx))
+            self.LandCover = np.concatenate(
+                (self.LandCover, ary_LandCover_idx))
 
         # 海陆掩码
         ary_LandSeaMask_idx = np.full(dshape, np.nan)
@@ -252,7 +263,8 @@ class CLASS_MERSI_L1():
         if self.LandSeaMask == []:
             self.LandSeaMask = ary_LandSeaMask_idx
         else:
-            self.LandSeaMask = np.concatenate((self.LandSeaMask, ary_LandSeaMask_idx))
+            self.LandSeaMask = np.concatenate(
+                (self.LandSeaMask, ary_LandSeaMask_idx))
 
         # 经纬度
         ary_lon_idx = np.full(dshape, np.nan)
@@ -279,7 +291,8 @@ class CLASS_MERSI_L1():
         if self.satAzimuth == []:
             self.satAzimuth = ary_sata_idx / 100.
         else:
-            self.satAzimuth = np.concatenate((self.satAzimuth, ary_sata_idx / 100.))
+            self.satAzimuth = np.concatenate(
+                (self.satAzimuth, ary_sata_idx / 100.))
 
         ary_satz_idx = np.full(dshape, np.nan)
         condition = np.logical_and(ary_satz > 0, ary_satz < 18000)
@@ -287,7 +300,8 @@ class CLASS_MERSI_L1():
         if self.satZenith == []:
             self.satZenith = ary_satz_idx / 100.
         else:
-            self.satZenith = np.concatenate((self.satZenith, ary_satz_idx / 100.))
+            self.satZenith = np.concatenate(
+                (self.satZenith, ary_satz_idx / 100.))
 
         # 太阳方位角 天顶角
         ary_suna_idx = np.full(dshape, np.nan)
@@ -297,7 +311,8 @@ class CLASS_MERSI_L1():
         if self.sunAzimuth == []:
             self.sunAzimuth = ary_suna_idx / 100.
         else:
-            self.sunAzimuth = np.concatenate((self.sunAzimuth, ary_suna_idx / 100.))
+            self.sunAzimuth = np.concatenate(
+                (self.sunAzimuth, ary_suna_idx / 100.))
 
         ary_sunz_idx = np.full(dshape, np.nan)
         condition = np.logical_and(ary_sunz > 0, ary_sunz < 18000)
@@ -306,7 +321,8 @@ class CLASS_MERSI_L1():
         if self.sunZenith == []:
             self.sunZenith = ary_sunz_idx / 100.
         else:
-            self.sunZenith = np.concatenate((self.sunZenith, ary_sunz_idx / 100.))
+            self.sunZenith = np.concatenate(
+                (self.sunZenith, ary_sunz_idx / 100.))
 
 if __name__ == '__main__':
     L1File = 'D:/data/FY3C_MERSI/FY3C_MERSI_GBAL_L1_20150223_2340_1000M_MS.HDF'

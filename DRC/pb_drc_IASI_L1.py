@@ -1,19 +1,24 @@
 # coding: utf-8
 
+import os
+import sys
+import coda
+import beatl2
+import numpy as np
+from datetime import datetime
+from PB.pb_time import metop_ymd2seconds
+from PB import pb_sat
+from DV.dv_map import dv_map
+
 '''
 Created on 2017年9月7日
 
 @author: wangpeng
 '''
 
-import os, sys, coda, beatl2
-import numpy as np
-from datetime import datetime
-from PB.pb_time import metop_ymd2seconds
-from PB import  pb_sat
-
 # 配置文件信息，设置为全局
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+
 
 class CLASS_IASI_L1():
 
@@ -42,9 +47,9 @@ class CLASS_IASI_L1():
         self.radiance = []
 
         # 按通道初始化
-        for Band in BandLst :
-#             self.DN[Band] = None
-#             self.Ref[Band] = None
+        for Band in BandLst:
+            #             self.DN[Band] = None
+            #             self.Ref[Band] = None
             self.Tbb[Band] = None
             self.Rad[Band] = None
             self.SV[Band] = None
@@ -77,7 +82,7 @@ class CLASS_IASI_L1():
             product_size = coda.get_product_file_size(fp)
             print 'product_class ', product_class
             print 'product_type', product_type
-            print 'product_version' , product_version
+            print 'product_version', product_version
             print 'product_format', product_format
             print 'product_size', product_size
             record = beatl2.ingest(L1File)
@@ -132,7 +137,8 @@ class CLASS_IASI_L1():
             WaveRad1 = D1.waveRad[Band]
             WaveRad2 = pb_sat.spec_interp(WaveNum1, WaveRad1, WaveNum2)
             newRad = pb_sat.spec_convolution(WaveNum2, WaveRad2, self.radiance)
-            tbb = pb_sat.planck_r2t(newRad, D1.WN[Band], D1.TeA[Band], D1.TeB[Band])
+            tbb = pb_sat.planck_r2t(
+                newRad, D1.WN[Band], D1.TeA[Band], D1.TeB[Band])
 
             self.Tbb[Band] = tbb.reshape(tbb.size, 1)
             self.Rad[Band] = newRad.reshape(newRad.size, 1)
@@ -142,10 +148,25 @@ class CLASS_IASI_L1():
 if __name__ == '__main__':
     T1 = datetime.now()
     BandLst = ['CH_20', 'CH_21', 'CH_22', 'CH_23', 'CH_24', 'CH_25']
-    L1File = 'D:/data/METOP/IASI_xxx_1C_M02_20180411124157Z_20180411124453Z_N_O_20180411142343Z__20180411142456'
-    iasi = CLASS_IASI_L1(BandLst)
-    iasi.Load(L1File)
+    L1File = 'D:/data/METOP/IASI_xxx_1C_M02_20180502060857Z_20180502061152Z_N_O_20180502072426Z__20180502072755'
+    iasi1 = CLASS_IASI_L1(BandLst)
+    iasi1.Load(L1File)
+    L1File = 'D:/data/METOP/IASI_xxx_1C_M02_20180502061153Z_20180502061456Z_N_O_20180502072518Z__20180502072850'
+    iasi2 = CLASS_IASI_L1(BandLst)
+    iasi2.Load(L1File)
+    L1File = 'D:/data/METOP/IASI_xxx_1C_M02_20180502061457Z_20180502061752Z_N_O_20180502072608Z__20180502073251'
+    iasi3 = CLASS_IASI_L1(BandLst)
+    iasi3.Load(L1File)
+
+    lons = np.concatenate((iasi1.Lons, iasi2.Lons, iasi3.Lons))
+    lats = np.concatenate((iasi1.Lats, iasi2.Lats, iasi3.Lats))
+
 #     iasi.get_rad_tbb('FY3D', 'MERSI2', BandLst)
     T2 = datetime.now()
     print 'times:', (T2 - T1).total_seconds()
+    value = np.full(lons.shape, 111)
+    p = dv_map(figsize=(6, 5))
+    p.easyplot(
+        lats, lons, value, vmin=0, vmax=300, markersize=1.5, marker='.')
+    p.savefig('test.png')
     pass

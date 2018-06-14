@@ -1,5 +1,7 @@
 # coding: utf-8
-import os, sys, h5py
+import os
+import sys
+import h5py
 import numpy as np
 from datetime import datetime
 from PB.pb_time import npp_ymd2seconds
@@ -85,11 +87,16 @@ class CLASS_CRIS_L1():
             h5File_R = h5py.File(L1File, 'r')
             self.Lons = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/Longitude')[:]
             self.Lats = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/Latitude')[:]
-            self.satAzimuth = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SatelliteAzimuthAngle')[:]
-            self.satZenith = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SatelliteZenithAngle')[:]
-            self.satRange = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SatelliteRange')[:]
-            self.sunAzimuth = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SolarAzimuthAngle')[:]
-            self.sunZenith = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SolarZenithAngle')[:]
+            self.satAzimuth = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SatelliteAzimuthAngle')[:]
+            self.satZenith = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SatelliteZenithAngle')[:]
+            self.satRange = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SatelliteRange')[:]
+            self.sunAzimuth = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SolarAzimuthAngle')[:]
+            self.sunZenith = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SolarZenithAngle')[:]
             real_lw = h5File_R.get('/All_Data/CrIS-FS-SDR_All/ES_RealLW')[:]
             real_mw = h5File_R.get('/All_Data/CrIS-FS-SDR_All/ES_RealMW')[:]
             real_sw = h5File_R.get('/All_Data/CrIS-FS-SDR_All/ES_RealSW')[:]
@@ -118,9 +125,12 @@ class CLASS_CRIS_L1():
 
 #         print u'切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值'
         # 开头和结尾不参与计算
-        real_lw[:, :, :, 1:-1] = w0 * real_lw[:, :, :, :-2] + w1 * real_lw[:, :, :, 1:-1] + w2 * real_lw[:, :, :, 2:]
-        real_mw[:, :, :, 1:-1] = w0 * real_mw[:, :, :, :-2] + w1 * real_mw[:, :, :, 1:-1] + w2 * real_mw[:, :, :, 2:]
-        real_sw[:, :, :, 1:-1] = w0 * real_sw[:, :, :, :-2] + w1 * real_sw[:, :, :, 1:-1] + w2 * real_sw[:, :, :, 2:]
+        real_lw[:, :, :, 1:-1] = w0 * real_lw[:, :, :, :-2] + \
+            w1 * real_lw[:, :, :, 1:-1] + w2 * real_lw[:, :, :, 2:]
+        real_mw[:, :, :, 1:-1] = w0 * real_mw[:, :, :, :-2] + \
+            w1 * real_mw[:, :, :, 1:-1] + w2 * real_mw[:, :, :, 2:]
+        real_sw[:, :, :, 1:-1] = w0 * real_sw[:, :, :, :-2] + \
+            w1 * real_sw[:, :, :, 1:-1] + w2 * real_sw[:, :, :, 2:]
 
         real_lw = real_lw[:, :, :, 2:-2]
         real_mw = real_mw[:, :, :, 2:-2]
@@ -138,11 +148,16 @@ class CLASS_CRIS_L1():
         self.radiance_old = np.concatenate((real_lw, real_mw, real_sw), axis=3)
 #         lens = self.radiance.shape[-1]
         lens = self.radiance_old.shape[-1]
-        self.radiance_old = self.radiance_old.reshape(self.radiance_old.size / lens, lens)
+        self.radiance_old = self.radiance_old.reshape(
+            self.radiance_old.size / lens, lens)
+        print '222', self.wavenumber_old.shape, self.radiance_old.shape
 
-        self.real_lw = real_lw.reshape(real_lw.size / real_lw.shape[-1], real_lw.shape[-1])
-        self.real_mw = real_mw.reshape(real_mw.size / real_mw.shape[-1], real_mw.shape[-1])
-        self.real_sw = real_sw.reshape(real_sw.size / real_sw.shape[-1], real_sw.shape[-1])
+        self.real_lw = real_lw.reshape(
+            real_lw.size / real_lw.shape[-1], real_lw.shape[-1])
+        self.real_mw = real_mw.reshape(
+            real_mw.size / real_mw.shape[-1], real_mw.shape[-1])
+        self.real_sw = real_sw.reshape(
+            real_sw.size / real_sw.shape[-1], real_sw.shape[-1])
 
     def Load(self, L1File):
 
@@ -159,11 +174,16 @@ class CLASS_CRIS_L1():
             h5File_R = h5py.File(L1File, 'r')
             self.Lons = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/Longitude')[:]
             self.Lats = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/Latitude')[:]
-            self.satAzimuth = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SatelliteAzimuthAngle')[:]
-            self.satZenith = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SatelliteZenithAngle')[:]
-            self.satRange = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SatelliteRange')[:]
-            self.sunAzimuth = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SolarAzimuthAngle')[:]
-            self.sunZenith = h5File_R.get('/All_Data/CrIS-SDR-GEO_All/SolarZenithAngle')[:]
+            self.satAzimuth = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SatelliteAzimuthAngle')[:]
+            self.satZenith = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SatelliteZenithAngle')[:]
+            self.satRange = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SatelliteRange')[:]
+            self.sunAzimuth = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SolarAzimuthAngle')[:]
+            self.sunZenith = h5File_R.get(
+                '/All_Data/CrIS-SDR-GEO_All/SolarZenithAngle')[:]
             real_lw = h5File_R.get('/All_Data/CrIS-SDR_All/ES_RealLW')[:]
             real_mw = h5File_R.get('/All_Data/CrIS-SDR_All/ES_RealMW')[:]
             real_sw = h5File_R.get('/All_Data/CrIS-SDR_All/ES_RealSW')[:]
@@ -202,9 +222,12 @@ class CLASS_CRIS_L1():
 
 #         print u'切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值'
         # 开头和结尾不参与计算
-        real_lw[:, :, :, 1:-1] = w0 * real_lw[:, :, :, :-2] + w1 * real_lw[:, :, :, 1:-1] + w2 * real_lw[:, :, :, 2:]
-        real_mw[:, :, :, 1:-1] = w0 * real_mw[:, :, :, :-2] + w1 * real_mw[:, :, :, 1:-1] + w2 * real_mw[:, :, :, 2:]
-        real_sw[:, :, :, 1:-1] = w0 * real_sw[:, :, :, :-2] + w1 * real_sw[:, :, :, 1:-1] + w2 * real_sw[:, :, :, 2:]
+        real_lw[:, :, :, 1:-1] = w0 * real_lw[:, :, :, :-2] + \
+            w1 * real_lw[:, :, :, 1:-1] + w2 * real_lw[:, :, :, 2:]
+        real_mw[:, :, :, 1:-1] = w0 * real_mw[:, :, :, :-2] + \
+            w1 * real_mw[:, :, :, 1:-1] + w2 * real_mw[:, :, :, 2:]
+        real_sw[:, :, :, 1:-1] = w0 * real_sw[:, :, :, :-2] + \
+            w1 * real_sw[:, :, :, 1:-1] + w2 * real_sw[:, :, :, 2:]
 
         real_lw = real_lw[:, :, :, 2:-2]
         real_mw = real_mw[:, :, :, 2:-2]
@@ -220,15 +243,13 @@ class CLASS_CRIS_L1():
         self.radiance = np.concatenate((real_lw, real_mw, real_sw), axis=3)
         lens = self.radiance.shape[-1]
         self.radiance = self.radiance.reshape(self.radiance.size / lens, lens)
-#         print self.wavenumber.shape
-#         print self.radiance.shape
 
     def gapFilling(self):
-#         print 'gapFilling before:'
-#         print self.wavenumber_old.shape
-#         print self.radiance_old.shape
+        #         print 'gapFilling before:'
+        #         print self.wavenumber_old.shape
+        #         print self.radiance_old.shape
         gapFile = os.path.join(MainPath, 'COEFF', 'cris_fs.GapCoeff.h5')
-        h5File_R = h5py.File(gapFile)
+        h5File_R = h5py.File(gapFile, 'r')
         c0 = h5File_R.get('C0')[:]
         p0 = h5File_R.get('P0')[:]
         gapNum = h5File_R.get('GAP_NUM')[:]
@@ -242,8 +263,10 @@ class CLASS_CRIS_L1():
         real_mw_e = radiance_new[:, ch_part1:ch_part2]
         real_sw_e = radiance_new[:, ch_part2:ch_part3]
         self.wavenumber = np.arange(650., 2755.0 + 0.625, 0.625)
-        self.radiance = np.concatenate((self.real_lw, real_lw_e, self.real_mw, real_mw_e, self.real_sw, real_sw_e), axis=1)
-
+        self.radiance = np.concatenate(
+            (self.real_lw, real_lw_e, self.real_mw, real_mw_e, self.real_sw, real_sw_e), axis=1)
+        print '1', self.wavenumber.shape
+        print self.radiance.shape
 #         real_lw_e = np.full_like(real_lw_e, np.nan)
 #         real_mw_e = np.full_like(real_mw_e, np.nan)
 #         real_sw_e = np.full_like(real_sw_e, np.nan)
@@ -259,16 +282,19 @@ class CLASS_CRIS_L1():
         # 第一组经纬度（成像仪）的ECEF坐标系下的值
         G_pos = np.zeros(np.append(self.Lons.shape, 3))
         high = np.zeros_like(self.Lons)
-        G_pos[:, :, 0], G_pos[:, :, 1], G_pos[:, :, 2] = pb_space.LLA2ECEF(self.Lons, self.Lats, high)
+        G_pos[:, :, 0], G_pos[:, :, 1], G_pos[
+            :, :, 2] = pb_space.LLA2ECEF(self.Lons, self.Lats, high)
         self.G_pos = G_pos
 
         # compute CrIS LOS Vector1   局地球面坐标系 RAE--->东-北-天坐标系ENU
-        cris_east, cris_north, cris_up = pb_space.RAE2ENU(self.satAzimuth, self.satZenith, self.satRange)
+        cris_east, cris_north, cris_up = pb_space.RAE2ENU(
+            self.satAzimuth, self.satZenith, self.satRange)
         print cris_east.shape
         # compute CrIS LOS Vector2   东-北-天坐标系ENU--->地球中心地球固定坐标系ECEF
         L_pos = np.zeros(np.append(self.Lons.shape, 3))
         L_pos[:, :, 0], L_pos[:, :, 1], L_pos[:, :, 2] = \
-            pb_space.ENU2ECEF(cris_east, cris_north, cris_up, self.Lons, self.Lats)
+            pb_space.ENU2ECEF(
+                cris_east, cris_north, cris_up, self.Lons, self.Lats)
 
         L_pos = L_pos * -1.0
         self.L_pos = L_pos
@@ -285,7 +311,8 @@ class CLASS_CRIS_L1():
             WaveRad1 = D1.waveRad[Band]
             WaveRad2 = pb_sat.spec_interp(WaveNum1, WaveRad1, WaveNum2)
             newRad = pb_sat.spec_convolution(WaveNum2, WaveRad2, self.radiance)
-            tbb = pb_sat.planck_r2t(newRad, D1.WN[Band], D1.TeA[Band], D1.TeB[Band])
+            tbb = pb_sat.planck_r2t(
+                newRad, D1.WN[Band], D1.TeA[Band], D1.TeB[Band])
 
             self.Tbb[Band] = tbb.reshape(tbb.size, 1)
             self.Rad[Band] = newRad.reshape(newRad.size, 1)
@@ -297,29 +324,35 @@ if __name__ == '__main__':
 
     BandLst = ['CH_20', 'CH_21', 'CH_22', 'CH_23', 'CH_24', 'CH_25']
 
-#     L1File = 'D:/data/NPP_CRIS/GCRSO-SCRIF-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5'
-    L1File = 'D:/data/npp_virrs_cris/GCRSO-SCRIS_npp_d20170201_t0741439_e0749417_b27282_c20180524085728187103_noaa_ops.h5'
+    L1File = 'D:/data/NPP_CRIS/GCRSO-SCRIF-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5'
+#     L1File = 'D:/data/npp_virrs_cris/GCRSO-SCRIS_npp_d20170201_t0741439_e0749417_b27282_c20180524085728187103_noaa_ops.h5'
     cris = CLASS_CRIS_L1(BandLst)
-#     cris.LoadFull(L1File)
-    cris.Load(L1File)
+    cris.LoadFull(L1File)
+#     cris.Load(L1File)
     cris.get_G_P_L()
-    print '1', cris.G_pos
-    print '2', cris.L_pos
-    print '3', cris.P_pos
-#     cris.gapFilling()
+#     print '1', cris.G_pos
+#     print '2', cris.L_pos
+#     print '3', cris.P_pos
+    cris.gapFilling()
 #     cris.get_rad_tbb(D1 BandLst)
     T2 = datetime.now()
     print 'times:', (T2 - T1).total_seconds()
-#     p = dv_plt.dv_scatter(figsize=(7, 5))
-#     p.xlim_min = 1000
-#     p.xlim_max = 1200
-#
-#     p.easyplot(cris.wavenumber, cris.radiance[0], 'b', 'after', marker='o', markersize=5)
-#     p.easyplot(cris.wavenumber, cris.radiance_old[0], 'r', 'before', marker='o', markersize=5)
-#
-#     p.title = u'20180415 17:46:39 NPP FULL CRIS'
-#     p.xlabel = u'波长'
-#     p.ylabel = u'radince'
-#     ofile = 'D:/data/NPP_CRIS/gapFilling_after.png'
-#     p.savefig(ofile, dpi=300)
+    print cris.wavenumber.shape
+    print cris.wavenumber_old.shape
+    print cris.radiance.shape
+    print cris.radiance_old.shape
+    p = dv_plt.dv_scatter(figsize=(7, 5))
+    p.xlim_min = 1000
+    p.xlim_max = 1200
+
+    p.easyplot(cris.wavenumber, cris.radiance[
+               0], 'b', 'after', marker='o', markersize=5)
+    p.easyplot(cris.wavenumber_old, cris.radiance_old[
+               0], 'r', 'before', marker='o', markersize=5)
+
+    p.title = u'20180415 17:46:39 NPP FULL CRIS'
+    p.xlabel = u'波长'
+    p.ylabel = u'radince'
+    ofile = 'D:/data/NPP_CRIS/gapFilling_after.png'
+    p.savefig(ofile, dpi=300)
     pass

@@ -1,4 +1,12 @@
 # coding: utf-8
+import os
+import h5py
+import time
+import numpy as np
+from datetime import datetime
+from PB import pb_name, pb_sat
+from PB.pb_time import fy3_ymd2seconds
+from DV.dv_map import dv_map
 
 '''
 Created on 2018年5月2日
@@ -6,13 +14,9 @@ Created on 2018年5月2日
 @author: wangpeng
 '''
 
-import os, h5py, time
-import numpy as np
-from datetime import datetime
-from PB import  pb_name, pb_sat
-from PB.pb_time import fy3_ymd2seconds
 
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+
 
 class CLASS_IRAS_L1():
 
@@ -49,13 +53,13 @@ class CLASS_IRAS_L1():
         self.VIS_Coeff = []
 
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
-        self.WN = {'CH_01':669.976914, 'CH_02':680.162001, 'CH_03':691.391561, 'CH_04':702.858560,
-                   'CH_05':715.270436, 'CH_06':732.203858, 'CH_07':749.383836, 'CH_08':801.671379,
-                   'CH_09':899.414299, 'CH_10':1032.591246, 'CH_11':1343.617931, 'CH_12':1364.298075,
-                   'CH_13':1529.295554, 'CH_14':2191.007796, 'CH_15':2209.606615, 'CH_16':2237.159430,
-                   'CH_17':2242.434450, 'CH_18':2387.507219, 'CH_19':2517.407819, 'CH_20':2667.944995,
-                   'CH_21':14431.029680, 'CH_22':11265.161110, 'CH_23':10601.633020, 'CH_24':10607.324440,
-                   'CH_25':8098.870570, 'CH_26':6061.054448}
+        self.WN = {'CH_01': 669.976914, 'CH_02': 680.162001, 'CH_03': 691.391561, 'CH_04': 702.858560,
+                   'CH_05': 715.270436, 'CH_06': 732.203858, 'CH_07': 749.383836, 'CH_08': 801.671379,
+                   'CH_09': 899.414299, 'CH_10': 1032.591246, 'CH_11': 1343.617931, 'CH_12': 1364.298075,
+                   'CH_13': 1529.295554, 'CH_14': 2191.007796, 'CH_15': 2209.606615, 'CH_16': 2237.159430,
+                   'CH_17': 2242.434450, 'CH_18': 2387.507219, 'CH_19': 2517.407819, 'CH_20': 2667.944995,
+                   'CH_21': 14431.029680, 'CH_22': 11265.161110, 'CH_23': 10601.633020, 'CH_24': 10607.324440,
+                   'CH_25': 8098.870570, 'CH_26': 6061.054448}
 
         # 红外转tbb的修正系数，固定值
         self.TeA = {}
@@ -96,11 +100,13 @@ class CLASS_IRAS_L1():
         finally:
             h5File_R.close()
 
-        #####################  通道的中心波数和光谱响应
+        # 通道的中心波数和光谱响应
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
-            srfFile = os.path.join(MainPath, 'SRF', '%s_%s_SRF_CH%02d_Pub.txt' % (self.sat, self.sensor, (i + 1)))
-            dictWave = np.loadtxt(srfFile, dtype={'names': ('num', 'rad'), 'formats': ('f4', 'f4')})
+            srfFile = os.path.join(
+                MainPath, 'SRF', '%s_%s_SRF_CH%02d_Pub.txt' % (self.sat, self.sensor, (i + 1)))
+            dictWave = np.loadtxt(
+                srfFile, dtype={'names': ('num', 'rad'), 'formats': ('f4', 'f4')})
             waveNum = dictWave['num']
             waveRad = dictWave['rad']
             self.waveNum[BandName] = waveNum
@@ -127,7 +133,6 @@ class CLASS_IRAS_L1():
             Rad = np.full(dshape, np.nan)
             Rad = pb_sat.plank_iras_tb2rad(Tbb, self.WN[BandName])
             self.Rad[BandName] = Rad
-
 
         ##################### 全局信息赋值 ############################
         # 对时间进行赋值合并
@@ -163,7 +168,8 @@ class CLASS_IRAS_L1():
         if self.LandCover == []:
             self.LandCover = ary_LandCover_idx
         else:
-            self.LandCover = np.concatenate((self.LandCover, ary_LandCover_idx))
+            self.LandCover = np.concatenate(
+                (self.LandCover, ary_LandCover_idx))
 
         # 海陆掩码
         ary_LandSeaMask_idx = np.full(dshape, np.nan)
@@ -173,7 +179,8 @@ class CLASS_IRAS_L1():
         if self.LandSeaMask == []:
             self.LandSeaMask = ary_LandSeaMask_idx
         else:
-            self.LandSeaMask = np.concatenate((self.LandSeaMask, ary_LandSeaMask_idx))
+            self.LandSeaMask = np.concatenate(
+                (self.LandSeaMask, ary_LandSeaMask_idx))
 
         # 经纬度
         ary_lon_idx = np.full(dshape, np.nan)
@@ -200,7 +207,8 @@ class CLASS_IRAS_L1():
         if self.satAzimuth == []:
             self.satAzimuth = ary_sata_idx / 100.
         else:
-            self.satAzimuth = np.concatenate((self.satAzimuth, ary_sata_idx / 100.))
+            self.satAzimuth = np.concatenate(
+                (self.satAzimuth, ary_sata_idx / 100.))
 
         ary_satz_idx = np.full(dshape, np.nan)
         condition = np.logical_and(ary_satz > 0, ary_satz < 18000)
@@ -208,7 +216,8 @@ class CLASS_IRAS_L1():
         if self.satZenith == []:
             self.satZenith = ary_satz_idx / 100.
         else:
-            self.satZenith = np.concatenate((self.satZenith, ary_satz_idx / 100.))
+            self.satZenith = np.concatenate(
+                (self.satZenith, ary_satz_idx / 100.))
 
         # 太阳方位角 天顶角
         ary_suna_idx = np.full(dshape, np.nan)
@@ -218,7 +227,8 @@ class CLASS_IRAS_L1():
         if self.sunAzimuth == []:
             self.sunAzimuth = ary_suna_idx / 100.
         else:
-            self.sunAzimuth = np.concatenate((self.sunAzimuth, ary_suna_idx / 100.))
+            self.sunAzimuth = np.concatenate(
+                (self.sunAzimuth, ary_suna_idx / 100.))
 
         ary_sunz_idx = np.full(dshape, np.nan)
         condition = np.logical_and(ary_sunz > 0, ary_sunz < 18000)
@@ -227,23 +237,37 @@ class CLASS_IRAS_L1():
         if self.sunZenith == []:
             self.sunZenith = ary_sunz_idx / 100.
         else:
-            self.sunZenith = np.concatenate((self.sunZenith, ary_sunz_idx / 100.))
+            self.sunZenith = np.concatenate(
+                (self.sunZenith, ary_sunz_idx / 100.))
 
 if __name__ == '__main__':
     T1 = datetime.now()
 
-    L1File = 'D:/data/FY3C_IRAS/FY3C_IRASX_GBAL_L1_20180417_1251_017KM_MS.HDF'
+    L1File = 'D:/data/FY3C_IRAS/FY3C_IRASX_GBAL_L1_20180502_0537_017KM_MS.HDF'
     iras = CLASS_IRAS_L1()
     iras.Load(L1File)
+    iras2 = CLASS_IRAS_L1()
+    L1File = 'D:/data/FY3C_IRAS/FY3C_IRASX_GBAL_L1_20180502_0719_017KM_MS.HDF'
+    iras2.Load(L1File)
     T2 = datetime.now()
-    print iras.Time.shape
-#     print iras.Time[0, 0]
-#     print time.gmtime(iras.Time[0, 0])
+#     print iras.Time.shape
+    print iras.Time[0, 0]
+    print time.gmtime(iras.Time[0, 0])
+    print iras.Time[-1, -1]
+    print time.gmtime(iras.Time[-1, -1])
 #     print iras.waveRad['CH_01']
-    print  iras.Tbb['CH_01']
-    print  iras.Rad['CH_01']
+#     print iras.Tbb['CH_01']
+#     print iras.Rad['CH_01']
     for band in sorted(iras.Tbb.keys()):
-        print  band, np.nanmin(iras.Tbb[band]), np.nanmax(iras.Tbb[band])
+        print band, np.nanmin(iras.Tbb[band]), np.nanmax(iras.Tbb[band])
 #         print  band, np.nanmin(iras.Rad[band]), np.nanmax(iras.Rad[band])
     print 'times:', (T2 - T1).total_seconds()
+    value = np.full(iras.Lons.shape, 999)
+    p = dv_map(figsize=(6, 5))
+    p.easyplot(
+        iras.Lats, iras.Lons, value, vmin=0, vmax=300,
+        markersize=1.5, marker='.')
 
+    p.easyplot(iras2.Lats, iras2.Lons, iras2.Tbb[
+               'CH_01'], vmin=0, vmax=300, markersize=1.5, marker='.')
+    p.savefig('test.png')

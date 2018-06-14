@@ -1,16 +1,17 @@
 # coding: utf-8
+import numpy as np
+from datetime import datetime
+
 __author__ = 'wangpeng'
 
 '''
-FileName:     pb_cfg.py
+FileName:     pb_sat.py
 Description:  配置文件处理的函数
 Author:       wangpeng
 Date:         2018-04-28
 version:      1.0
 '''
 
-import numpy as np
-from datetime import datetime
 
 def solar_zen(yy, mm, dd, hh, xlon, xlat):
     '''
@@ -36,7 +37,8 @@ def solar_zen(yy, mm, dd, hh, xlon, xlat):
     a3 = (0.9683 * xj - 78.00878) * fac
     delta = 23.4856 * np.sin(a3) * fac
 
-    amuzero = np.sin(xla) * np.sin(delta) + np.cos(xla) * np.cos(delta) * np.cos(ah)
+    amuzero = np.sin(xla) * np.sin(delta) + np.cos(xla) * \
+        np.cos(delta) * np.cos(ah)
 
     elev = np.arcsin(amuzero) * 180. / np.pi
 
@@ -45,7 +47,6 @@ def solar_zen(yy, mm, dd, hh, xlon, xlat):
 
 
 def getasol6s(ymd, hms, lons, lats):
-
     '''
     Function:    getasol6s
     Description: 计算太阳天顶角
@@ -78,13 +79,16 @@ def getasol6s(ymd, hms, lons, lats):
     a4 = 0.014615
     a5 = 0.040849
     A = 2 * np.pi * jday / 365.0
-    delta = b1 - b2 * np.cos(A) + b3 * np.sin(A) - b4 * np.cos(2 * A) + b5 * np.sin(2 * A) - b6 * np.cos(3 * A) + b7 * np.sin(3 * A)
-    ET = 12 * (a1 + a2 * np.cos(A) - a3 * np.sin(A) - a4 * np.cos(2 * A) - a5 * np.sin(2 * A)) / np.pi
+    delta = b1 - b2 * np.cos(A) + b3 * np.sin(A) - b4 * np.cos(2 * A) + \
+        b5 * np.sin(2 * A) - b6 * np.cos(3 * A) + b7 * np.sin(3 * A)
+    ET = 12 * (a1 + a2 * np.cos(A) - a3 * np.sin(A) - a4 *
+               np.cos(2 * A) - a5 * np.sin(2 * A)) / np.pi
     MST = GMT + lons / 15.0
     TST = MST + ET
     t = 15.0 * np.pi / 180.0 * (TST - 12.0)
 
-    asol = np.arccos(np.cos(delta) * np.cos(lats) * np.cos(t) + np.sin(delta) * np.sin(lats))
+    asol = np.arccos(
+        np.cos(delta) * np.cos(lats) * np.cos(t) + np.sin(delta) * np.sin(lats))
     return np.rad2deg(asol)
 
 
@@ -99,6 +103,7 @@ def sun_earth_dis_correction(ymd):
     OM = (0.9856 * (jjj - 4)) * np.pi / 180.
     dsol = 1. / ((1. - 0.01673 * np.cos(OM)) ** 2)
     return dsol
+
 
 def sun_glint_cal(obs_a, obs_z, sun_a, sun_z):
     '''
@@ -126,11 +131,14 @@ def sun_glint_cal(obs_a, obs_z, sun_a, sun_z):
 
     return glint
 
+
 def arrayMax(array_a, b):
     return max(array_a, b)
 
+
 def arrayMin(array_a, b):
     return min(array_a, b)
+
 
 def spec_interp(WaveNum1, WaveRad1, WaveNum2):
     '''
@@ -147,6 +155,7 @@ def spec_interp(WaveNum1, WaveRad1, WaveNum2):
     WaveRad2 = np.interp(WaveNum2, WaveNum1, WaveRad1, 0, 0)
     return WaveRad2
 
+
 def spec_convolution(WaveNum, WaveRad, RealRad):
     '''
     IN, WaveNum: 光谱的波数(cm-1)
@@ -155,7 +164,7 @@ def spec_convolution(WaveNum, WaveRad, RealRad):
     return , S 卷积后的响应值
     '''
     # RealRad的光谱信息必须和WaveNum,WaveRad的长度一致
-    if  WaveNum.shape[-1] != WaveRad.shape[-1] != RealRad.shape[-1]:
+    if WaveNum.shape[-1] != WaveRad.shape[-1] != RealRad.shape[-1]:
         print 'The spectral response length must be the same'
         return -1
 
@@ -164,6 +173,7 @@ def spec_convolution(WaveNum, WaveRad, RealRad):
     s2 = np.trapz(WaveRad, WaveNum)
     S = (s1 / s2)
     return S
+
 
 def planck_r2t(r, w, a=None, b=None):
     '''
@@ -179,7 +189,7 @@ def planck_r2t(r, w, a=None, b=None):
     vs = 1.0E+2 * w
     te = c2 * vs / np.log(c1 * vs ** 3 / (1.0E-5 * r) + 1.0)
 
-    if a and b  is not None:
+    if a and b is not None:
         tbb = te * a + b
     else:
         tbb = te
@@ -200,12 +210,13 @@ def planck_r2t(r, w, a=None, b=None):
 #     Tbb = a1 / a2
 #     return Tbb
 
+
 def plank_iras_tb2rad(T, W, a=None, b=None):
     '''
     plank for IRAS tb2rad
     T : TBB
     W : center wavenums
-    
+
     '''
     c1 = 0.000011910659
     c2 = 1.438833
@@ -215,11 +226,9 @@ def plank_iras_tb2rad(T, W, a=None, b=None):
     return Rad
 
 if __name__ == '__main__':
-#     print solar_zen(2018, 3, 26, 00, 105.37498, 81.54135)
-#     print getasol6s('20180326', '004500', 105.37498, 81.54135)
-#     print sun_glint_cal(90, 90, -90, 90)
-#     print sun_glint_cal(359, 179, 359, 179)
+    #     print solar_zen(2018, 3, 26, 00, 105.37498, 81.54135)
+    #     print getasol6s('20180326', '004500', 105.37498, 81.54135)
+    #     print sun_glint_cal(90, 90, -90, 90)
+    #     print sun_glint_cal(359, 179, 359, 179)
 
     pass
-
-

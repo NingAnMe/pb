@@ -6,7 +6,8 @@ Created on 2017年9月7日
 @author: wangpeng
 '''
 
-import os, h5py
+import os
+import h5py
 import numpy as np
 from PB.pb_time import fy3_ymd2seconds
 from PB import pb_sat
@@ -20,11 +21,12 @@ class CLASS_MERSI2_L1():
     '''
     1km的mersi2数据类
     '''
+
     def __init__(self):
 
         # 定标使用
         self.sat = 'FY3D'
-        self.sensor = 'MERSI2'
+        self.sensor = 'MERSI'
         self.res = 1000
         self.Band = 25
         self.obrit_direction = []
@@ -56,10 +58,13 @@ class CLASS_MERSI2_L1():
         self.VIS_Coeff = []
         # 波长（μm） 转 波数 cm-1  (10000μm=1cm)   cm-1 = 10000/波长（μm）
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
-        self.WN = {'CH_20':2634.359, 'CH_21':2471.654, 'CH_22':1382.621, 'CH_23':1168.182, 'CH_24':933.364, 'CH_25':836.941 }
+        self.WN = {'CH_20': 2634.359, 'CH_21': 2471.654, 'CH_22':
+                   1382.621, 'CH_23': 1168.182, 'CH_24': 933.364, 'CH_25': 836.941}
         # 红外转tbb的修正系数，固定值
-        self.TeA = {'CH_20':1.00103, 'CH_21':1.00085, 'CH_22':1.00125, 'CH_23':1.00030, 'CH_24':1.00133, 'CH_25':1.00065 }
-        self.TeB = {'CH_20':-0.4759, 'CH_21':-0.3139, 'CH_22':-0.2662, 'CH_23':-0.0513, 'CH_24':-0.0734, 'CH_25':0.0875 }
+        self.TeA = {'CH_20': 1.00103, 'CH_21': 1.00085, 'CH_22':
+                    1.00125, 'CH_23': 1.00030, 'CH_24': 1.00133, 'CH_25': 1.00065}
+        self.TeB = {'CH_20': -0.4759, 'CH_21': -0.3139, 'CH_22': -
+                    0.2662, 'CH_23': -0.0513, 'CH_24': -0.0734, 'CH_25': 0.0875}
         # 所有通道的中心波数和对应的响应值 ，SRF
         self.waveNum = {}
         self.waveRad = {}
@@ -80,11 +85,15 @@ class CLASS_MERSI2_L1():
             ary_ch1_4 = h5File_R.get('/Data/EV_250_Aggr.1KM_RefSB')[:]
             ary_ch5_19 = h5File_R.get('/Data/EV_1KM_RefSB')[:]
             ary_ch20_23 = h5File_R.get('/Data/EV_1KM_Emissive')[:]
-            ary_ch20_23_a = h5File_R.get('/Data/EV_1KM_Emissive').attrs['Slope']
-            ary_ch20_23_b = h5File_R.get('/Data/EV_1KM_Emissive').attrs['Intercept']
+            ary_ch20_23_a = h5File_R.get(
+                '/Data/EV_1KM_Emissive').attrs['Slope']
+            ary_ch20_23_b = h5File_R.get(
+                '/Data/EV_1KM_Emissive').attrs['Intercept']
             ary_ch24_25 = h5File_R.get('/Data/EV_250_Aggr.1KM_Emissive')[:]
-            ary_ch24_25_a = h5File_R.get('/Data/EV_250_Aggr.1KM_Emissive').attrs['Slope']
-            ary_ch24_25_b = h5File_R.get('/Data/EV_250_Aggr.1KM_Emissive').attrs['Intercept']
+            ary_ch24_25_a = h5File_R.get(
+                '/Data/EV_250_Aggr.1KM_Emissive').attrs['Slope']
+            ary_ch24_25_b = h5File_R.get(
+                '/Data/EV_250_Aggr.1KM_Emissive').attrs['Intercept']
             ary_IR_Coeff = h5File_R.get('/Calibration/IR_Cal_Coeff')[:]
             ary_VIS_Coeff = h5File_R.get('/Calibration/VIS_Cal_Coeff')[:]
             ary_sv = h5File_R.get('/Calibration/SV_DN_average')[:]
@@ -115,11 +124,13 @@ class CLASS_MERSI2_L1():
         finally:
             h5File_R.close()
 
-        #####################  通道的中心波数和光谱响应
+        # 通道的中心波数和光谱响应
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
-            srfFile = os.path.join(MainPath, 'SRF', '%s_%s_SRF_CH%02d_Pub.txt' % (self.sat, self.sensor, (i + 1)))
-            dictWave = np.loadtxt(srfFile, dtype={'names': ('num', 'rad'), 'formats': ('f4', 'f4')})
+            srfFile = os.path.join(
+                MainPath, 'SRF', '%s_%s_SRF_CH%02d_Pub.txt' % (self.sat, self.sensor, (i + 1)))
+            dictWave = np.loadtxt(
+                srfFile, dtype={'names': ('num', 'rad'), 'formats': ('f4', 'f4')})
             waveNum = 10 ** 7 / dictWave['num'][::-1]
             waveRad = dictWave['rad'][::-1]
             self.waveNum[BandName] = waveNum
@@ -177,7 +188,8 @@ class CLASS_MERSI2_L1():
             idx = np.logical_and(indata < 65500, indata > 0)
             DN[idx] = indata[idx]
             Rad[idx] = DN[idx] * a[i] + b[i]
-            Tbb = pb_sat.planck_r2t(Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
+            Tbb = pb_sat.planck_r2t(
+                Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
             # 对类成员进行赋值
             if BandName not in self.DN.keys():
                 self.DN[BandName] = DN
@@ -196,8 +208,8 @@ class CLASS_MERSI2_L1():
 #                 k2 = K[i, 2, jj]
 #                 k1 = K[i, 1, jj]
 #                 k0 = K[i, 0, jj]
-#                 Rad[row_i, :] = (DN[row_i, :] * k3 ** 3 + DN[row_i, :] * k2 ** 2 + DN[row_i, :] * k1 + k0)  # / 100.
-
+# Rad[row_i, :] = (DN[row_i, :] * k3 ** 3 + DN[row_i, :] * k2 ** 2 +
+# DN[row_i, :] * k1 + k0)  # / 100.
 
         ##################### 全局信息赋值 ############################
         # 对时间进行赋值合并
@@ -241,7 +253,8 @@ class CLASS_MERSI2_L1():
         if self.LandCover == []:
             self.LandCover = ary_LandCover_idx
         else:
-            self.LandCover = np.concatenate((self.LandCover, ary_LandCover_idx))
+            self.LandCover = np.concatenate(
+                (self.LandCover, ary_LandCover_idx))
 
         # 海陆掩码
         ary_LandSeaMask_idx = np.full(dshape, np.nan)
@@ -251,7 +264,8 @@ class CLASS_MERSI2_L1():
         if self.LandSeaMask == []:
             self.LandSeaMask = ary_LandSeaMask_idx
         else:
-            self.LandSeaMask = np.concatenate((self.LandSeaMask, ary_LandSeaMask_idx))
+            self.LandSeaMask = np.concatenate(
+                (self.LandSeaMask, ary_LandSeaMask_idx))
 
         # 经纬度
         ary_lon_idx = np.full(dshape, np.nan)
@@ -278,7 +292,8 @@ class CLASS_MERSI2_L1():
         if self.satAzimuth == []:
             self.satAzimuth = ary_sata_idx / 100.
         else:
-            self.satAzimuth = np.concatenate((self.satAzimuth, ary_sata_idx / 100.))
+            self.satAzimuth = np.concatenate(
+                (self.satAzimuth, ary_sata_idx / 100.))
 
         ary_satz_idx = np.full(dshape, np.nan)
         condition = np.logical_and(ary_satz > 0, ary_satz < 18000)
@@ -286,7 +301,8 @@ class CLASS_MERSI2_L1():
         if self.satZenith == []:
             self.satZenith = ary_satz_idx / 100.
         else:
-            self.satZenith = np.concatenate((self.satZenith, ary_satz_idx / 100.))
+            self.satZenith = np.concatenate(
+                (self.satZenith, ary_satz_idx / 100.))
 
         # 太阳方位角 天顶角
         ary_suna_idx = np.full(dshape, np.nan)
@@ -296,7 +312,8 @@ class CLASS_MERSI2_L1():
         if self.sunAzimuth == []:
             self.sunAzimuth = ary_suna_idx / 100.
         else:
-            self.sunAzimuth = np.concatenate((self.sunAzimuth, ary_suna_idx / 100.))
+            self.sunAzimuth = np.concatenate(
+                (self.sunAzimuth, ary_suna_idx / 100.))
 
         ary_sunz_idx = np.full(dshape, np.nan)
         condition = np.logical_and(ary_sunz > 0, ary_sunz < 18000)
@@ -305,7 +322,8 @@ class CLASS_MERSI2_L1():
         if self.sunZenith == []:
             self.sunZenith = ary_sunz_idx / 100.
         else:
-            self.sunZenith = np.concatenate((self.sunZenith, ary_sunz_idx / 100.))
+            self.sunZenith = np.concatenate(
+                (self.sunZenith, ary_sunz_idx / 100.))
 
         # 系数先不合并，暂时未用，数据格式无法统一了
         self.IR_Coeff = ary_IR_Coeff
@@ -317,7 +335,8 @@ class CLASS_MERSI2_L1():
         # 第一组经纬度（成像仪）的ECEF坐标系下的值
         G_pos = np.zeros(np.append(self.Lons.shape, 3))
         high = np.zeros_like(self.Lons)
-        G_pos[:, :, 0], G_pos[:, :, 1], G_pos[:, :, 2] = pb_space.LLA2ECEF(self.Lons, self.Lats, high)
+        G_pos[:, :, 0], G_pos[:, :, 1], G_pos[
+            :, :, 2] = pb_space.LLA2ECEF(self.Lons, self.Lats, high)
         self.G_pos = G_pos
 
 if __name__ == '__main__':
@@ -327,4 +346,3 @@ if __name__ == '__main__':
     mersi.get_G_P_L()
     print mersi.G_pos
     pass
-

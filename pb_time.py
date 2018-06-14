@@ -9,15 +9,18 @@ Date:         2015-08-21
 version:      1.0.0.050821_beat
 '''
 import re
-import time, calendar
+import time
+import calendar
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import math
+
 
 def run(date_s, date_e):
     while date_s <= date_e:
         print 'Test:', date_s
         date_s = date_s + relativedelta(days=1)
+
 
 def ymdCheck(ymd, hms, fmt="%Y%m%d %H%M%S"):
     '''
@@ -32,17 +35,21 @@ def ymdCheck(ymd, hms, fmt="%Y%m%d %H%M%S"):
         print "ymdCheck %s %s is wrong date。\n" % (ymd, hms)
         return None
 
+
 def ymd2date(ymd):
     return datetime.strptime('%s' % (ymd), "%Y%m%d")
+
 
 def ymd2y_m_d(ymd, split='.'):
     if len(ymd) != 8:
         return None
     return split.join([ymd[:4], ymd[4:6], ymd[6:]])
 
+
 def ymd_plus(ymd, days):
     date1 = ymd2date(ymd)
     return (date1 + relativedelta(days=days)).strftime('%Y%m%d')
+
 
 def get_local_time():
     '''
@@ -50,11 +57,13 @@ def get_local_time():
     '''
     return datetime.now()
 
+
 def get_utc_time():
     '''
     获得当日UTC日期, datetime格式
     '''
     return datetime.utcnow()
+
 
 def arg_str2date(str_time=""):
     '''
@@ -124,11 +133,13 @@ def lonIsday(ymd, hms, lon):
     else:
         return False
 
+
 def lon2timezone(lon):
     '''
     经度转时区
     '''
     return int(lon / 15.)
+
 
 def getJulianDay(yy, mm, dd, startwith=1):
     '''
@@ -137,6 +148,7 @@ def getJulianDay(yy, mm, dd, startwith=1):
     date1 = datetime.date(yy, 1, 1)
     date2 = datetime.date(yy, mm, dd)
     return (date2 - date1).days + startwith
+
 
 def JDay2Datetime(stryear, strJdays, strhms):
     '''
@@ -147,6 +159,7 @@ def JDay2Datetime(stryear, strJdays, strhms):
         strhms = strhms + '00'
 
     return datetime.strptime('%s%s %s' % (stryear, strJdays, strhms), '%Y%j %H%M%S')
+
 
 def ymd2ymd(num, interval, namerule, ymd):
     '''
@@ -182,12 +195,14 @@ def ymd2ymd(num, interval, namerule, ymd):
             if 'YYYYMMDF' in namerule:
                 newYmd = '%s%02d' % (t_ymd[:6], 21)
             elif 'YYYYMMDL' in namerule:
-                lastday = calendar.monthrange(int(t_ymd[:4]), int(t_ymd[4:6]))[1]
+                lastday = calendar.monthrange(
+                    int(t_ymd[:4]), int(t_ymd[4:6]))[1]
                 newYmd = '%s%02d' % (t_ymd[:6], lastday)
     else:
         newYmd = ymd
 
     return newYmd
+
 
 def days2hms(days):
     '''
@@ -202,13 +217,13 @@ def days2hms(days):
     '''
     if days >= 1:
         return None
-    #### 天单位转换成小时
+    # 天单位转换成小时
     hour_point, hour = math.modf(days * 24.)
-    #### 把小时的小数部分转换成分钟
+    # 把小时的小数部分转换成分钟
     minute_point, minute = math.modf(hour_point * 60.)
-    #### 把分钟的小数部分转化成秒
+    # 把分钟的小数部分转化成秒
     cecond_point, second = math.modf(minute_point * 60.)
-    #### 把秒的小数部分转成毫秒
+    # 把秒的小数部分转成毫秒
     millisecond_point, millisecond = math.modf(cecond_point * 60.)
     return '%02d:%02d:%02d.%03d' % (hour, minute, second, millisecond)
 
@@ -217,12 +232,14 @@ def npp_ymd2seconds(ymdhms):
     '''
     npp VIIRS和 CRIS 数据的时间单位是距离 1958年1月1日 UTC时间的microseconds 微秒
     ymdhms/1000000 = 秒  （距离1958年1月1日 UTC时间）
-    
+
     '''
     T1 = ymdhms / 1000000
-    secs = int((datetime(1970, 1, 1, 0, 0, 0) - datetime(1958, 1, 1, 0, 0, 0)).total_seconds())
+    secs = int(
+        (datetime(1970, 1, 1, 0, 0, 0) - datetime(1958, 1, 1, 0, 0, 0)).total_seconds())
     # 返回距离1970-01-01的秒
     return (T1 - secs)
+
 
 def metop_ymd2seconds(ymdhms):
     '''
@@ -230,9 +247,11 @@ def metop_ymd2seconds(ymdhms):
     return 使用此函数转换为距离1970年01月01日的秒
     '''
     T1 = ymdhms
-    secs = int((datetime(2000, 1, 1, 0, 0, 0) - datetime(1970, 1, 1, 0, 0, 0)).total_seconds())
+    secs = int(
+        (datetime(2000, 1, 1, 0, 0, 0) - datetime(1970, 1, 1, 0, 0, 0)).total_seconds())
     # 返回距离1970-01-01的秒
     return (T1 + secs)
+
 
 def fy3_ymd2seconds(ary_day, ary_time):
     '''
@@ -243,11 +262,13 @@ def fy3_ymd2seconds(ary_day, ary_time):
     '''
 
 #   源矩阵类型 uint32  和  int32 不同 此函数relativedelta不支持 需要转成浮点，或是在外部统一int32,奇怪的问题，未来得及细细解决。
-    newTime = datetime(2000, 1, 1, 12, 0, 0) + relativedelta(days=ary_day, seconds=ary_time / 1000.)
+    newTime = datetime(2000, 1, 1, 12, 0, 0) + \
+        relativedelta(days=ary_day, seconds=ary_time / 1000.)
 #     newTime = datetime(2000, 1, 1, 12, 0, 0) + relativedelta(days=ary_day, microseconds=ary_time)
     secs = int((newTime - datetime(1970, 1, 1, 0, 0, 0)).total_seconds())
     # 返回距离1970-01-01的秒
     return secs
+
 
 def is_day_timestamp_and_lon(timestamp, lon):
     """
@@ -264,6 +285,33 @@ def is_day_timestamp_and_lon(timestamp, lon):
     else:
         return False
 
+
+def CombineTimeList(TimeList):
+    '''
+    :param : TimeList [[datetime1, datetime2], ...],把时间段有重复部分进行融合
+    :return : 融合后的TimeList
+    '''
+    # 将时间段list中有重叠的时间段进行融合为新的时间段
+    newTimeList = []
+    # 默认排序,升序
+    TimeList.sort()
+    # 标记有时间融合的时间
+    stime = TimeList[0][0]
+    etime = TimeList[0][1]
+    for i in xrange(1, len(TimeList), 1):
+        if TimeList[i][1] <= etime:
+            continue
+        elif TimeList[i][0] <= etime <= TimeList[i][1]:
+            etime = TimeList[i][1]
+        elif TimeList[i][0] > etime:
+            newTimeList.append([stime, etime])
+            stime = TimeList[i][0]
+            etime = TimeList[i][1]
+
+    newTimeList.append([stime, etime])
+
+    return newTimeList
+
 if __name__ == '__main__':
 
     print time.gmtime(1.52419264E9)
@@ -272,5 +320,3 @@ if __name__ == '__main__':
     print lonIsday('20180420', '10:35:30', 20)
     print datetime.fromtimestamp(1.52396134e+09)
     pass
-
-

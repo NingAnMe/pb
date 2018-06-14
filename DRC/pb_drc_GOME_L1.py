@@ -1,4 +1,13 @@
 # coding: utf-8
+import os
+import sys
+import coda
+import beatl2
+import numpy as np
+from datetime import datetime
+from DV import dv_map, dv_plt
+from PB.pb_time import metop_ymd2seconds
+from PB import pb_sat
 
 '''
 Created on 2018年4月13日
@@ -6,15 +15,10 @@ Created on 2018年4月13日
 @author: wangpeng
 '''
 
-import os, sys, coda, beatl2
-import numpy as np
-from datetime import datetime
-from DV import dv_map, dv_plt
-from PB.pb_time import metop_ymd2seconds
-from PB import  pb_sat
 
 # 配置文件信息，设置为全局
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+
 
 class CLASS_GOME_L1():
 
@@ -45,8 +49,8 @@ class CLASS_GOME_L1():
         self.radiance = []
 
         # 按通道初始化,没有的物理量不要初始化，匹配会报错
-        for Band in BandLst :
-#             self.DN[Band] = None
+        for Band in BandLst:
+            #             self.DN[Band] = None
             self.Ref[Band] = None
 #             self.Tbb[Band] = None
 #             self.Rad[Band] = None
@@ -80,7 +84,7 @@ class CLASS_GOME_L1():
             product_size = coda.get_product_file_size(fp)
             print 'product_class ', product_class
             print 'product_type', product_type
-            print 'product_version' , product_version
+            print 'product_version', product_version
             print 'product_format', product_format
             print 'product_size', product_size
             record = beatl2.ingest(L1File)
@@ -95,10 +99,14 @@ class CLASS_GOME_L1():
             print record
 
             self.rec = record
-            SUN_Z = coda.fetch(fp, 'MDR', -1, 'Earthshine', 'GEO_EARTH', 'SOLAR_ZENITH')
-            SUN_A = coda.fetch(fp, 'MDR', -1, 'Earthshine', 'GEO_EARTH', 'SOLAR_AZIMUTH')
-            SAT_Z = coda.fetch(fp, 'MDR', -1, 'Earthshine', 'GEO_EARTH', 'SAT_ZENITH')
-            SAT_A = coda.fetch(fp, 'MDR', -1, 'Earthshine', 'GEO_EARTH', 'SAT_AZIMUTH')
+            SUN_Z = coda.fetch(
+                fp, 'MDR', -1, 'Earthshine', 'GEO_EARTH', 'SOLAR_ZENITH')
+            SUN_A = coda.fetch(
+                fp, 'MDR', -1, 'Earthshine', 'GEO_EARTH', 'SOLAR_AZIMUTH')
+            SAT_Z = coda.fetch(
+                fp, 'MDR', -1, 'Earthshine', 'GEO_EARTH', 'SAT_ZENITH')
+            SAT_A = coda.fetch(
+                fp, 'MDR', -1, 'Earthshine', 'GEO_EARTH', 'SAT_AZIMUTH')
 
             print '太阳方位角度长度', SUN_Z.shape, SUN_Z[0].shape
 
@@ -130,19 +138,23 @@ class CLASS_GOME_L1():
                 row, col = np.unravel_index(m, (dataRow, dataCol))
                 for i in xrange(2048):
                     if i < 1024:
-                        self.radiance[m, i] = self.radiance[m, i] * self.k / WAVE_3[row][i]
+                        self.radiance[m, i] = self.radiance[
+                            m, i] * self.k / WAVE_3[row][i]
                     else:
-                        self.radiance[m, i] = self.radiance[m, i] * self.k / WAVE_4[row][i - 1024]
+                        self.radiance[m, i] = self.radiance[
+                            m, i] * self.k / WAVE_4[row][i - 1024]
 
             # 计算太阳辐亮度
             self.vec_Solar_L = np.zeros((2048,))  # 太阳辐亮度
             self.vec_Solar_WL = np.zeros((2048,))  # 太阳辐亮度对应的波长
             for i in xrange(2048):
                 if i < 1024:
-                    self.vec_Solar_L[ i] = (SMR[0][2][i] * self.k) / LAMBDA_SMR[0][2][i]
+                    self.vec_Solar_L[i] = (
+                        SMR[0][2][i] * self.k) / LAMBDA_SMR[0][2][i]
                     self.vec_Solar_WL[i] = LAMBDA_SMR[0][2][i]
                 else:
-                    self.vec_Solar_L[i] = (SMR[0][3][i - 1024] * self.k) / LAMBDA_SMR[0][3][i - 1024]
+                    self.vec_Solar_L[i] = (
+                        SMR[0][3][i - 1024] * self.k) / LAMBDA_SMR[0][3][i - 1024]
                     self.vec_Solar_WL[i] = LAMBDA_SMR[0][3][i - 1024]
 
             print 'GOME数据观测长度 %d' % dataLen
@@ -152,11 +164,11 @@ class CLASS_GOME_L1():
             # 暂时取一个观测的光谱波数
             self.wavenumber = record.wavelength[0, 2048:]
             print 'GOME辐亮度波长最小最大值,取第一个观测点'
-            print np.min(self.wavenumber), self.wavenumber[ 0:3]
+            print np.min(self.wavenumber), self.wavenumber[0:3]
             print np.max(self.wavenumber)
             self.wavenumber = record.wavelength[9, 2048:]
             print 'GOME辐亮度波长最小最大值，取第十个观测点'
-            print np.min(self.wavenumber), self.wavenumber[ 0:3]
+            print np.min(self.wavenumber), self.wavenumber[0:3]
             print np.max(self.wavenumber)
 
             v_ymd2seconds = np.vectorize(metop_ymd2seconds)
@@ -187,7 +199,8 @@ class CLASS_GOME_L1():
             # 把数据1光谱插值到gome的太阳光谱
             WaveRad2_solar = pb_sat.spec_interp(WaveNum1, WaveRad1, WaveNum2)
 #             WaveRad2_solar = D1.spec_interp(WaveNum1, WaveRad1, self.vec_Solar_WL)
-            newRad_solar = pb_sat.spec_convolution(self.vec_Solar_WL, WaveRad2_solar, self.vec_Solar_L)
+            newRad_solar = pb_sat.spec_convolution(
+                self.vec_Solar_WL, WaveRad2_solar, self.vec_Solar_L)
 
 #             ref = newRad / newRad_solar * np.pi / np.cos(np.deg2rad(self.sunZenith))
             ref = np.pi * newRad / newRad_solar
@@ -213,12 +226,15 @@ class CLASS_GOME_L1():
 #             newRad = newRad.reshape(newRad.size, 1)
 #             print newRad.shape
             # 太阳光谱插值
-            WaveRad2_solar = pb_sat.spec_interp(WaveNum1, WaveRad1, self.vec_Solar_WL)
+            WaveRad2_solar = pb_sat.spec_interp(
+                WaveNum1, WaveRad1, self.vec_Solar_WL)
             # 太阳光谱插值
             # 把gome的通道做成390-800波段间隔1纳米的响应
             solar_x = np.arange(390, 801, 1)
-            solar_y1 = pb_sat.spec_interp(self.vec_Solar_WL[0:1024], self.vec_Solar_L[0:1024], solar_x)
-            solar_y2 = pb_sat.spec_interp(self.vec_Solar_WL[1024:], self.vec_Solar_L[1024:], solar_x)
+            solar_y1 = pb_sat.spec_interp(
+                self.vec_Solar_WL[0:1024], self.vec_Solar_L[0:1024], solar_x)
+            solar_y2 = pb_sat.spec_interp(
+                self.vec_Solar_WL[1024:], self.vec_Solar_L[1024:], solar_x)
             solar_y = solar_y1 + solar_y2
             solar_rad = pb_sat.spec_convolution(solar_x, y, solar_y)
             print solar_y
@@ -237,15 +253,18 @@ class CLASS_GOME_L1():
             gome_y1_lst = []
             gome_y2_lst = []
             for i in xrange(self.radiance.shape[0]):
-                gome_y1 = pb_sat.spec_interp(self.wavenumber[0:1024], self.radiance[i, 0:1024], solar_x)
-                gome_y2 = pb_sat.spec_interp(self.wavenumber[1024:], self.radiance[i, 1024:], solar_x)
+                gome_y1 = pb_sat.spec_interp(
+                    self.wavenumber[0:1024], self.radiance[i, 0:1024], solar_x)
+                gome_y2 = pb_sat.spec_interp(
+                    self.wavenumber[1024:], self.radiance[i, 1024:], solar_x)
                 gome_y1_lst.append(gome_y1)
                 gome_y2_lst.append(gome_y2)
             gome_y = np.array(gome_y1_lst) + np.array(gome_y2_lst)
             gome_rad = pb_sat.spec_convolution(solar_x, y, gome_y)
             gome_rad = gome_rad.reshape(gome_rad.size, 1)
 
-            ref = gome_rad / solar_rad * np.pi / np.cos(np.deg2rad(self.sunZenith))
+            ref = gome_rad / solar_rad * np.pi / \
+                np.cos(np.deg2rad(self.sunZenith))
 
             self.Ref[Band] = ref.reshape(ref.size, 1)
             self.SV[Band] = None
@@ -254,7 +273,8 @@ class CLASS_GOME_L1():
 
 if __name__ == '__main__':
     T1 = datetime.now()
-    BandLst = ['CH_01', 'CH_02', 'CH_03', 'CH_08', 'CH_09', 'CH_10', 'CH_11', 'CH_12', 'CH_13', 'CH_14']
+    BandLst = ['CH_01', 'CH_02', 'CH_03', 'CH_08', 'CH_09',
+               'CH_10', 'CH_11', 'CH_12', 'CH_13', 'CH_14']
     L1File = 'D:/data/METOP/GOME_xxx_1B_M02_20180301000257Z_20180301000557Z_N_O_20180301014503Z__20180301014539'
 #     L1File = 'D:/data/METOP/GOME_xxx_1B_M02_20160109122059Z_20160109122359Z_N_O_20160109134314Z__20160109135951'
 #     L1File = 'D:/data/METOP/GOME_xxx_1B_M02_20160110102058Z_20160110102358Z_N_O_20160110114353Z__20160110115057'
