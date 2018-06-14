@@ -17,7 +17,6 @@ version:      1.0.0.050821_beat
 '''
 
 
-
 def run(date_s, date_e):
     while date_s <= date_e:
         print 'Test:', date_s
@@ -378,8 +377,6 @@ def get_dsl(ymd, launch_date):
     dsl = delta.days
     return dsl
 
->>>>>>> 55abc55cdc2172e8c9faff9a7506c004b4ec5007
-
 if __name__ == '__main__':
 
     print time.gmtime(1.52419264E9)
@@ -390,9 +387,7 @@ if __name__ == '__main__':
 
     pass
 
-
     with time_block("Test time_block"):
         print "kaishi"
 
     print get_ymd("/adfaf/afdff/20180101.hdf")
->>>>>>> 55abc55cdc2172e8c9faff9a7506c004b4ec5007
