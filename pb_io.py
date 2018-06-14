@@ -301,7 +301,6 @@ def progress_lock(max_wait_time=5):
                 time.sleep(random_number)
             else:
                 break
-            print sleep_time
         with open(lock, "w"):
             pass
         yield
@@ -326,8 +325,3 @@ if __name__ == '__main__':
     # for k in l:
         # print k, ":", c.__dict__[k]
         # print k
-
-    # with file_lock():
-    #     print "1111"
-    for i in xrange(100):
-        print random.random() * 0.1
