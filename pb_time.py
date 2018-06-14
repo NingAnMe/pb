@@ -1,4 +1,11 @@
 # coding: utf-8
+import re
+import time
+import calendar
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import math
+from contextlib import contextmanager
 __author__ = 'wangpeng'
 
 '''
@@ -8,12 +15,7 @@ Author:       wangpeng
 Date:         2015-08-21
 version:      1.0.0.050821_beat
 '''
-import re
-import time
-import calendar
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-import math
+
 
 
 def run(date_s, date_e):
@@ -312,6 +314,72 @@ def CombineTimeList(TimeList):
 
     return newTimeList
 
+
+@contextmanager
+def time_block(flag, switch=True):
+    """
+    计算一个代码块的运行时间
+    :param flag: 标签
+    :param on: 是否开启
+    :return:
+    """
+    time_start = time.clock()
+    try:
+        yield
+    finally:
+        if switch is True:
+            time_end = time.clock()
+            all_time = time_end - time_start
+            print "{} time: {}".format(flag, all_time)
+
+
+def get_ymd(in_file):
+    """
+    从输入文件中获取 ymd
+    :param in_file:
+    :return:
+    """
+    if not isinstance(in_file, str):
+        return
+    m = re.match(r".*_(\d{8})_", in_file)
+
+    if m is None:
+        return
+    else:
+        return m.groups()[0]
+
+
+def get_hm(in_file):
+    """
+    从输入文件中获取 hm
+    :param in_file:
+    :return:
+    """
+    if not isinstance(in_file, str):
+        return
+    m = re.match(r".*_(\d{4})_", in_file)
+
+    if m is None:
+        return
+    else:
+        return m.groups()[0]
+
+
+def get_dsl(ymd, launch_date):
+    """
+    根据文件名和发射时间获取相差的天数
+    :param ymd: (str)
+    :param launch_date: (str)卫星发射时间 YYYYMMDD
+    :return: (int)
+    """
+    date1 = ymd2date(ymd)
+    date2 = ymd2date(launch_date)
+    delta = date1 - date2
+    dsl = delta.days
+    return dsl
+
+>>>>>>> 55abc55cdc2172e8c9faff9a7506c004b4ec5007
+
 if __name__ == '__main__':
 
     print time.gmtime(1.52419264E9)
@@ -319,4 +387,12 @@ if __name__ == '__main__':
     print aa
     print lonIsday('20180420', '10:35:30', 20)
     print datetime.fromtimestamp(1.52396134e+09)
+
     pass
+
+
+    with time_block("Test time_block"):
+        print "kaishi"
+
+    print get_ymd("/adfaf/afdff/20180101.hdf")
+>>>>>>> 55abc55cdc2172e8c9faff9a7506c004b4ec5007
