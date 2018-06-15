@@ -4,17 +4,20 @@ Created on 2015年8月13日
 
 @author: zhangtao
 '''
-import re
 from abc import ABCMeta, abstractmethod
 from datetime import datetime, timedelta
-from PB import pb_time
-# from PB.CSC.pb_csc_console import LogServer
+import re
 
+from PB import pb_time
+
+
+# from PB.CSC.pb_csc_console import LogServer
 class nameClassManager(object):
     '''
     插件类的装饰器
     '''
     PLUGINS = []
+
     def getClass(self, text):
         for plugin in self.PLUGINS:
             if plugin().check(text):
@@ -36,6 +39,7 @@ class nameClassManager(object):
 class satNameBase(object):  # metaclass=ABCMeta
     ''' hdf base class '''
     __metaclass__ = ABCMeta
+
     def __init__(self, pat, totalSec):
 
         self.pat = pat
@@ -49,12 +53,14 @@ class satNameBase(object):  # metaclass=ABCMeta
 
     @property
     def dt_s(self):
-        if self.ymd is None or self.hms is None: return None
+        if self.ymd is None or self.hms is None:
+            return None
         return datetime.strptime('%s %s' % (self.ymd, self.hms), "%Y%m%d %H%M%S")
 
     @property
     def dt_e(self):
-        if self.ymd is None or self.hms is None: return None
+        if self.ymd is None or self.hms is None:
+            return None
         return datetime.strptime('%s %s' % (self.ymd, self.hms), "%Y%m%d %H%M%S") + timedelta(seconds=(self.totalSec))
 
 
@@ -64,6 +70,7 @@ class AURA_OMI_L2(satNameBase):
     AURA OMI L2 NO2 SO2
     OMI-Aura_L2-OMNO2_2016m0101t0059-o60970_v003-2016m0101t202533.he5
     '''
+
     def __init__(self):
         pat = u'OMI-Aura_L2-\w{5}_(\d{4})m(\d{4})t(\d{4})-o(\d{5})_v003-\w{16}.he5$'
         totalSec = 99 * 60
@@ -78,6 +85,7 @@ class AURA_OMI_L2(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class AURA_OMI_L3(satNameBase):
     '''
@@ -86,6 +94,7 @@ class AURA_OMI_L3(satNameBase):
     OMI-Aura_L3-OMAEROe_2016m0101_v003-2016m0103t021922.he5
     OMI-Aura_L3-OMSO2e_2016m0101_v003-2016m0108t112606.he5
     '''
+
     def __init__(self):
         pat = u'OMI-Aura_L3-\w+_(\d{4})m(\d{4})_v003-\w{16}.he5$'
         totalSec = 24 * 60 * 60
@@ -99,6 +108,7 @@ class AURA_OMI_L3(satNameBase):
             return True
         else:
             return False
+
 
 @nameClassManager.plugin
 class MODDIS_L1L2(satNameBase):
@@ -117,12 +127,14 @@ class MODDIS_L1L2(satNameBase):
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
-            tt = pb_time.JDay2Datetime(g.group(1), g.group(2), g.group(3) + '00')
+            tt = pb_time.JDay2Datetime(
+                g.group(1), g.group(2), g.group(3) + '00')
             self.ymd = tt.strftime('%Y%m%d')
             self.hms = g.group(3) + '00'
             return True
         else:
             return False
+
 
 @nameClassManager.plugin
 class MODDIS_L3(satNameBase):
@@ -146,6 +158,7 @@ class MODDIS_L3(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class MOPITT_L3_D(satNameBase):
     '''
@@ -166,6 +179,7 @@ class MOPITT_L3_D(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class MOPITT_L3_M(satNameBase):
     '''
@@ -174,7 +188,7 @@ class MOPITT_L3_M(satNameBase):
     '''
 
     def __init__(self):
-#         pat = u'MOP03JM-(\d{6})-L3V93.1.3.hdf$'
+        #         pat = u'MOP03JM-(\d{6})-L3V93.1.3.hdf$'
         pat = u'MOP03JM-(\d{6})-L3V[\.\w]+.he5$'
         totalSec = 24 * 60 * 60
         satNameBase.__init__(self, pat, totalSec)
@@ -187,6 +201,7 @@ class MOPITT_L3_M(satNameBase):
             return True
         else:
             return False
+
 
 @nameClassManager.plugin
 class METOP_L2(satNameBase):
@@ -207,6 +222,7 @@ class METOP_L2(satNameBase):
             return True
         else:
             return False
+
 
 @nameClassManager.plugin
 class METOP_L1(satNameBase):
@@ -229,6 +245,7 @@ class METOP_L1(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class NPP_L1(satNameBase):
     '''
@@ -237,6 +254,7 @@ class NPP_L1(satNameBase):
     GCRSO-SCRIS_npp_d20170728_t0501519_e0509497_b29791_c20170729031753478626_noac_ops.h5
     GCRSO-SCRIF-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5     
     '''
+
     def __init__(self):
         # - 中划线不匹配 不知道为什么
         pat = u'\w{5}-.*_npp_d(\d{8})_t(\d{7})_e(\d{7})_b(\d{5})_c(\d{20})_\w{4}_ops.h5$'
@@ -252,12 +270,14 @@ class NPP_L1(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class NPP_L1_VIIRS(satNameBase):
     '''
     GDNBO_npp_d20160212_t0700199_e0706003_b22245_c20160212130601292266_noaa_ops.h5
     GMODO-SVM01-SVM02-SVM03-SVM04-SVM05-SVM06-SVM07-SVM08-SVM09-SVM10-SVM11-SVM12-SVM13-SVM14-SVM15-SVM16_npp_d20141115_t0001028_e0006432_b15799_c20170810221740745607_noaa_ops.h5
     '''
+
     def __init__(self):
         pat = u'(GDNBO|GMODO|GMTCO|SVM\d{2}).*_npp_d(\d{8})_t(\d{7})_e(\d{7})_b\d{5}_c\d{20}_\w{4}_ops.h5$'
         totalSec = 6 * 60
@@ -271,6 +291,7 @@ class NPP_L1_VIIRS(satNameBase):
             return True
         else:
             return False
+
 
 @nameClassManager.plugin
 class GCOM_L1(satNameBase):
@@ -291,6 +312,7 @@ class GCOM_L1(satNameBase):
             return True
         else:
             return False
+
 
 @nameClassManager.plugin
 class CALIPSO_L2(satNameBase):
@@ -331,6 +353,8 @@ class CALIPSO_L2(satNameBase):
 #             return True
 #         else:
 #             return False
+
+
 @nameClassManager.plugin
 class FY2_L1(satNameBase):
     '''
@@ -376,6 +400,7 @@ class FY3_L1_5(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class FY3_L1_TRACK(satNameBase):
     '''
@@ -400,6 +425,7 @@ class FY3_L1_TRACK(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class NPP_VIIRS_L2(satNameBase):
     '''
@@ -415,12 +441,14 @@ class NPP_VIIRS_L2(satNameBase):
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
-            tt = pb_time.JDay2Datetime(g.group(1), g.group(2), g.group(3) + '00')
+            tt = pb_time.JDay2Datetime(
+                g.group(1), g.group(2), g.group(3) + '00')
             self.ymd = tt.strftime('%Y%m%d')
             self.hms = g.group(3) + '00'
             return True
         else:
             return False
+
 
 @nameClassManager.plugin
 class IMS_NORTH(satNameBase):
@@ -443,6 +471,7 @@ class IMS_NORTH(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class SIC_NRT_GSFC_D(satNameBase):
     '''
@@ -463,6 +492,8 @@ class SIC_NRT_GSFC_D(satNameBase):
             return True
         else:
             return False
+
+
 @nameClassManager.plugin
 class SIC_NRT_GSFC_M(satNameBase):
     '''
@@ -483,6 +514,7 @@ class SIC_NRT_GSFC_M(satNameBase):
         else:
             return False
 
+
 @nameClassManager.plugin
 class M10A1(satNameBase):
     '''
@@ -491,6 +523,7 @@ class M10A1(satNameBase):
     author: huangyejian
     modify: 2016-06-13   
     '''
+
     def __init__(self):
         pat = u'(MOD|MYD)10A1.A(\d{4})(\d{3}).h\d{2}v\d{2}.005.\d{13}.hdf$'
         # pat = u'(MOD13A1).A(\d{4})(\d{3}).h27v05.006.\d{13}.hdf$'
@@ -505,14 +538,16 @@ class M10A1(satNameBase):
             self.hms = '000000'
 #             print g.group(2), g.group(3)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class AQUAAIRSL1B(satNameBase):
     '''
     AIRS.2012.07.19.074.L1B.AIRS_Rad.v5.0.0.0.G12201105939.hdf
     '''
+
     def __init__(self):
         pat = u'AIRS.(\d{4}).(\d{2}).(\d{2}).(\d{3}).L1B.AIRS_Rad.v5.0.(0|\d{2}).0.G(\d{11}).hdf$'
         totalSec = 6 * 60
@@ -521,7 +556,7 @@ class AQUAAIRSL1B(satNameBase):
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
-#             tt = pb_time.JDay2Datetime(g.group(2), g.group(3), '000000')
+            #             tt = pb_time.JDay2Datetime(g.group(2), g.group(3), '000000')
             self.ymd = g.group(1) + g.group(2) + g.group(3)
             self.hms = '000000'
             # 074 表示一天中产生的第几个文件，每6分钟产生一个文件。60取证为小时，取余为分钟
@@ -531,8 +566,9 @@ class AQUAAIRSL1B(satNameBase):
             self.hms = hm + '00'
 
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class MOY08(satNameBase):
@@ -542,6 +578,7 @@ class MOY08(satNameBase):
     author: huangyejian
     modify: 2016-07-23   
     '''
+
     def __init__(self):
         pat = u'(MOD|MYD)08_D3.A(\d{4})(\d{3}).(051|006).\d{13}.hdf$'
         # pat = u'(MOD13A1).A(\d{4})(\d{3}).h27v05.006.\d{13}.hdf$'
@@ -556,8 +593,9 @@ class MOY08(satNameBase):
             self.hms = '000000'
 #             print g.group(2), g.group(3)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class MCD43C1(satNameBase):
@@ -566,6 +604,7 @@ class MCD43C1(satNameBase):
     author: huangyejian
     modify: 2016-07-23   
     '''
+
     def __init__(self):
         pat = u'MCD43C1.A(\d{4})(\d{3}).005.\d{13}.hdf$'
         totalSec = 24 * 60 * 60
@@ -579,8 +618,9 @@ class MCD43C1(satNameBase):
             self.hms = '000000'
             print g.group(2), g.group(3)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class vwnd(satNameBase):
@@ -589,6 +629,7 @@ class vwnd(satNameBase):
     author: huangyejian
     modify: 2016-09-01   
     '''
+
     def __init__(self):
         pat = u'vwnd.sig995.(\d{4}).nc'
         totalSec = 24 * 60 * 60
@@ -601,8 +642,9 @@ class vwnd(satNameBase):
             self.hms = '000000'
 
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class uwnd(satNameBase):
@@ -611,6 +653,7 @@ class uwnd(satNameBase):
     author: huangyejian
     modify: 2016-09-01   
     '''
+
     def __init__(self):
         # pat = u'MCD43C1.A(\d{4})(\d{3}).005.\d{13}.hdf$'
         pat = u'uwnd.sig995.(\d{4}).nc$'
@@ -624,8 +667,9 @@ class uwnd(satNameBase):
             self.hms = '000000'
 
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class pr_wtr(satNameBase):
@@ -634,6 +678,7 @@ class pr_wtr(satNameBase):
     author: huangyejian
     modify: 2016-09-01   
     '''
+
     def __init__(self):
         # pat = u'MCD43C1.A(\d{4})(\d{3}).005.\d{13}.hdf$'
         pat = u'pr_wtr.eatm.(\d{4}).nc$'
@@ -643,14 +688,13 @@ class pr_wtr(satNameBase):
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
-#             tt = pb_time.JDay2Datetime(g.group(1), g.group(2), '000000')
+            #             tt = pb_time.JDay2Datetime(g.group(1), g.group(2), '000000')
             self.ymd = g.group(1) + '0101'
             self.hms = '000000'
 
             return True
-        else :
+        else:
             return False
-
 
 
 @nameClassManager.plugin
@@ -660,6 +704,7 @@ class NECP(satNameBase):
     author: huangyejian
     modify: 2016-07-30   
     '''
+
     def __init__(self):
         pat = u'NISE_SSMIF13_(\d{8}).HDFEOS$'
         # pat = u'(MOD13A1).A(\d{4})(\d{3}).h27v05.006.\d{13}.hdf$'
@@ -669,13 +714,14 @@ class NECP(satNameBase):
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
-#             tt = pb_time.JDay2Datetime(g.group(1) , '000000')
-#             self.ymd = tt.strftime('%Y%m%d')
+            #             tt = pb_time.JDay2Datetime(g.group(1) , '000000')
+            #             self.ymd = tt.strftime('%Y%m%d')
             self.ymd = g.group(1)
             self.hms = '000000'
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class oco2(satNameBase):
@@ -684,6 +730,7 @@ class oco2(satNameBase):
     author: huangyejian
     modify: 2016-10-09   
     '''
+
     def __init__(self):
         pat = u'oco2_\w{7}_\w{6}_(\d{6})_\w{5}_\d{12}.h5\Z'
         # pat = u'(MOD13A1).A(\d{4})(\d{3}).h27v05.006.\d{13}.hdf$'
@@ -693,13 +740,14 @@ class oco2(satNameBase):
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
-#             tt = pb_time.JDay2Datetime(g.group(1) , '000000')
-#             self.ymd = tt.strftime('%Y%m%d')
+            #             tt = pb_time.JDay2Datetime(g.group(1) , '000000')
+            #             self.ymd = tt.strftime('%Y%m%d')
             self.ymd = "20" + g.group(1)
             self.hms = '000000'
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class oco2_R(satNameBase):
@@ -708,6 +756,7 @@ class oco2_R(satNameBase):
     author: huangyejian
     modify: 2016-10-09   
     '''
+
     def __init__(self):
         pat = u'oco2_\w{7}_\w{6}_(\d{6})_\w{6}_\d{12}.h5\Z'
         # pat = u'(MOD13A1).A(\d{4})(\d{3}).h27v05.006.\d{13}.hdf$'
@@ -717,19 +766,21 @@ class oco2_R(satNameBase):
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
-#             tt = pb_time.JDay2Datetime(g.group(1) , '000000')
-#             self.ymd = tt.strftime('%Y%m%d')
+            #             tt = pb_time.JDay2Datetime(g.group(1) , '000000')
+            #             self.ymd = tt.strftime('%Y%m%d')
             self.ymd = "20" + g.group(1)
             self.hms = '000000'
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class Tansat(satNameBase):
     '''
     20091001.H5
     '''
+
     def __init__(self):
         pat = u'(\d{8}).H5\Z'
         # pat = u'(MOD13A1).A(\d{4})(\d{3}).h27v05.006.\d{13}.hdf$'
@@ -739,12 +790,12 @@ class Tansat(satNameBase):
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
-#             tt = pb_time.JDay2Datetime(g.group(1) , '000000')
-#             self.ymd = tt.strftime('%Y%m%d')
+            #             tt = pb_time.JDay2Datetime(g.group(1) , '000000')
+            #             self.ymd = tt.strftime('%Y%m%d')
             self.ymd = g.group(1)
             self.hms = '000000'
             return True
-        else :
+        else:
             return False
 
 
@@ -753,6 +804,7 @@ class FY2_DDC(satNameBase):
     '''
     FY2E_FDI_ALL_NOM_20160901_DCC.hdf
     '''
+
     def __init__(self):
         pat = u'FY2[A-Z]_FDI_ALL_NOM_(\d{8})_\w{3}.hdf\Z'
         totalSec = 24 * 60 * 60
@@ -764,14 +816,16 @@ class FY2_DDC(satNameBase):
             self.ymd = g.group(1)
             self.hms = '000000'
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class FY2E_AMV(satNameBase):
     '''
     FY2E_AMV_IR1_OTG_20161101_1500.AWX
     '''
+
     def __init__(self):
         pat = u'FY2[A-Z]_AMV_\w{3}_OTG_(\d{8})_(\d{4}).AWX\Z'
         totalSec = 6 * 60 * 60
@@ -783,14 +837,16 @@ class FY2E_AMV(satNameBase):
             self.ymd = g.group(1)
             self.hms = g.group(2) + "00"
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class HY2A_SM2B(satNameBase):
     '''
     H2A_SM2B20160531_00950.h5
     '''
+
     def __init__(self):
         pat = u'H2A_SM2B(\d{8})_(\d{5}).h5\Z'
         totalSec = 24 * 60 * 60
@@ -802,8 +858,9 @@ class HY2A_SM2B(satNameBase):
             self.ymd = g.group(1)
             self.hms = "00000"
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class FY3C_xishuang(satNameBase):
@@ -813,6 +870,7 @@ class FY3C_xishuang(satNameBase):
     FY3C_MWRIA_ORBT_L2_TPW_MLT_NUL_20161108_0150_025KM_MS.HDF
     FY3C_MWRID_ORBT_L2_TPW_MLT_NUL_20161108_0100_025KM_MS.HDF
     '''
+
     def __init__(self):
         pat = u'FY3C_\w{5}_ORBT_L2_\w{3}_MLT_NUL_(\d{8})_(\d{4})_\w{5}_MS.(L1c|HDF)\Z'
         totalSec = 60 * 100
@@ -824,14 +882,16 @@ class FY3C_xishuang(satNameBase):
             self.ymd = g.group(1)
             self.hms = g.group(2)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class FY3C_SIC(satNameBase):
     '''
     FY3C_VIRRX_GBAL_L2_SIC_MLT_GLL_20161106_POAD_1000M_MS.HDF
     '''
+
     def __init__(self):
         pat = u'FY3C_\w{5}_GBAL_L2_\w{3}_MLT_GLL_(\d{8})_POAD_\w{5}_MS.(L1c|HDF)\Z'
         totalSec = 60 * 60 * 24
@@ -843,8 +903,9 @@ class FY3C_SIC(satNameBase):
             self.ymd = g.group(1)
             self.hms = "000000"
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class airquality(satNameBase):
@@ -852,6 +913,7 @@ class airquality(satNameBase):
     airquality20161119130000.000
     airquality20161119150000.txt
     '''
+
     def __init__(self):
         pat = u'airquality(\d{8})(\d{6}).(000|txt)\Z'
         totalSec = 60 * 60
@@ -863,8 +925,9 @@ class airquality(satNameBase):
             self.ymd = g.group(1)
             self.hms = g.group(2)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class Ozone(satNameBase):
@@ -872,6 +935,7 @@ class Ozone(satNameBase):
     L3_ozone_omi_20151115.txt
     L3_aersl_omi_20161115.txt
     '''
+
     def __init__(self):
         pat = u'L3_\w{5}_omi_(\d{8}).txt\Z'
         totalSec = 60 * 60 * 24
@@ -883,16 +947,18 @@ class Ozone(satNameBase):
             self.ymd = g.group(1)
             self.hms = "000000"
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class VIIRSEDR(satNameBase):
     '''
     VIIRS-Cloud-Top-Temperature-EDR
     VIIRS-Cloud-Top-Pressure-EDR
-    
+
     '''
+
     def __init__(self):
         totalSec = 60 * 60 * 24
 #         pat = u'VIIRS-EDR_VIIRS-Cloud-\w{4}-\w{6}-\w{3}_(\d{8})_\d{5}.tar\Z'
@@ -905,7 +971,7 @@ class VIIRSEDR(satNameBase):
             self.ymd = g.group(1)
             self.hms = "000000"
             return True
-        else :
+        else:
             return False
 
 # @nameClassManager.plugin
@@ -934,12 +1000,14 @@ class VIIRSEDR(satNameBase):
 #         else :
 #             return False
 
+
 @nameClassManager.plugin
 class gdas0p5(satNameBase):
     '''
     20080515_gdas0p5
-    
+
     '''
+
     def __init__(self):
         totalSec = 60 * 60 * 24
         pat = u'(\d{8})_gdas0p5\Z'
@@ -951,16 +1019,18 @@ class gdas0p5(satNameBase):
             self.ymd = g.group(1)
             self.hms = "000000"
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class GOME_AAI(satNameBase):
     '''
     envisat project used
     S-O3M_GOME_NAR_02_M02_20171017052357Z_20171017052657Z_N_O_20171017070631Z.hdf5.gz
-    
+
     '''
+
     def __init__(self):
         totalSec = 60 * 3
 #         u'S-O3M_GOME_NAR_02_\w{3}_(\d{8})(\d{6})Z_\d{14}Z_N_O_\d{14}Z.hdf5.gz\Z'
@@ -974,8 +1044,9 @@ class GOME_AAI(satNameBase):
             self.ymd = g.group(1)
             self.hms = g.group(2)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class GOME_NO2_SO2(satNameBase):
@@ -985,6 +1056,7 @@ class GOME_NO2_SO2(satNameBase):
     S-O3M_GOME_O3-NO2-NO2Tropo-SO2-HCHO_L2_20170917055654_003_METOPA_56622_DLR_04.HDF5
 
     '''
+
     def __init__(self):
         totalSec = 60 * 60 * 1.4
 #         u'S-O3M_GOME_NAR_02_\w{3}_(\d{8})(\d{6})Z_\d{14}Z_N_O_\d{14}Z.hdf5.gz\Z'
@@ -998,8 +1070,9 @@ class GOME_NO2_SO2(satNameBase):
             self.ymd = g.group(1)
             self.hms = g.group(2)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class Gomeso2(satNameBase):
@@ -1007,8 +1080,9 @@ class Gomeso2(satNameBase):
     GOME_O3-NO2-NO2Tropo-BrO-SO2-H2O-HCHO_L2_20170418033736_051_METOPB_23775_DLR_04.HDF5
     GOME_O3-NO2-NO2Tropo-BrO-SO2-H2O-HCHO_L2_20170418060544_050_METOPA_54463_DLR_04.HDF5
     GOME_O3-NO2-NO2Tropo-BrO-SO2-H2O-HCHO-OClO_L2_20161116232745_054_METOPB_21613_DLR_04.HDF5
-    
+
     '''
+
     def __init__(self):
         totalSec = 60 * 60 * 2
         pat = u'GOME_O3-NO2-NO2Tropo-BrO-SO2-H2O-HCHO.*_L2_(\d{8})(\d{6})_\d{3}_METOP(\w{1})_\d{5}_DLR_04.HDF5\Z'
@@ -1020,14 +1094,16 @@ class Gomeso2(satNameBase):
             self.ymd = g.group(1)
             self.hms = g.group(2)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class FY4A(satNameBase):
     '''
     FY4A-_AGRI--_N_DISK_0995E_L1-_FDI-_MULT_NOM_20170507031500_20170507032959_4000M_V0001.HDF
     '''
+
     def __init__(self):
         totalSec = 60 * 15
         pat = u'FY4A-_AGRI--_N_DISK_\d{4}E_L1-_\w{3}-_MULT_NOM_(\d{8})(\d{6})_(\d{14})_4000M_V0001.HDF\Z'
@@ -1039,18 +1115,21 @@ class FY4A(satNameBase):
             self.ymd = g.group(1)
             self.hms = g.group(2)
             return True
-        else :
+        else:
             return False
+
 
 @nameClassManager.plugin
 class HIMAWARI_08(satNameBase):
     '''
     AHI8_OBI_2000M_NOM_20171109_0000.hdf
     '''
+
     def __init__(self):
         totalSec = 60 * 10
         pat = u'AHI8_OBI_2000M_NOM_(\d{8})_(\d{4}).hdf\Z'
         satNameBase.__init__(self, pat, totalSec)
+
     def check(self, infile):
         g = re.match(self.pat, infile)
         if g:
@@ -1058,7 +1137,7 @@ class HIMAWARI_08(satNameBase):
             self.hms = g.group(2) + '00'
 
             return True
-        else :
+        else:
             return False
 
 if __name__ == '__main__':
@@ -1073,5 +1152,8 @@ if __name__ == '__main__':
 #     a = allcls.getInstance('S-O3M_GOME_O3-NO2-NO2Tropo-HCHO_L2_20171017050855_001_METOPB_26361_DLR_04.HDF5')
 #     a = allcls.getInstance('S-O3M_GOME_O3-NO2-NO2Tropo-SO2-HCHO_L2_20170917055654_003_METOPA_56622_DLR_04.HDF5')
 #     a = allcls.getInstance('GMODO-SVM01-SVM02-SVM03-SVM04-SVM05-SVM06-SVM07-SVM08-SVM09-SVM10-SVM11-SVM12-SVM13-SVM14-SVM15-SVM16_npp_d20141115_t0001028_e0006432_b15799_c20170810221740745607_noaa_ops.h5')
-    a = allcls.getInstance('GCRSO-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5')
-    print a.dt_s, a.dt_e
+#     a = allcls.getInstance(
+#         'GCRSO-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5')
+#     a = allcls.getInstance(
+#         'GCRSO-SCRIF-SCRIS_npp_d20180505_t0039599_e0047577_b33775_c20180509051250505569_noac_ops.h5')
+#     print a.dt_s, a.dt_e
