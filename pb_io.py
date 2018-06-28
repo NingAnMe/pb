@@ -310,6 +310,22 @@ def progress_lock(max_wait_time=5):
         except:
             pass
 
+
+def str_format(string, values):
+    """
+    格式化字符串
+    :param string:(str) "DCC: %sat_sensor_Projection_%ymd（分辨率 %resolution 度）"
+    :param values:(dict) {"sat_sensor": sat_sensor, "resolution": str(resolution), "ymd": ymd}
+    :return: DCC: FY3D+MERSI_Projection_201712（分辨率 1 度）
+    """
+    if not isinstance(string, (str, unicode)):
+        return
+
+    for k, v in values.iteritems():
+        string = string.replace("%" + str(k), str(v))
+    return string
+
+
 if __name__ == '__main__':
     pass
 
