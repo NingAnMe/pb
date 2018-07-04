@@ -1,18 +1,20 @@
 # coding: utf-8
-import os
-import h5py
-import time
-import numpy as np
-from datetime import datetime
-from PB import pb_name, pb_sat
-from PB.pb_time import fy3_ymd2seconds
-from DV.dv_map import dv_map
-
 '''
 Created on 2018年5月2日
 
 @author: wangpeng
 '''
+
+from datetime import datetime
+import os
+import time
+
+import h5py
+
+from DV.dv_map import dv_map
+from PB import pb_name, pb_sat
+from PB.pb_time import fy3_ymd2seconds
+import numpy as np
 
 
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
@@ -30,8 +32,7 @@ class CLASS_IRAS_L1():
         self.obrit_direction = []
         self.obrit_num = []
 
-        self.DN = {}
-        self.Ref = {}
+        self.Dn = {}
         self.Rad = {}
         self.Tbb = {}
 
@@ -122,7 +123,7 @@ class CLASS_IRAS_L1():
             DN = np.full(dshape, np.nan)
             idx = np.logical_and(ary_ch26_dn[i] < 4095, ary_ch26_dn[i] > -4095)
             DN[idx] = ary_ch26_dn[i][idx]
-            self.DN[BandName] = DN
+            self.Dn[BandName] = DN
 
             # Tbb值存放无效值用nan填充
             Tbb = np.full(dshape, np.nan)
@@ -134,7 +135,7 @@ class CLASS_IRAS_L1():
             Rad = pb_sat.plank_iras_tb2rad(Tbb, self.WN[BandName])
             self.Rad[BandName] = Rad
 
-        ##################### 全局信息赋值 ############################
+        # 全局信息赋值 ############################
         # 对时间进行赋值合并
         v_ymd2seconds = np.vectorize(fy3_ymd2seconds)
         T1 = v_ymd2seconds(ary_day, ary_time)

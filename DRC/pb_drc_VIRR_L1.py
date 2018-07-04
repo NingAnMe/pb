@@ -1,16 +1,18 @@
 # coding: utf-8
 
-import os
-import h5py
-import numpy as np
-from datetime import datetime
-from PB import pb_name, pb_sat
-
 '''
 Created on 2017年9月7日
 
 @author: wangpeng
 '''
+
+from datetime import datetime
+import os
+
+import h5py
+
+from PB import pb_name, pb_sat
+import numpy as np
 
 
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
@@ -28,7 +30,7 @@ class CLASS_VIRR_L1():
         self.obrit_direction = []
         self.obrit_num = []
 
-        self.DN = {}
+        self.Dn = {}
         self.Ref = {}
         self.Rad = {}
         self.Tbb = {}
@@ -190,7 +192,7 @@ class CLASS_VIRR_L1():
                 DN = np.full(dshape, np.nan)
                 idx = np.logical_and(ary_ch7[k] < 32767, ary_ch7[k] > 0)
                 DN[idx] = ary_ch7[k][idx]
-                self.DN[BandName] = DN
+                self.Dn[BandName] = DN
 
                 # 反射率值存放无效值用nan填充
                 Ref = (DN * proj_Cal_Coeff[k][1] + proj_Cal_Coeff[k][0]) / 100.
@@ -207,7 +209,7 @@ class CLASS_VIRR_L1():
                 k = i - 2
                 # 下标i-2 (3,4,5通道DN存放在一个三维数组中)
                 DN[idx] = ary_ch3[k][idx]
-                self.DN[BandName] = DN
+                self.Dn[BandName] = DN
 
                 Rad[idx] = DN[idx] * ary_scales[idx[0], k] + \
                     ary_offsets[idx[0], k]

@@ -7,12 +7,15 @@ Created on 2017年9月7日
 '''
 
 import os
+
 import h5py
-import numpy as np
-from PB.pb_time import fy3_ymd2seconds
+
+from DV import dv_map, dv_plt
 from PB import pb_sat
 from PB import pb_space
-from DV import dv_map, dv_plt
+from PB.pb_time import fy3_ymd2seconds
+import numpy as np
+
 
 # 获取类py文件所在的目录
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
@@ -27,16 +30,12 @@ class CLASS_HIRAS_L1():
 
         self.sat = 'FY3D'
         self.sensor = 'HIRAS'
-        self.obrit_direction = []
-        self.obrit_num = []
+        self.orbit_direction = []
+        self.orbit_num = []
 
         # 字典类型物理量
-        self.DN = {}
-        self.Ref = {}
         self.Tbb = {}
         self.Rad = {}
-        self.SV = {}
-        self.BB = {}
 
         # 二维矩阵
         self.Lons = []
@@ -47,8 +46,8 @@ class CLASS_HIRAS_L1():
         self.sunAzimuth = []
         self.sunZenith = []
 
-        self.LandSeaMask = None
-        self.LandCover = None
+        self.LandSeaMask = []
+        self.LandCover = []
         # 高光谱位置信息，ECEF坐标系位置
         self.hiras_pos = []
         # hiras扫描探元号记录
@@ -63,13 +62,6 @@ class CLASS_HIRAS_L1():
         self.L_pos = None
         self.P_pos = None
 
-        # 按通道初始化
-        for Band in BandLst:
-            self.Tbb[Band] = None
-            self.Rad[Band] = None
-            self.SV[Band] = None
-            self.BB[Band] = None
-
     def Load(self, L1File):
         # 增加切趾计算
         w0 = 0.23
@@ -81,10 +73,10 @@ class CLASS_HIRAS_L1():
         print (u'读取 L1 %s' % L1File)
         try:
             h5File_R = h5py.File(L1File, 'r')
-            obrit_direction = h5File_R.attrs.get('Orbit Direction')
-            obrit_num = h5File_R.attrs.get('Orbit Number')
-            self.obrit_direction.append(obrit_direction)
-            self.obrit_num.append(obrit_num)
+            orbit_direction = h5File_R.attrs.get('Orbit Direction')
+            orbit_num = h5File_R.attrs.get('Orbit Number')
+            self.orbit_direction.append(orbit_direction)
+            self.orbit_num.append(orbit_num)
 
             real_lw = h5File_R.get('/Data/ES_RealLW')[:]
             real_mw = h5File_R.get('/Data/ES_RealMW1')[:]
@@ -283,8 +275,6 @@ class CLASS_HIRAS_L1():
 
             self.Tbb[Band] = tbb.reshape(tbb.size, 1)
             self.Rad[Band] = newRad.reshape(newRad.size, 1)
-            self.SV[Band] = None
-            self.BB[Band] = None
 
     def get_G_P_L(self):
 

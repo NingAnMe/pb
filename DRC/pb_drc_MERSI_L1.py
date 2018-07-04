@@ -1,21 +1,23 @@
 # coding: utf-8
 
-import os
-import sys
-import h5py
-import time
-import numpy as np
-from PB import pb_sat
-from PB.pb_time import fy3_ymd2seconds
-
 '''
 Created on 2017年9月7日
 
 @author: wangpeng
 '''
-
-
 # 获取类py文件所在的目录
+
+import os
+import sys
+import time
+
+import h5py
+
+from PB import pb_sat
+from PB.pb_time import fy3_ymd2seconds
+import numpy as np
+
+
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
 
 
@@ -34,7 +36,7 @@ class CLASS_MERSI_L1():
         self.Band = 20
         self.obrit_direction = []
         self.obrit_num = []
-        self.DN = {}
+        self.Dn = {}
         self.Ref = {}
         self.Rad = {}
         self.Tbb = {}
@@ -147,10 +149,10 @@ class CLASS_MERSI_L1():
             self.waveNum[BandName] = waveNum
             self.waveRad[BandName] = waveRad
 
-        ############### 数据大小 使用经度维度 ###############
+        # 数据大小 使用经度维度 ###############
         dshape = ary_lon.shape
 
-        ############### 通道信息赋值  #######################
+        # 通道信息赋值  #######################
         # 读取FY3C查找表
 #         LutAry = np.loadtxt(self.LutFile, dtype={'names': ('TBB', '05'),
 #                             'formats': ('i4', 'f4')})
@@ -175,7 +177,7 @@ class CLASS_MERSI_L1():
                 idx = np.logical_and(ary_ch1[i] < 10000, ary_ch1[i] >= 0)
                 DN[idx] = ary_ch1[i][idx]
                 Ref = (DN ** 2 * K[i, 2] + DN * K[i, 1] + K[i, 0]) / 100.
-                self.DN[BandName] = DN
+                self.Dn[BandName] = DN
                 self.Ref[BandName] = Ref
             elif i > 4:
                 k = i - 5
@@ -183,7 +185,7 @@ class CLASS_MERSI_L1():
                 idx = np.logical_and(ary_ch6[k] < 10000, ary_ch6[k] >= 0)
                 DN[idx] = ary_ch6[k][idx]
                 Ref = (DN ** 2 * K[i, 2] + DN * K[i, 1] + K[i, 0]) / 100.
-                self.DN[BandName] = DN
+                self.Dn[BandName] = DN
                 self.Ref[BandName] = Ref
             # 红外
             elif i == 4:
@@ -195,7 +197,7 @@ class CLASS_MERSI_L1():
                 idx = np.logical_and(ary_ch5 < 10000, ary_ch5 >= 0)
                 # dn
                 DN[idx] = ary_ch5[idx]
-                self.DN[BandName] = DN
+                self.Dn[BandName] = DN
                 # rad
                 Rad = DN / 100.
                 self.Rad[BandName] = Rad
@@ -209,7 +211,7 @@ class CLASS_MERSI_L1():
 #                 self.CA[BandName] = np.full(dshape, np.nan)
 #                 self.CA[BandName][idx] = CA / 100.
 
-        ##################### 全局信息赋值 ############################
+        # 全局信息赋值 ############################
         # 对时间进行赋值合并
         v_ymd2seconds = np.vectorize(fy3_ymd2seconds)
         T1 = v_ymd2seconds(ary_day, ary_time)
@@ -328,7 +330,7 @@ if __name__ == '__main__':
     L1File = 'D:/data/FY3C_MERSI/FY3C_MERSI_GBAL_L1_20150223_2340_1000M_MS.HDF'
     mersi = CLASS_MERSI_L1()
     mersi.Load(L1File)
-    print mersi.DN['CH_05']
+    print mersi.Dn['CH_05']
     print mersi.Rad['CH_05']
     print mersi.Tbb['CH_05']
     print mersi.sunZenith[1000, 1000]
