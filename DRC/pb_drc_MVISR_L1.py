@@ -39,11 +39,14 @@ class Fy1CdL1(object):
         self.LandSeaMask = []
         self.LandCover = []
 
+        # 新添加
+        self.CalibrationCoeff = {}
+        self.RelativeAzimuth = []
+
         # 其他程序使用
         self.LutFile = []
         self.IR_Coeff = []
         self.VIS_Coeff = []
-        self.CalibrationCoeff = {}
 
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
         self.WN = {}
@@ -93,7 +96,7 @@ class Fy1CdL1(object):
 
         coeff_dataset = coeff_dataset[idx_vaild, :]
 
-        time = self.create_time(year, day, msec_dataset) # （x,）
+        time = self.create_time(year, day, msec_dataset)  # （x,）
 
         cols_data = 1018
         self.Time = self.extend_matrix_2d(time, 1, cols_data)
@@ -107,8 +110,8 @@ class Fy1CdL1(object):
             channel_name = 'CH_{:02d}'.format(i + 1)
             self.DN[channel_name] = dn_dataset[i, :]
             self.SV[channel_name] = self.extend_matrix_2d(sv_dataset[i, :], 10, cols_data)
-            self.CalibrationCoeff[channel_name] = self.extend_matrix_2d(coeff_dataset[:, (i * 2):((i + 1) * 2)],
-                                                          2, cols_data)
+            self.CalibrationCoeff[channel_name] = self.extend_matrix_2d(
+                coeff_dataset[:, (i * 2):((i + 1) * 2)], 2, cols_data)
 
         # except Exception as why:
         #     print why
@@ -127,17 +130,17 @@ class Fy1CdL1(object):
         return time
 
     @staticmethod
-    def year_days_msec_to_timestamp(year, days, msec):
+    def year_days_msec_to_timestamp(year, day_in_year, msec):
         """
         第几天，第几天，当天第多少毫秒，转为距离1970年的时间戳
         :param year:
-        :param day:
+        :param day_in_year:
         :param msec:
         :return:
         """
         year_date = datetime.strptime(str(year), '%Y')
         date_1970 = datetime.strptime('1970', '%Y')
-        day_delta = timedelta(days=int(days) - 1)
+        day_delta = timedelta(days=int(day_in_year) - 1)
         second_delata = timedelta(seconds=(int(msec) / 1000))
         delta_since_1970 = year_date + day_delta + second_delata - date_1970
         timestamp = delta_since_1970.total_seconds()
@@ -170,4 +173,3 @@ if __name__ == '__main__':
     in_file = r'E:\projects\six_sv\FY1C_L1_GDPT_20000118_1505.HDF'
     fy1_cd = Fy1CdL1()
     fy1_cd.Load(in_file)
-
