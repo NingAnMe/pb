@@ -23,7 +23,7 @@ class CLASS_MVISR_L1(object):
         self.obrit_direction = []
         self.obrit_num = []
 
-        self.DN = {}
+        self.Dn = {}
         self.Ref = {}
         self.Rad = {}
         self.Tbb = {}
@@ -113,11 +113,7 @@ class CLASS_MVISR_L1(object):
 
         for i in xrange(self.Band):
             channel_name = 'CH_{:02d}'.format(i + 1)
-            self.DN[channel_name] = dn_dataset[i, :]
-            self.SV[channel_name] = self.extend_matrix_2d(
-                sv_dataset[i, :], 10, cols_data)
-            self.CalibrationCoeff[channel_name] = self.extend_matrix_2d(
-                coeff_dataset[:, (i * 2):((i + 1) * 2)], 2, cols_data)
+            self.Dn[channel_name] = dn_dataset[i, :]
             self.SV[channel_name] = self.extend_matrix_2d(
                 sv_dataset[i, :], 10, cols_data)
             k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i + 1])
