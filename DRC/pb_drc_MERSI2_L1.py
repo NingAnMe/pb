@@ -74,6 +74,9 @@ class CLASS_MERSI2_L1():
         self.waveNum = {}
         self.waveRad = {}
 
+        # 投影使用
+        self.VIS_Coeff = []
+
     def Load(self, L1File):
 
         ipath = os.path.dirname(L1File)
@@ -350,7 +353,7 @@ class CLASS_MERSI2_L1():
 
         # 系数先不合并，暂时未用，数据格式无法统一了
 #         self.IR_Coeff = ary_IR_Coeff
-#         self.VIS_Coeff = ary_VIS_Coeff
+        self.VIS_Coeff = ary_VIS_Coeff
 
     def get_G_P_L(self):
 

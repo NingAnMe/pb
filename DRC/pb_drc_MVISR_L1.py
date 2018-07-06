@@ -6,11 +6,12 @@
 """
 from datetime import datetime, timedelta
 
-import numpy as np
 from pyhdf.SD import SD, SDC
 
+import numpy as np
 
-class Fy1CdL1(object):
+
+class CLASS_MVISR_L1(object):
 
     def __init__(self):
 
@@ -102,14 +103,18 @@ class Fy1CdL1(object):
         self.Time = self.extend_matrix_2d(time, 1, cols_data)
         self.Lons = self.extend_matrix_2d(longitude_dataset, 51, cols_data)
         self.Lats = self.extend_matrix_2d(latitude_dataset, 51, cols_data)
-        self.satZenith = self.extend_matrix_2d(sensor_zenith_dataset, 51, cols_data)
-        self.sunZenith = self.extend_matrix_2d(solar_zenith_dataset, 51, cols_data)
-        self.RelativeAzimuth = self.extend_matrix_2d(relative_azimuth, 51, cols_data)
+        self.satZenith = self.extend_matrix_2d(
+            sensor_zenith_dataset, 51, cols_data)
+        self.sunZenith = self.extend_matrix_2d(
+            solar_zenith_dataset, 51, cols_data)
+        self.RelativeAzimuth = self.extend_matrix_2d(
+            relative_azimuth, 51, cols_data)
 
         for i in xrange(4):
             channel_name = 'CH_{:02d}'.format(i + 1)
             self.DN[channel_name] = dn_dataset[i, :]
-            self.SV[channel_name] = self.extend_matrix_2d(sv_dataset[i, :], 10, cols_data)
+            self.SV[channel_name] = self.extend_matrix_2d(
+                sv_dataset[i, :], 10, cols_data)
             self.CalibrationCoeff[channel_name] = self.extend_matrix_2d(
                 coeff_dataset[:, (i * 2):((i + 1) * 2)], 2, cols_data)
 

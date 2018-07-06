@@ -225,6 +225,28 @@ class METOP_L2(satNameBase):
 
 
 @nameClassManager.plugin
+class FY1CD_L1(satNameBase):
+    '''
+    FY1[A-Z]_L1_GDPT_(\d{8})_(\d{4}).HDF\Z
+    FY1[A-Z]_L1_GDPT_(\d{8})_(\d{4}).OBC.HDF\Z
+    '''
+
+    def __init__(self):
+        pat = u'FY1[A-Z]_L1_GDPT_(\d{8})_(\d{4}).*.HDF$'
+        totalSec = 30 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(1)
+            self.hms = g.group(2) + '00'
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
 class METOP_L1(satNameBase):
     '''
     IASI_xxx_1C_M02_20160301052958Z_20160301053254Z_N_O_20160301070539Z__20160301070731
@@ -1142,6 +1164,7 @@ class HIMAWARI_08(satNameBase):
 
 if __name__ == '__main__':
     allcls = nameClassManager()
+    a = allcls.getInstance('FY1D_L1_GDPT_20040101_0000.OBC.HDF')
 #     a = allcls.getInstance('GW1AM2_201610010013_148D_L1SGBTBR_2220220.h5.gz')
 #     a = allcls.getInstance('L3_aersl_omi_20161115.txt')
 #     a = allcls.getInstance('GCRSO-SCRIS_npp_d20161013_t1010409_e1011107_b25708_c20161021051241157665_noaa_ops.h5')
@@ -1156,4 +1179,4 @@ if __name__ == '__main__':
 #         'GCRSO-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5')
 #     a = allcls.getInstance(
 #         'GCRSO-SCRIF-SCRIS_npp_d20180505_t0039599_e0047577_b33775_c20180509051250505569_noac_ops.h5')
-#     print a.dt_s, a.dt_e
+    print a.dt_s, a.dt_e
