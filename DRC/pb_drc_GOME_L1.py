@@ -1,22 +1,24 @@
 # coding: utf-8
-import os
-import sys
-import coda
-import beatl2
-import numpy as np
-from datetime import datetime
-from DV import dv_map, dv_plt
-from PB.pb_time import metop_ymd2seconds
-from PB import pb_sat
-
 '''
 Created on 2018年4月13日
 
 @author: wangpeng
 '''
-
-
 # 配置文件信息，设置为全局
+
+from datetime import datetime
+import os
+import sys
+
+import beatl2
+import coda
+
+from DV import dv_map, dv_plt
+from PB import pb_sat
+from PB.pb_time import metop_ymd2seconds
+import numpy as np
+
+
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
 
 
@@ -27,12 +29,7 @@ class CLASS_GOME_L1():
         self.k = 1.98644746103858e-9
 
         # 字典类型物理量
-        self.DN = {}
         self.Ref = {}
-        self.Tbb = {}
-        self.Rad = {}
-        self.SV = {}
-        self.BB = {}
 
         # 二维矩阵
         self.Lons = []
@@ -47,18 +44,6 @@ class CLASS_GOME_L1():
         # 光谱信息
         self.wavenumber = []
         self.radiance = []
-
-        # 按通道初始化,没有的物理量不要初始化，匹配会报错
-        for Band in BandLst:
-            #             self.DN[Band] = None
-            self.Ref[Band] = None
-#             self.Tbb[Band] = None
-#             self.Rad[Band] = None
-            self.SV[Band] = None
-            self.BB[Band] = None
-
-        self.LandSeaMask = None
-        self.LandCover = None
 
     def Load(self, L1File):
 
@@ -206,8 +191,6 @@ class CLASS_GOME_L1():
             ref = np.pi * newRad / newRad_solar
 
             self.Ref[Band] = ref.reshape(ref.size, 1)
-            self.SV[Band] = None
-            self.BB[Band] = None
 
     def get_rad_tbb_test(self, D1, bandLst):
         '''
@@ -267,8 +250,6 @@ class CLASS_GOME_L1():
                 np.cos(np.deg2rad(self.sunZenith))
 
             self.Ref[Band] = ref.reshape(ref.size, 1)
-            self.SV[Band] = None
-            self.BB[Band] = None
 
 
 if __name__ == '__main__':

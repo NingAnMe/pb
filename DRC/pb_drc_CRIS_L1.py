@@ -1,20 +1,24 @@
 # coding: utf-8
-import os
-import sys
-import h5py
-import numpy as np
-from datetime import datetime
-from PB.pb_time import npp_ymd2seconds
-from PB import pb_sat
-from DV import dv_plt
-from PB import pb_space
 '''
 Created on 2017年9月7日
 
 @author: wangpeng
 '''
-
 # 配置文件信息，设置为全局
+
+from datetime import datetime
+import os
+import sys
+
+import h5py
+
+from DV import dv_plt
+from PB import pb_sat
+from PB import pb_space
+from PB.pb_time import npp_ymd2seconds
+import numpy as np
+
+
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
 
 
@@ -26,17 +30,13 @@ class CLASS_CRIS_L1():
         self.sensor = 'CRIS'
         self.res = 15000
 
-        self.obrit_direction = ['A']
-        self.obrit_num = [1]
+        self.orbit_direction = ['A']
+        self.orbit_num = [1]
         self.pixel_num = []
 
         # 字典类型物理量
-        self.DN = {}
-        self.Ref = {}
         self.Tbb = {}
         self.Rad = {}
-        self.SV = {}
-        self.BB = {}
 
         # 二维矩阵
         self.Lons = []
@@ -55,17 +55,6 @@ class CLASS_CRIS_L1():
         self.radiance = []
         # gapfilling 之前的辐射
         self.radiance_old = []
-
-        for Band in BandLst:
-            # self.DN[Band] = None
-            # self.Ref[Band] = None
-            self.Tbb[Band] = None
-            self.Rad[Band] = None
-            self.SV[Band] = None
-            self.BB[Band] = None
-
-        self.LandSeaMask = None
-        self.LandCover = None
 
         # 增加矢量计算 G,P,L
         self.G_pos = None
@@ -316,8 +305,6 @@ class CLASS_CRIS_L1():
 
             self.Tbb[Band] = tbb.reshape(tbb.size, 1)
             self.Rad[Band] = newRad.reshape(newRad.size, 1)
-            self.SV[Band] = None
-            self.BB[Band] = None
 
 if __name__ == '__main__':
     T1 = datetime.now()

@@ -25,13 +25,12 @@ MainPath, MainFile = os.path.split(os.path.realpath(__file__))
 class CLASS_VIIRS_L1():
 
     def __init__(self):
-
         self.sat = 'NPP'
         self.sensor = 'VIIRS'
         self.res = 750
         self.Band = 1
-        self.orbit_direction = ['A']
-        self.orbit_num = [1]
+        self.obrit_direction = ['A']
+        self.obrit_num = [1]
 
         self.Ref = {}
         self.Rad = {}
@@ -57,65 +56,104 @@ class CLASS_VIIRS_L1():
 
     def Load(self, L1File):
         print u'读取 L1所有数据信息...... %s' % L1File
+        if not os.path.isfile(L1File):
+            print 'Error: %s not found' % L1File
+            return
         try:
             h5File_R = h5py.File(L1File, 'r')
+        except Exception as e:
+            print str(e)
+            return
+
+        try:
             ary_lon = h5File_R.get('/All_Data/VIIRS-MOD-GEO_All/Longitude')[:]
             ary_lat = h5File_R.get('/All_Data/VIIRS-MOD-GEO_All/Latitude')[:]
-            ary_satz = h5File_R.get(
-                '/All_Data/VIIRS-MOD-GEO_All/SatelliteZenithAngle')[:]
-            ary_sata = h5File_R.get(
+            self.satAzimuth = h5File_R.get(
                 '/All_Data/VIIRS-MOD-GEO_All/SatelliteAzimuthAngle')[:]
-            ary_sunz = h5File_R.get(
-                '/All_Data/VIIRS-MOD-GEO_All/SolarZenithAngle')[:]
-            ary_suna = h5File_R.get(
+            self.satZenith = h5File_R.get(
+                '/All_Data/VIIRS-MOD-GEO_All/SatelliteZenithAngle')[:]
+            self.sunAzimuth = h5File_R.get(
                 '/All_Data/VIIRS-MOD-GEO_All/SolarAzimuthAngle')[:]
-            ary_time = h5File_R.get('/All_Data/VIIRS-MOD-GEO_All/StartTime')[:]
+            self.sunZenith = h5File_R.get(
+                '/All_Data/VIIRS-MOD-GEO_All/SolarZenithAngle')[:]
+#             Times = h5File_R.get('/All_Data/VIIRS-MOD-GEO_All/MidTime')[:]
+            Times = h5File_R.get('/All_Data/VIIRS-MOD-GEO_All/StartTime')[:]
+            tmpTime = np.full_like(ary_lon, -999, dtype='i4')
+            v_ymd2seconds = np.vectorize(npp_ymd2seconds)
+            T1 = v_ymd2seconds(Times)
+            for i in xrange(len(tmpTime)):
+                tmpTime[i, :] = T1[i / 16]
+            self.Time = tmpTime
+            ymd = time.gmtime(self.Time[0, 0])
+            ymd = time.strftime('%Y%m%d', ymd)
+#             print ymd
 
-            Ref = {}
-            # 由于不确定性 比较了14和15年的数据值一致，定值。偶尔出现-999.33导致计算错
-            Ref_a = 2.4417415E-5
-
-            Rad = {}
-            Rad_a = {}
-            Rad_b = {}
-            Tbb = {}
-            Tbb_a = {}
-            Tbb_b = {}
+            dsol = sun_earth_dis_correction(ymd)
 
             for i in xrange(1, 17, 1):
-                if i < 12:
-                    Ref[i] = h5File_R.get(
-                        '/All_Data/VIIRS-M%d-SDR_All/Reflectance' % i)[:]
+                # sv,bb 赋值 None, 有值则赋真实值
+                bandName = 'CH_%02d' % i
 
+                if i < 12:
+                    ref = h5File_R.get(
+                        '/All_Data/VIIRS-M%d-SDR_All/Reflectance' % i)[:]
+    #                 ref_fac = h5File_R.get('/All_Data/VIIRS-M%d-SDR_All/ReflectanceFactors' % i)[:][0]
+                    # 由于不确定性 比较了14和15年的数据值一致，定值。偶尔出现-999.33导致计算错
+                    ref_fac = 2.4417415E-5
+                    idx = np.where(ref < 65500)
+                    newRef = np.full_like(ref, np.nan, 'f4')
+                    newRef[idx] = ref[idx]
+                    self.Ref[bandName] = newRef * ref_fac * \
+                        np.cos(np.deg2rad(self.sunZenith)) * dsol
                 elif i == 13:
-                    Rad[i] = h5File_R.get(
+                    rad = h5File_R.get(
                         '/All_Data/VIIRS-M%d-SDR_All/Radiance' % i)[:]
-                    Tbb[i] = h5File_R.get(
+                    tbb = h5File_R.get(
                         '/All_Data/VIIRS-M%d-SDR_All/BrightnessTemperature' % i)[:]
-                    Rad_a[i] = 1.
-                    Rad_b[i] = 0.
-                    Tbb_a[i] = 1.
-                    Tbb_b[i] = 0.
+                    idx = np.where(rad > 0)
+                    newRad = np.full_like(rad, np.nan, 'f4')
+                    newRad[idx] = rad[idx] * \
+                        ((10000 / self.WN['CH_%02d' % i]) ** 2) / 10.
+
+                    idx = np.where(tbb > 0)
+                    newTbb = np.full_like(tbb, np.nan, 'f4')
+                    newTbb[idx] = tbb[idx]
+
+                    self.Rad[bandName] = newRad
+                    self.Tbb[bandName] = newTbb
+
                 else:
-                    Rad[i] = h5File_R.get(
+                    rad = h5File_R.get(
                         '/All_Data/VIIRS-M%d-SDR_All/Radiance' % i)[:]
-                    Rad_a[i] = h5File_R.get(
+                    rad_fac = h5File_R.get(
                         '/All_Data/VIIRS-M%d-SDR_All/RadianceFactors' % i)[:][0]
-                    Rad_b[i] = h5File_R.get(
+                    rad_int = h5File_R.get(
                         '/All_Data/VIIRS-M%d-SDR_All/RadianceFactors' % i)[:][1]
-                    Tbb[i] = h5File_R.get(
+                    tbb = h5File_R.get(
                         '/All_Data/VIIRS-M%d-SDR_All/BrightnessTemperature' % i)[:]
-                    Tbb_a[i] = h5File_R.get(
+                    tbb_fac = h5File_R.get(
                         '/All_Data/VIIRS-M%d-SDR_All/BrightnessTemperatureFactors' % i)[:][0]
-                    Tbb_b[i] = h5File_R.get(
+                    tbb_int = h5File_R.get(
                         '/All_Data/VIIRS-M%d-SDR_All/BrightnessTemperatureFactors' % i)[:][1]
+                    idx = np.where(rad < 65500)
+                    newRad = np.full_like(rad, np.nan, 'f4')
+                    newRad[idx] = rad[idx] * \
+                        ((10000 / self.WN['CH_%02d' % i]) ** 2) / 10.
+
+                    idx = np.where(tbb < 65500)
+                    newTbb = np.full_like(tbb, np.nan, 'f4')
+                    newTbb[idx] = tbb[idx]
+
+                    self.Rad[bandName] = newRad * rad_fac + rad_int
+                    self.Tbb[bandName] = newTbb * tbb_fac + tbb_int
 
         except Exception as e:
             print str(e)
+            return
         finally:
             h5File_R.close()
 
-        # 11111111通道的中心波数和光谱响应
+        # 通道的中心波数和光谱响应
 #         for i in xrange(self.Band):
         i = 14
         BandName = 'CH_%02d' % (i + 1)
@@ -128,103 +166,22 @@ class CLASS_VIIRS_L1():
         self.waveNum[BandName] = waveNum
         self.waveRad[BandName] = waveRad
 
-        # 2222222 数据大小 使用经度维度 ###############
-        dshape = ary_lon.shape
-
-        # 对时间进行赋值合并
-        v_ymd2seconds = np.vectorize(npp_ymd2seconds)
-        T1 = v_ymd2seconds(ary_time)
-
-        Time = np.full(dshape, -999)
-        for i in xrange(len(Time)):
-            Time[i, :] = T1[i / 16]
-        if self.Time == []:
-            self.Time = Time
-        else:
-            self.Time = np.concatenate((self.Time, Time))
-
-        ymd = time.gmtime(self.Time[0, 0])
-        ymd1 = time.strftime('%Y%m%d', ymd)
-        dsol = sun_earth_dis_correction(ymd1)
-
-        # 3333333 1-12通道的可见光数据进行定标 ########
-        for i in range(1, 12, 1):
-            BandName = 'CH_%02d' % i
-            condition = np.logical_and(Ref[i] > 0, Ref[i] < 65500)
-            idx = np.where(condition)
-            Ref_data = np.full(dshape, np.nan)
-            Ref_data[idx] = Ref[i][idx]
-
-            Ref_data = Ref_data * Ref_a * np.cos(np.deg2rad(ary_sunz)) * dsol
-            if BandName not in self.Ref.keys():
-                self.Ref[BandName] = Ref_data
-            else:
-                self.Ref[BandName] = np.concatenate(
-                    (self.Ref[BandName], Ref_data))
-
-        # 红外
-        for i in xrange(12, 17, 1):
-
-            BandName = 'CH_%02d' % i
-            condition = np.logical_and(Rad[i] > 0, Rad[i] < 65500)
-            idx = np.where(condition)
-            Rad_data = np.full(dshape, np.nan)
-            Tbb_data = np.full(dshape, np.nan)
-            Rad_data[idx] = Rad[i][idx] * \
-                ((10000 / self.WN[BandName]) ** 2) / 10.
-            Rad_data[idx] = Rad_data[idx] * Rad_a[i] + Rad_b[i]
-            Tbb_data[idx] = Tbb[i][idx] * Tbb_a[i] + Tbb_b[i]
-
-            if BandName not in self.Rad.keys():
-                self.Rad[BandName] = Rad_data
-            else:
-                self.Rad[BandName] = np.concatenate(
-                    (self.Rad[BandName], Rad_data))
-
-            if BandName not in self.Tbb.keys():
-                self.Tbb[BandName] = Tbb_data
-            else:
-                self.Tbb[BandName] = np.concatenate(
-                    (self.Tbb[BandName], Tbb_data))
-
         # 经纬度
-        ary_lon_idx = np.full(dshape, np.nan)
+        ary_lon_idx = np.full(ary_lon.shape, np.nan)
         condition = np.logical_and(ary_lon > -180., ary_lon < 180.)
         ary_lon_idx[condition] = ary_lon[condition]
-
         if self.Lons == []:
             self.Lons = ary_lon_idx
         else:
             self.Lons = np.concatenate((self.Lons, ary_lon_idx))
 
-        ary_lat_idx = np.full(dshape, np.nan)
+        ary_lat_idx = np.full(ary_lon.shape, np.nan)
         condition = np.logical_and(ary_lat > -90., ary_lat < 90.)
         ary_lat_idx[condition] = ary_lat[condition]
-
         if self.Lats == []:
             self.Lats = ary_lat_idx
         else:
             self.Lats = np.concatenate((self.Lats, ary_lat_idx))
-        # 角度信息
-        if self.satAzimuth == []:
-            self.satAzimuth = ary_sata
-        else:
-            self.satAzimuth = np.concatenate((self.satAzimuth, ary_sata))
-
-        if self.satZenith == []:
-            self.satZenith = ary_satz
-        else:
-            self.satZenith = np.concatenate((self.satZenith, ary_satz))
-
-        if self.sunAzimuth == []:
-            self.sunAzimuth = ary_suna
-        else:
-            self.sunAzimuth = np.concatenate((self.sunAzimuth, ary_suna))
-
-        if self.sunZenith == []:
-            self.sunZenith = ary_sunz
-        else:
-            self.sunZenith = np.concatenate((self.sunZenith, ary_sunz))
 
     def get_G_P_L(self):
 
@@ -244,8 +201,7 @@ if __name__ == '__main__':
     virr = CLASS_VIIRS_L1()
 #     virr.LutFile = 'C:\E\py_src\pysrc\OM\FY-3\exe\linux\FY3C-VIRR-LUT-TB-RB.txt'
     virr.Load(L1File)
-#     virr.Load(L1File)
-    print virr.Rad['CH_15'].shape
+    print virr.Rad['CH_15']
     print np.nanmin(virr.Tbb['CH_15'])
     print np.nanmax(virr.Tbb['CH_15'])
     T2 = datetime.now()

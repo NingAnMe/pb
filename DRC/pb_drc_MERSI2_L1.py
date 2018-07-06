@@ -7,11 +7,14 @@ Created on 2017年9月7日
 '''
 
 import os
+
 import h5py
-import numpy as np
-from PB.pb_time import fy3_ymd2seconds
+
 from PB import pb_sat
 from PB import pb_space
+from PB.pb_time import fy3_ymd2seconds
+import numpy as np
+
 
 # 获取类py文件所在的目录
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
@@ -29,12 +32,13 @@ class CLASS_MERSI2_L1():
         self.sensor = 'MERSI'
         self.res = 1000
         self.Band = 25
-        self.obrit_direction = []
-        self.obrit_num = []
-        self.DN = {}
+        self.orbit_direction = []
+        self.orbit_num = []
+        self.Dn = {}
         self.Ref = {}
         self.Rad = {}
         self.Tbb = {}
+
         self.satAzimuth = []
         self.satZenith = []
         self.sunAzimuth = []
@@ -42,20 +46,21 @@ class CLASS_MERSI2_L1():
         self.Lons = []
         self.Lats = []
         self.Time = []
+
         self.SV = {}
         self.BB = {}
         self.LandSeaMask = []
         self.LandCover = []
+
+        # wangpeng add k  2018-06-29
+        self.cal_coeff1 = {}
+        self.cal_coeff2 = {}
 
         # 增加矢量计算 G,P,L
         self.G_pos = None
         self.L_pos = None
         self.P_pos = None
 
-        # 其他程序使用
-        self.LutFile = []
-        self.IR_Coeff = []
-        self.VIS_Coeff = []
         # 波长（μm） 转 波数 cm-1  (10000μm=1cm)   cm-1 = 10000/波长（μm）
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
         self.WN = {'CH_20': 2634.359, 'CH_21': 2471.654, 'CH_22':
@@ -70,6 +75,7 @@ class CLASS_MERSI2_L1():
         self.waveRad = {}
 
     def Load(self, L1File):
+
         ipath = os.path.dirname(L1File)
         iname = os.path.basename(L1File)
         geoFile = os.path.join(ipath, iname[0:-12] + 'GEO1K_MS.HDF')
@@ -77,10 +83,10 @@ class CLASS_MERSI2_L1():
         try:
             h5File_R = h5py.File(L1File, 'r')
 
-            obrit_direction = h5File_R.attrs.get('Orbit Direction')
-            obrit_num = h5File_R.attrs.get('Orbit Number')
-            self.obrit_direction.append(obrit_direction)
-            self.obrit_num.append(obrit_num)
+            orbit_direction = h5File_R.attrs.get('Orbit Direction')
+            orbit_num = h5File_R.attrs.get('Orbit Number')
+            self.orbit_direction.append(orbit_direction)
+            self.orbit_num.append(orbit_num)
 
             ary_ch1_4 = h5File_R.get('/Data/EV_250_Aggr.1KM_RefSB')[:]
             ary_ch5_19 = h5File_R.get('/Data/EV_1KM_RefSB')[:]
@@ -136,10 +142,10 @@ class CLASS_MERSI2_L1():
             self.waveNum[BandName] = waveNum
             self.waveRad[BandName] = waveRad
 
-        ############### 数据大小 使用经度维度 ###############
+        # 数据大小 使用经度维度
         dshape = ary_lon.shape
 
-        # 1-19通道的可见光数据进行定标 ########
+        # 1-19通道的可见光数据进行定标
         K = ary_VIS_Coeff
         for i in range(19):
             if i < 4:
@@ -157,12 +163,15 @@ class CLASS_MERSI2_L1():
             Ref = ((DN ** 2 * K[i, 2]) + DN * K[i, 1] + K[i, 0]) / 100.
 
             BandName = 'CH_%02d' % (i + 1)
-            if BandName not in self.DN.keys():
-                self.DN[BandName] = DN
+            if BandName not in self.Dn.keys():
+                self.Dn[BandName] = DN
                 self.Ref[BandName] = Ref
             else:
-                self.DN[BandName] = np.concatenate((self.DN[BandName], DN))
+                self.Dn[BandName] = np.concatenate((self.Dn[BandName], DN))
                 self.Ref[BandName] = np.concatenate((self.Ref[BandName], Ref))
+
+            if BandName not in self.cal_coeff1.keys():
+                self.cal_coeff1[BandName] = [K[i, 0], K[i, 1], K[i, 2]]
 
         # 20-25通道的红外光数据进行定标 ########
         K = ary_IR_Coeff
@@ -184,6 +193,20 @@ class CLASS_MERSI2_L1():
             DN = np.full(dshape, np.nan)
             Rad = np.full(dshape, np.nan)
 
+            # 存放定标系数
+            if BandName not in self.cal_coeff1.keys():
+                self.cal_coeff1[BandName] = [
+                    K[i, 0, 0], K[i, 2, 0], K[i, 3, 0]]
+#             k1 = np.full(dshape, np.nan)
+
+            # 把红外定标系数拆成4个数据 2000*2048
+            k1 = (np.repeat(K[i, 1, :], 10 * 2048)).reshape(dshape)
+            if BandName not in self.cal_coeff2.keys():
+                self.cal_coeff2[BandName] = k1
+
+            else:
+                self.cal_coeff2[BandName] = np.concatenate(
+                    (self.cal_coeff2[BandName], k1))
             # 对无效DN值进行过滤
             idx = np.logical_and(indata < 65500, indata > 0)
             DN[idx] = indata[idx]
@@ -191,12 +214,12 @@ class CLASS_MERSI2_L1():
             Tbb = pb_sat.planck_r2t(
                 Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
             # 对类成员进行赋值
-            if BandName not in self.DN.keys():
-                self.DN[BandName] = DN
+            if BandName not in self.Dn.keys():
+                self.Dn[BandName] = DN
                 self.Rad[BandName] = Rad
                 self.Tbb[BandName] = Tbb
             else:
-                self.DN[BandName] = np.concatenate((self.DN[BandName], DN))
+                self.Dn[BandName] = np.concatenate((self.Dn[BandName], DN))
                 self.Rad[BandName] = np.concatenate((self.Rad[BandName], Rad))
                 self.Tbb[BandName] = np.concatenate((self.Tbb[BandName], Tbb))
 
@@ -211,7 +234,7 @@ class CLASS_MERSI2_L1():
 # Rad[row_i, :] = (DN[row_i, :] * k3 ** 3 + DN[row_i, :] * k2 ** 2 +
 # DN[row_i, :] * k1 + k0)  # / 100.
 
-        ##################### 全局信息赋值 ############################
+        # 全局信息赋值 ############################
         # 对时间进行赋值合并
         v_ymd2seconds = np.vectorize(fy3_ymd2seconds)
         T1 = v_ymd2seconds(ary_day, ary_time)
@@ -326,8 +349,8 @@ class CLASS_MERSI2_L1():
                 (self.sunZenith, ary_sunz_idx / 100.))
 
         # 系数先不合并，暂时未用，数据格式无法统一了
-        self.IR_Coeff = ary_IR_Coeff
-        self.VIS_Coeff = ary_VIS_Coeff
+#         self.IR_Coeff = ary_IR_Coeff
+#         self.VIS_Coeff = ary_VIS_Coeff
 
     def get_G_P_L(self):
 
@@ -343,6 +366,6 @@ if __name__ == '__main__':
     L1File = 'D:/data/FY3D+MERSI_HIRAS/FY3D_MERSI_GBAL_L1_20180326_0045_1000M_MS.HDF'
     mersi = CLASS_MERSI2_L1()
     mersi.Load(L1File)
-    mersi.get_G_P_L()
-    print mersi.G_pos
+
+    print type(mersi.orbit_num)
     pass

@@ -1,22 +1,25 @@
 # coding: utf-8
 
-import os
-import sys
-import coda
-import beatl2
-import numpy as np
-from datetime import datetime
-from PB.pb_time import metop_ymd2seconds
-from PB import pb_sat
-from DV.dv_map import dv_map
-
 '''
 Created on 2017年9月7日
 
 @author: wangpeng
 '''
-
 # 配置文件信息，设置为全局
+
+from datetime import datetime
+import os
+import sys
+
+import beatl2
+import coda
+
+from DV.dv_map import dv_map
+from PB import pb_sat
+from PB.pb_time import metop_ymd2seconds
+import numpy as np
+
+
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
 
 
@@ -25,12 +28,8 @@ class CLASS_IASI_L1():
     def __init__(self, BandLst):
 
         # 字典类型物理量
-        self.DN = {}
-        self.Ref = {}
         self.Tbb = {}
         self.Rad = {}
-        self.SV = {}
-        self.BB = {}
 
         # 二维矩阵
         self.Lons = []
@@ -45,18 +44,6 @@ class CLASS_IASI_L1():
         # 光谱信息
         self.wavenumber = []
         self.radiance = []
-
-        # 按通道初始化
-        for Band in BandLst:
-            #             self.DN[Band] = None
-            #             self.Ref[Band] = None
-            self.Tbb[Band] = None
-            self.Rad[Band] = None
-            self.SV[Band] = None
-            self.BB[Band] = None
-
-        self.LandSeaMask = None
-        self.LandCover = None
 
     def Load(self, L1File):
 
@@ -142,8 +129,6 @@ class CLASS_IASI_L1():
 
             self.Tbb[Band] = tbb.reshape(tbb.size, 1)
             self.Rad[Band] = newRad.reshape(newRad.size, 1)
-            self.SV[Band] = None
-            self.BB[Band] = None
 
 if __name__ == '__main__':
     T1 = datetime.now()

@@ -1,15 +1,18 @@
 # coding: utf-8
-import os
-import re
-import random
-import errno
-import yaml
-import h5py
-import numpy as np
-import time
-from configobj import ConfigObj
-from datetime import datetime
 from contextlib import contextmanager
+from datetime import datetime
+import errno
+import os
+import random
+import re
+import time
+
+from configobj import ConfigObj
+import h5py
+import yaml
+
+import numpy as np
+
 
 __description__ = u'IO处理的函数'
 __author__ = 'wangpeng'
@@ -23,7 +26,7 @@ def makeYamlCfg(yaml_dict, oFile):
     if not os.path.isdir(cfgPath):
         os.makedirs(cfgPath)
     with open(oFile, 'w') as stream:
-            yaml.dump(yaml_dict, stream, default_flow_style=False)
+        yaml.dump(yaml_dict, stream, default_flow_style=False)
 
 
 def loadYamlCfg(iFile):
@@ -54,6 +57,7 @@ def make_sure_path_exists(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+
 
 def FindFile(ipath, pat):
     '''
@@ -118,7 +122,7 @@ def path_replace_ymd(path, ymd):
     path = path.replace('%DD', dd)
     path = path.replace('%JJJ', jj)
 
-    return  path
+    return path
 
 
 def load_yaml_config(in_file):
@@ -311,6 +315,48 @@ def progress_lock(max_wait_time=5):
             pass
 
 
+def write_txt(in_file, head, bodys, keylens=8):
+    """
+    description: wangpeng add 20180615 (写入或更新txt)
+    :in_file 写入文件位置
+    :head  文件头信息
+    :bodys 文件体
+    :keylens 更新文件使用的第一列关键字长度
+    """
+    allLines = []
+    DICT_D = {}
+    FilePath = os.path.dirname(in_file)
+    if not os.path.exists(FilePath):
+        os.makedirs(FilePath)
+
+    if os.path.isfile(in_file) and os.path.getsize(in_file) != 0:
+        fp = open(in_file, 'r')
+        fp.readline()
+        Lines = fp.readlines()
+        fp.close()
+        # 使用字典特性，保证时间唯一，读取数据
+        for Line in Lines:
+            DICT_D[Line[:keylens]] = Line[keylens:]
+        # 添加或更改数据
+        for Line in bodys:
+            DICT_D[Line[:keylens]] = Line[keylens:]
+        # 按照时间排序
+        newLines = sorted(
+            DICT_D.iteritems(), key=lambda d: d[0], reverse=False)
+
+        for i in xrange(len(newLines)):
+            allLines.append(str(newLines[i][0]) + str(newLines[i][1]))
+        fp = open(in_file, 'w')
+        fp.write(head)
+        fp.writelines(allLines)
+        fp.close()
+    else:
+        fp = open(in_file, 'w')
+        fp.write(head)
+        fp.writelines(bodys)
+        fp.close()
+
+
 def str_format(string, values):
     """
     格式化字符串
@@ -325,7 +371,6 @@ def str_format(string, values):
         string = string.replace("%" + str(k), str(v))
     return string
 
-
 if __name__ == '__main__':
     pass
 
@@ -339,5 +384,5 @@ if __name__ == '__main__':
     # l = c.__dict__.keys()
     # l = sorted(l)
     # for k in l:
-        # print k, ":", c.__dict__[k]
-        # print k
+    # print k, ":", c.__dict__[k]
+    # print k
