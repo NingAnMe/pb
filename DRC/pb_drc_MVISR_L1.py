@@ -69,6 +69,7 @@ class CLASS_MVISR_L1(object):
 
         dn_dataset = hdf4.select('Earth_View')[:]
         sv_dataset = hdf4.select('Space_View')[:]
+        bb_dataset = hdf4.select('Black_Body_View')[:]
 
         sensor_zenith_dataset = hdf4.select('Sensor_Zenith')[:]
         solar_zenith_dataset = hdf4.select('Solar_Zenith')[:]
@@ -87,7 +88,8 @@ class CLASS_MVISR_L1(object):
         msec_dataset = msec_dataset[idx_vaild]
 
         dn_dataset = dn_dataset[:, idx_vaild, :]
-        sv_dataset = sv_dataset[:, idx_vaild]
+        sv_dataset = sv_dataset[:, idx_vaild, :]
+        bb_dataset = bb_dataset[:, idx_vaild, :]
 
         sensor_zenith_dataset = sensor_zenith_dataset[idx_vaild, :]
         solar_zenith_dataset = solar_zenith_dataset[idx_vaild, :]
@@ -104,24 +106,19 @@ class CLASS_MVISR_L1(object):
         self.Time = self.extend_matrix_2d(time, 1, cols_data)
         self.Lons = self.extend_matrix_2d(longitude_dataset, 51, cols_data)
         self.Lats = self.extend_matrix_2d(latitude_dataset, 51, cols_data)
-        self.satZenith = self.extend_matrix_2d(
-            sensor_zenith_dataset, 51, cols_data)
-        self.sunZenith = self.extend_matrix_2d(
-            solar_zenith_dataset, 51, cols_data)
-        self.RelativeAzimuth = self.extend_matrix_2d(
-            relative_azimuth, 51, cols_data)
+        self.satZenith = self.extend_matrix_2d(sensor_zenith_dataset, 51, cols_data)
+        self.sunZenith = self.extend_matrix_2d(solar_zenith_dataset, 51, cols_data)
+        self.RelativeAzimuth = self.extend_matrix_2d(relative_azimuth, 51, cols_data)
 
         for i in xrange(self.Band):
             channel_name = 'CH_{:02d}'.format(i + 1)
             self.Dn[channel_name] = dn_dataset[i, :]
-            self.SV[channel_name] = self.extend_matrix_2d(
-                sv_dataset[i, :], 10, cols_data)
+            self.SV[channel_name] = self.extend_matrix_2d(sv_dataset[i, :], 10, cols_data)
+            self.BB[channel_name] = self.extend_matrix_2d(bb_dataset[i, :], 6, cols_data)
             k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i + 1])
             k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i])
-            self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(
-                k0_dataset, 1, cols_data)
-            self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(
-                k1_dataset, 1, cols_data)
+            self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_data)
+            self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_data)
 
         # except Exception as why:
         #     print why
@@ -191,3 +188,4 @@ if __name__ == '__main__':
     print mvisr.ir_coeff_k0['CH_01'].shape
     print mvisr.ir_coeff_k1['CH_01'].shape
     print mvisr.Time
+    print mvisr.BB['CH_01'].shape
