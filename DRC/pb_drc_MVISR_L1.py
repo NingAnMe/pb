@@ -10,13 +10,13 @@ import numpy as np
 from pyhdf.SD import SD, SDC
 
 
-class Fy1CdL1(object):
+class CLASS_MVISR_L1(object):
 
     def __init__(self):
 
         # 定标使用
         self.sat = 'FY1C'
-        self.sensor = 'VIRR'
+        self.sensor = 'MVISR'
         self.res = 1100
         self.Band = 4
         self.obrit_direction = []
@@ -40,7 +40,8 @@ class Fy1CdL1(object):
         self.LandCover = []
 
         # 新添加
-        self.CalibrationCoeff = {}
+        self.ir_coeff_k0 = {}
+        self.ir_coeff_k1 = {}
         self.RelativeAzimuth = []
 
         # 其他程序使用
@@ -106,12 +107,14 @@ class Fy1CdL1(object):
         self.sunZenith = self.extend_matrix_2d(solar_zenith_dataset, 51, cols_data)
         self.RelativeAzimuth = self.extend_matrix_2d(relative_azimuth, 51, cols_data)
 
-        for i in xrange(4):
+        for i in xrange(self.Band):
             channel_name = 'CH_{:02d}'.format(i + 1)
             self.DN[channel_name] = dn_dataset[i, :]
             self.SV[channel_name] = self.extend_matrix_2d(sv_dataset[i, :], 10, cols_data)
-            self.CalibrationCoeff[channel_name] = self.extend_matrix_2d(
-                coeff_dataset[:, (i * 2):((i + 1) * 2)], 2, cols_data)
+            k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i + 1])
+            k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i])
+            self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_data)
+            self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_data)
 
         # except Exception as why:
         #     print why
@@ -126,7 +129,7 @@ class Fy1CdL1(object):
         for msec in msec_dataset:
             timestamp = self.year_days_msec_to_timestamp(year, day, msec)
             time.append(timestamp)
-        time = np.array(time).reshape(len(time), -1)
+        time = self.change_1d_to_2d(time)
         return time
 
     @staticmethod
@@ -147,8 +150,14 @@ class Fy1CdL1(object):
         return timestamp
 
     @staticmethod
+    def change_1d_to_2d(data):
+        return np.array(data).reshape(len(data), -1)
+
+
+    @staticmethod
     def extend_matrix_2d(data, cols_data, cols_count):
         """
+        传入的数据必须是 2 维
         原数据每一列按一定比例扩展到多少列
         :param data:
         :param cols_data:
@@ -171,5 +180,8 @@ class Fy1CdL1(object):
 
 if __name__ == '__main__':
     in_file = r'E:\projects\six_sv\FY1C_L1_GDPT_20000118_1505.HDF'
-    fy1_cd = Fy1CdL1()
-    fy1_cd.Load(in_file)
+    mvisr = CLASS_MVISR_L1()
+    mvisr.Load(in_file)
+    print mvisr.ir_coeff_k0['CH_01'].shape
+    print mvisr.ir_coeff_k1['CH_01'].shape
+    print mvisr.Time
