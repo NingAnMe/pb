@@ -6,13 +6,14 @@
 """
 from datetime import datetime, timedelta
 
-import sys
+# import sys
 from pyhdf.SD import SD, SDC
 
 import numpy as np
 
-from PB.pb_time import time_block
-from DV.dv_map import dv_map
+# from PB.pb_time import time_block
+# from DV.dv_map import dv_map
+
 
 class CLASS_MVISR_L1(object):
 
@@ -235,7 +236,7 @@ if __name__ == '__main__':
     print mvisr.Lats.shape
     print mvisr.Lons.shape
 
-    p = dv_map()
-    p.easyplot(mvisr.Lats, mvisr.Lons, mvisr.satZenith,
-               ptype=None, markersize=0.1, marker='o')
-    p.savefig('test0.png')
+    # p = dv_map()
+    # p.easyplot(mvisr.Lats, mvisr.Lons, mvisr.satZenith,
+    #            ptype=None, markersize=0.1, marker='o')
+    # p.savefig('test0.png')
