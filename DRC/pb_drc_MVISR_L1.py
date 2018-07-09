@@ -6,10 +6,13 @@
 """
 from datetime import datetime, timedelta
 
+import sys
 from pyhdf.SD import SD, SDC
 
 import numpy as np
 
+from PB.pb_time import time_block
+from DV.dv_map import dv_map
 
 class CLASS_MVISR_L1(object):
 
@@ -104,7 +107,7 @@ class CLASS_MVISR_L1(object):
 
         cols_data = 1018
         self.Time = self.extend_matrix_2d(time, 1, cols_data)
-        self.Lons = self.extend_matrix_2d(longitude_dataset, 51, cols_data)
+        self.Lons = self.interpolate_lat_lon(longitude_dataset, 51, cols_data)
         self.Lats = self.extend_matrix_2d(latitude_dataset, 51, cols_data)
         self.satZenith = self.extend_matrix_2d(sensor_zenith_dataset, 51, cols_data)
         self.sunZenith = self.extend_matrix_2d(solar_zenith_dataset, 51, cols_data)
@@ -158,6 +161,46 @@ class CLASS_MVISR_L1(object):
         return np.array(data).reshape(len(data), -1)
 
     @staticmethod
+    def interpolate_lat_lon(data, cols_data, cols_count):
+        """
+        传入的数据必须是 2 维
+        原数据每两列按线性比例插值
+        :param data: 2D [[]]
+        :param cols_data: int
+        :param cols_count: int
+        :return: 2D [[]]
+        """
+        if cols_data == 1:
+            data_one = data[:].reshape(len(data), -1)
+            data_extend = np.tile(data_one, cols_count)
+        else:
+            data_extend = None
+            times = int(np.ceil(float(cols_count) / cols_data))
+            for col_data in xrange(int(cols_data) - 1):
+                data_times = None
+                data_one = data[:, col_data]
+                data_next = data[:, col_data + 1]
+                if col_data < (int(cols_data) - 2):
+                    times = times
+                else:
+                    times = cols_count - data_extend.shape[1]
+                for row_data, value_one in enumerate(data_one):
+                    data_inter = np.linspace(data_one[row_data], data_next[row_data], times)
+                    data_inter = data_inter.reshape(1, -1)
+                    if data_times is None:
+                        data_times = data_inter
+                    else:
+                        data_times = np.concatenate((data_times, data_inter), axis=0)
+                if data_extend is None:
+                    data_extend = data_times
+                else:
+                    data_extend = np.concatenate((data_extend, data_times), axis=1)
+
+            if data_extend is not None:
+                data_extend = data_extend[:, :cols_count]
+        return data_extend
+
+    @staticmethod
     def extend_matrix_2d(data, cols_data, cols_count):
         """
         传入的数据必须是 2 维
@@ -178,14 +221,21 @@ class CLASS_MVISR_L1(object):
                 data_extend = np.concatenate((data_extend, data_times), axis=1)
         if data_extend is not None:
             data_extend = data_extend[:, :cols_count]
-        return data_extend
+        return np.array(data_extend)
 
 
 if __name__ == '__main__':
-    in_file = r'E:\projects\six_sv\FY1C_L1_GDPT_20000118_1505.HDF'
+    in_file = r'E:\projects\six_sv\FY1C_L1_GDPT_20000205_0707.HDF'
     mvisr = CLASS_MVISR_L1()
     mvisr.Load(in_file)
     print mvisr.ir_coeff_k0['CH_01'].shape
     print mvisr.ir_coeff_k1['CH_01'].shape
     print mvisr.Time
     print mvisr.BB['CH_01'].shape
+    print mvisr.Lats.shape
+    print mvisr.Lons.shape
+
+    p = dv_map()
+    p.easyplot(mvisr.Lats, mvisr.Lons, mvisr.satZenith,
+               ptype=None, markersize=0.1, marker='o')
+    p.savefig('test0.png')
