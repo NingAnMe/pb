@@ -371,6 +371,37 @@ def str_format(string, values):
         string = string.replace("%" + str(k), str(v))
     return string
 
+
+def get_files_by_ymd(dir_path, ymd_start, ymd_end, ext=None, pattern_ymd=None):
+    """
+    :param dir_path: 文件夹
+    :param ymd_start: 开始时间
+    :param ymd_end: 结束时间
+    :param ext: 后缀名
+    :param pattern_ymd: 匹配时间的模式
+    :return: list
+    """
+    files_found = []
+    if pattern_ymd is not None:
+        pattern = pattern_ymd
+    else:
+        pattern = r".*(\d{8})"
+
+    for root, dirs, files in os.walk(dir_path):
+        for file_name in files:
+            if ext is not None:
+                if os.path.splitext(file_name)[1].lower() != ext:
+                    continue
+            re_result = re.match(pattern, file_name)
+            if re_result is not None:
+                ymd_file = re_result.groups()[0]
+            else:
+                continue
+            if int(ymd_start) <= int(ymd_file) <= int(ymd_end):
+                files_found.append(os.path.join(root, file_name))
+    return files_found
+
+
 if __name__ == '__main__':
     pass
 
