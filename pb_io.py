@@ -372,13 +372,13 @@ def str_format(string, values):
     return string
 
 
-def get_files_by_ymd(dir_path, ymd_start, ymd_end, ext=None, pattern_ymd=None):
+def get_files_by_ymd(dir_path, time_start, time_end, ext=None, pattern_ymd=None):
     """
     :param dir_path: 文件夹
-    :param ymd_start: 开始时间
-    :param ymd_end: 结束时间
-    :param ext: 后缀名
-    :param pattern_ymd: 匹配时间的模式
+    :param time_start: 开始时间
+    :param time_end: 结束时间
+    :param ext: 后缀名, '.hdf5'
+    :param pattern_ymd: 匹配时间的模式, 可以是 r".*(\d{8})_(\d{4})_"
     :return: list
     """
     files_found = []
@@ -390,14 +390,16 @@ def get_files_by_ymd(dir_path, ymd_start, ymd_end, ext=None, pattern_ymd=None):
     for root, dirs, files in os.walk(dir_path):
         for file_name in files:
             if ext is not None:
-                if os.path.splitext(file_name)[1].lower() != ext:
+                if '.' not in ext:
+                    ext = '.' + ext
+                if os.path.splitext(file_name)[1].lower() != ext.lower():
                     continue
             re_result = re.match(pattern, file_name)
             if re_result is not None:
-                ymd_file = re_result.groups()[0]
+                time_file = ''.join(re_result.groups())
             else:
                 continue
-            if int(ymd_start) <= int(ymd_file) <= int(ymd_end):
+            if int(time_start) <= int(time_file) <= int(time_end):
                 files_found.append(os.path.join(root, file_name))
     return files_found
 
