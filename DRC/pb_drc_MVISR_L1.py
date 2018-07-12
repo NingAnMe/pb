@@ -6,13 +6,13 @@
 """
 from datetime import datetime, timedelta
 
-# import sys
 from pyhdf.SD import SD, SDC
 
 import numpy as np
 
 from PB.pb_time import time_block
-# from DV.dv_map import dv_map
+from DV.dv_map import dv_map
+from congrid import congrid
 
 
 class CLASS_MVISR_L1(object):
@@ -73,7 +73,7 @@ class CLASS_MVISR_L1(object):
 
         dn_dataset = hdf4.select('Earth_View')[:]
         sv_dataset = hdf4.select('Space_View')[:]
-        # bb_dataset = hdf4.select('Black_Body_View')[:]
+        bb_dataset = hdf4.select('Black_Body_View')[:]
 
         sensor_zenith_dataset = hdf4.select('Sensor_Zenith')[:]
         solar_zenith_dataset = hdf4.select('Solar_Zenith')[:]
@@ -93,7 +93,7 @@ class CLASS_MVISR_L1(object):
 
         dn_dataset = dn_dataset[:, idx_vaild, :]
         sv_dataset = sv_dataset[:, idx_vaild, :]
-        # bb_dataset = bb_dataset[:, idx_vaild, :]
+        bb_dataset = bb_dataset[:, idx_vaild, :]
 
         sensor_zenith_dataset = sensor_zenith_dataset[idx_vaild, :]
         solar_zenith_dataset = solar_zenith_dataset[idx_vaild, :]
@@ -106,24 +106,43 @@ class CLASS_MVISR_L1(object):
 
         time = self.create_time(year, day, msec_dataset)  # （x,）
 
-        cols_data = 1018
-        self.Time = self.interpolate_lat_lon(time, 1, cols_data)
-        self.Lons = self.interpolate_lat_lon(longitude_dataset, 51, cols_data)
-        self.Lats = self.interpolate_lat_lon(latitude_dataset, 51, cols_data)
-        self.satZenith = self.interpolate_lat_lon(sensor_zenith_dataset, 51, cols_data)
-        self.sunZenith = self.interpolate_lat_lon(solar_zenith_dataset, 51, cols_data)
-        self.RelativeAzimuth = self.interpolate_lat_lon(relative_azimuth, 51, cols_data)
+        shape = dn_dataset[0].shape
+        cols_data = dn_dataset[0].shape[1]
+
+        # self.Time = self.extend_matrix_2d(time, 1, cols_data)
+        # self.Lons = self.interpolate_lat_lon(longitude_dataset, 51, cols_data)
+        # self.Lats = self.interpolate_lat_lon(latitude_dataset, 51, cols_data)
+        # self.satZenith = self.extend_matrix_2d(sensor_zenith_dataset, 51, cols_data)
+        # self.sunZenith = self.extend_matrix_2d(solar_zenith_dataset, 51, cols_data)
+        # self.RelativeAzimuth = self.extend_matrix_2d(relative_azimuth, 51, cols_data)
+        #
+        # for i in xrange(self.Band):
+        #     channel_name = 'CH_{:02d}'.format(i + 1)
+        #     self.Dn[channel_name] = dn_dataset[i, :]
+        #     self.SV[channel_name] = self.extend_matrix_2d(sv_dataset[i, :], 10, cols_data)
+        #     self.BB[channel_name] = self.extend_matrix_2d(bb_dataset[i, :], 6, cols_data)
+        #     k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i + 1])
+        #     k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i])
+        #     self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_data)
+        #     self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_data)
+
+        self.Time = self.extend_matrix_2d(time, 1, cols_data)
+        self.Lats = congrid(latitude_dataset, shape, method='spline')
+        self.Lons = congrid(longitude_dataset, shape, method='spline')
+        self.satZenith = congrid(sensor_zenith_dataset, shape, method='spline')
+        self.sunZenith = congrid(solar_zenith_dataset, shape, method='spline')
+        self.RelativeAzimuth = congrid(relative_azimuth, shape, method='spline')
 
         for i in xrange(self.Band):
             channel_name = 'CH_{:02d}'.format(i + 1)
             self.Dn[channel_name] = dn_dataset[i, :]
-            self.SV[channel_name] = self.interpolate_lat_lon(sv_dataset[i, :], 10, cols_data)
-            # self.BB[channel_name] = self.interpolate_lat_lon(bb_dataset[i, :], 6, cols_data)
+            self.SV[channel_name] = congrid(sv_dataset[i, :], shape, method='spline')
+            self.BB[channel_name] = congrid(bb_dataset[i, :], shape, method='spline')
+
             k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i + 1])
             k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i])
-            self.ir_coeff_k0[channel_name] = self.interpolate_lat_lon(k0_dataset, 1, cols_data)
-            self.ir_coeff_k1[channel_name] = self.interpolate_lat_lon(k1_dataset, 1, cols_data)
-
+            self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_data)
+            self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_data)
         # except Exception as why:
         #     print why
         # finally:
@@ -235,8 +254,16 @@ if __name__ == '__main__':
         print mvisr.Time.shape
         print mvisr.Lats.shape
         print mvisr.Lons.shape
+    lat_0 = 28.550000
+    lon_0 = 23.390000
+    lat_max = lat_0 + 3
+    lat_min = lat_0 - 3
+    lon_max = lon_0 + 3
+    lon_min = lon_0 - 3
 
-    # p = dv_map()
-    # p.easyplot(mvisr.Lats, mvisr.Lons, mvisr.satZenith,
-    #            ptype=None, markersize=0.1, marker='o')
-    # p.savefig('test0.png')
+    box = [lat_max, lat_min, lon_min, lon_max]
+    # box = [60, 10, 70, 150]
+    p = dv_map()
+    p.easyplot(mvisr.Lats, mvisr.Lons, mvisr.Dn['CH_01'], vmin=None, vmax=None,
+               ptype=None, markersize=0.1, marker='o', box=box)
+    p.savefig('test070701_01.png')
