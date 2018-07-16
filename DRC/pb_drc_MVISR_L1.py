@@ -139,8 +139,8 @@ class CLASS_MVISR_L1(object):
             self.SV[channel_name] = congrid(sv_dataset[i, :], shape, method='spline')
             self.BB[channel_name] = congrid(bb_dataset[i, :], shape, method='spline')
 
-            k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i + 1])
-            k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i])
+            k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i * 2 + 1])
+            k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i * 2])
             self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_data)
             self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_data)
         # except Exception as why:
