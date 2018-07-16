@@ -114,8 +114,6 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
         newcoords_tr -= ofs
 
         newa = scipy.ndimage.map_coordinates(a, newcoords)
-        print a
-        print newcoords
         return newa
     else:
         print "Congrid error: Unrecognized interpolation type.\n", \
