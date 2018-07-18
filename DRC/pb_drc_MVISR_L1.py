@@ -23,7 +23,7 @@ class CLASS_MVISR_L1(object):
         self.sat = 'FY1C'
         self.sensor = 'MVISR'
         self.res = 1100
-        self.Band = 4
+        self.Band = None
         self.obrit_direction = []
         self.obrit_num = []
 
@@ -66,6 +66,8 @@ class CLASS_MVISR_L1(object):
 
     def Load(self, in_file):
         hdf4 = SD(in_file, SDC.READ)
+        self.Band = hdf4.select('Earth_View').shape[0]
+
         # try:
         year_dataset = hdf4.select('Year_Count')[:]
         msec_dataset = hdf4.select('Msec_Count')[:]
