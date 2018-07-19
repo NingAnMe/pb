@@ -66,7 +66,7 @@ class CLASS_MVISR_L1(object):
 
     def Load(self, in_file):
         hdf4 = SD(in_file, SDC.READ)
-        self.Band = hdf4.select('Earth_View').shape[0]
+        self.Band = hdf4.select('Earth_View')[:].shape[0]
 
         # try:
         year_dataset = hdf4.select('Year_Count')[:]
@@ -145,6 +145,7 @@ class CLASS_MVISR_L1(object):
             k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i * 2])
             self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_data)
             self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_data)
+        hdf4.end()
         # except Exception as why:
         #     print why
         # finally:
@@ -248,7 +249,7 @@ class CLASS_MVISR_L1(object):
 
 if __name__ == '__main__':
     with time_block('all'):
-        in_file = r'E:\projects\six_sv_data\FY1C_L1_GDPT_20000205_0707.HDF'
+        in_file = r'E:\projects\six_sv_data\FY1D_L1_GDPT_20020518_1458.HDF'
         mvisr = CLASS_MVISR_L1()
         mvisr.Load(in_file)
         print mvisr.ir_coeff_k0['CH_01'].shape
