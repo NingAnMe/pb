@@ -401,6 +401,7 @@ def get_files_by_ymd(dir_path, time_start, time_end, ext=None, pattern_ymd=None)
                 continue
             if int(time_start) <= int(time_file) <= int(time_end):
                 files_found.append(os.path.join(root, file_name))
+    files_found.sort()
     return files_found
 
 
