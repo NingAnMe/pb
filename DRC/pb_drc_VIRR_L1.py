@@ -1,10 +1,10 @@
 # coding: utf-8
-
-'''
+"""
 Created on 2017年9月7日
 
 @author: wangpeng
-'''
+@modify: anning 2018-07-30
+"""
 
 from datetime import datetime
 import os
@@ -35,22 +35,27 @@ class CLASS_VIRR_L1():
         self.Rad = {}
         self.Tbb = {}
 
+        self.SV = {}
+        self.BB = {}
+        self.Height = []
         self.satAzimuth = []
         self.satZenith = []
         self.sunAzimuth = []
         self.sunZenith = []
+        self.relaAzimuth = []
+        self.relaZenith = []
+        self.LandSeaMask = []
+        self.LandCover = []
         self.Lons = []
         self.Lats = []
         self.Time = []
-        self.SV = {}
-        self.BB = {}
-        self.LandSeaMask = []
-        self.LandCover = []
 
         # 其他程序使用
         self.LutFile = []
         self.IR_Coeff = []
         self.VIS_Coeff = []
+        self.Rad_non = {}
+        self.Tbb_coeff = {}
 
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
         self.WN = {'CH_03': 2673.796, 'CH_04': 925.925, 'CH_05': 833.333}
@@ -77,45 +82,39 @@ class CLASS_VIRR_L1():
 
             #################### 读取L1文件 ######################
             try:
-                h5File_R = h5py.File(L1File, 'r')
-                ary_ch3 = h5File_R.get('/Data/EV_Emissive')[:]
-                ary_ch7 = h5File_R.get('/Data/EV_RefSB')[:]
-                ary_offsets = h5File_R.get(
-                    '/Data/Emissive_Radiance_Offsets')[:]
-                ary_scales = h5File_R.get('/Data/Emissive_Radiance_Scales')[:]
-                ary_ref_cal = h5File_R.attrs['RefSB_Cal_Coefficients']
-                ary_Nonlinear = h5File_R.attrs[
-                    'Prelaunch_Nonlinear_Coefficients']
-
+                with h5py.File(L1File, 'r') as h5File_R:
+                    ary_ch3 = h5File_R.get('/Data/EV_Emissive')[:]
+                    ary_ch7 = h5File_R.get('/Data/EV_RefSB')[:]
+                    ary_offsets = h5File_R.get(
+                        '/Data/Emissive_Radiance_Offsets')[:]
+                    ary_scales = h5File_R.get('/Data/Emissive_Radiance_Scales')[:]
+                    ary_ref_cal = h5File_R.attrs['RefSB_Cal_Coefficients']
+                    ary_Nonlinear = h5File_R.attrs[
+                        'Prelaunch_Nonlinear_Coefficients']
+                    ary_tb_coeff = h5File_R.attrs['Prelaunch_Nonlinear_Coefficients']
             except Exception as e:
                 print str(e)
                 return
-
-            finally:
-                h5File_R.close()
             #################### 读取GEO文件 ######################
             try:
-                h5File_R = h5py.File(geoFile, 'r')
-                ary_satz = h5File_R.get('/Geolocation/SensorZenith')[:]
-                ary_sata = h5File_R.get('/Geolocation/SensorAzimuth')[:]
-                ary_sunz = h5File_R.get('/Geolocation/SolarZenith')[:]
-                ary_suna = h5File_R.get('/Geolocation/SolarAzimuth')[:]
-                ary_lon = h5File_R.get('/Geolocation/Longitude')[:]
-                ary_lat = h5File_R.get('/Geolocation/Latitude')[:]
-                ary_LandCover = h5File_R.get('/Geolocation/LandCover')[:]
-                ary_LandSeaMask = h5File_R.get('/Geolocation/LandSeaMask')[:]
+                with h5py.File(geoFile, 'r') as h5File_R:
+                    ary_satz = h5File_R.get('/Geolocation/SensorZenith')[:]
+                    ary_sata = h5File_R.get('/Geolocation/SensorAzimuth')[:]
+                    ary_sunz = h5File_R.get('/Geolocation/SolarZenith')[:]
+                    ary_suna = h5File_R.get('/Geolocation/SolarAzimuth')[:]
+                    ary_lon = h5File_R.get('/Geolocation/Longitude')[:]
+                    ary_lat = h5File_R.get('/Geolocation/Latitude')[:]
+                    ary_LandCover = h5File_R.get('/Geolocation/LandCover')[:]
+                    ary_LandSeaMask = h5File_R.get('/Geolocation/LandSeaMask')[:]
             except Exception as e:
                 print str(e)
-            finally:
-                h5File_R.close()
             #################### 读取OBC文件 ####################
             try:
-                h5File_R = h5py.File(obcFile, 'r')
-                ary_sv = h5File_R.get('/Calibration/Space_View')[:]
+                with h5py.File(obcFile, 'r') as h5File_R:
+                    ary_sv = h5File_R.get('/Calibration/Space_View')[:]
             except Exception as e:
                 print str(e)
-            finally:
-                h5File_R.close()
+                return
 
         else:
             # FY3A/FY3B VIRR
@@ -123,34 +122,32 @@ class CLASS_VIRR_L1():
             obcFile = os.path.join(ipath, iname[0:-12] + 'OBCXX_MS.HDF')
             #################### 读取L1文件 ####################
             try:
-                h5File_R = h5py.File(L1File, 'r')
-                ary_ch3 = h5File_R.get('/EV_Emissive')[:]
-                ary_ch7 = h5File_R.get('/EV_RefSB')[:]
-                ary_offsets = h5File_R.get('/Emissive_Radiance_Offsets')[:]
-                ary_scales = h5File_R.get('/Emissive_Radiance_Scales')[:]
-                ary_ref_cal = h5File_R.attrs['RefSB_Cal_Coefficients']
-                ary_Nonlinear = h5File_R.attrs[
-                    'Prelaunch_Nonlinear_Coefficients']
-                ary_satz = h5File_R.get('/SensorZenith')[:]
-                ary_sata = h5File_R.get('/SensorAzimuth')[:]
-                ary_sunz = h5File_R.get('/SolarZenith')[:]
-                ary_suna = h5File_R.get('/SolarAzimuth')[:]
-                ary_lon = h5File_R.get('/Longitude')[:]
-                ary_lat = h5File_R.get('/Latitude')[:]
-                ary_LandCover = h5File_R.get('/LandCover')[:]
-                ary_LandSeaMask = h5File_R.get('/LandSeaMask')[:]
+                with h5py.File(L1File, 'r') as h5File_R:
+                    ary_ch3 = h5File_R.get('/EV_Emissive')[:]
+                    ary_ch7 = h5File_R.get('/EV_RefSB')[:]
+                    ary_offsets = h5File_R.get('/Emissive_Radiance_Offsets')[:]
+                    ary_scales = h5File_R.get('/Emissive_Radiance_Scales')[:]
+                    ary_ref_cal = h5File_R.attrs['RefSB_Cal_Coefficients']
+                    ary_Nonlinear = h5File_R.attrs['Prelaunch_Nonlinear_Coefficients']
+                    ary_tb_coeff = h5File_R.attrs['Prelaunch_Nonlinear_Coefficients']
+                    ary_satz = h5File_R.get('/SensorZenith')[:]
+                    ary_sata = h5File_R.get('/SensorAzimuth')[:]
+                    ary_sunz = h5File_R.get('/SolarZenith')[:]
+                    ary_suna = h5File_R.get('/SolarAzimuth')[:]
+                    ary_lon = h5File_R.get('/Longitude')[:]
+                    ary_lat = h5File_R.get('/Latitude')[:]
+                    ary_LandCover = h5File_R.get('/LandCover')[:]
+                    ary_LandSeaMask = h5File_R.get('/LandSeaMask')[:]
             except Exception as e:
                 print str(e)
-            finally:
-                h5File_R.close()
+                return
             #################### 读取OBC文件 ####################
             try:
-                h5File_R = h5py.File(obcFile, 'r')
-                ary_sv = h5File_R.get('Space_View')[:]
+                with h5py.File(obcFile, 'r') as h5File_R:
+                    ary_sv = h5File_R.get('Space_View')[:]
             except Exception as e:
                 print (str(e))
-            finally:
-                h5File_R.close()
+                return
 
         # 通道的中心波数和光谱响应
         for i in xrange(self.Band):
@@ -198,11 +195,10 @@ class CLASS_VIRR_L1():
                 Ref = (DN * proj_Cal_Coeff[k][1] + proj_Cal_Coeff[k][0]) / 100.
                 self.Ref[BandName] = Ref
 
-            if i >= 2 and i <= 4:
+            if 2 <= i <= 4:
                 # DN Rad Tbb 值存放,默认 nan填充
                 DN = np.full(dshape, np.nan)
                 Rad = np.full(dshape, np.nan)
-                Tbb = np.full(dshape, np.nan)
 
                 condition = np.logical_and(ary_ch3[k] < 32767, ary_ch3[k] > 0)
                 idx = np.where(condition)
@@ -213,15 +209,20 @@ class CLASS_VIRR_L1():
 
                 Rad[idx] = DN[idx] * ary_scales[idx[0], k] + \
                     ary_offsets[idx[0], k]
-                k0 = ary_Nonlinear[3 * k]
-                k1 = ary_Nonlinear[3 * k + 1] + 1
-                k2 = ary_Nonlinear[3 * k + 2]
-                Rad = Rad ** 2 * k2 + Rad * k1 + k0
-                self.Rad[BandName] = Rad
+                k0 = ary_Nonlinear[k]
+                k1 = ary_Nonlinear[3 + k]
+                k2 = ary_Nonlinear[6 + k]
+                Rad_nonlinearity = Rad ** 2 * k2 + Rad * k1 + k0
+                self.Rad_non[BandName] = Rad_nonlinearity
+                self.Rad[BandName] = Rad + Rad_nonlinearity
 
                 Tbb = pb_sat.planck_r2t(
                     Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
                 self.Tbb[BandName] = Tbb
+                k0 = ary_tb_coeff[k * 2 + 1]
+                k1 = ary_tb_coeff[k * 2]
+                Tbb_coeff = Tbb * k0 + k1
+                self.Tbb_coeff[BandName] = Tbb_coeff
 
                 # 亮温存放无效值用nan填充
 #                 Tbb = np.full(ary_lon.shape, np.nan)
@@ -247,13 +248,6 @@ class CLASS_VIRR_L1():
             BB = np.full(dshape, np.nan)
             for j in xrange(dshape[0]):
                 SV[j, :] = ary_sv[i, j, 0]
-                # virr 没有BB
-#                 BB[j, :] = ary_bb[i][j / 10]
-
-#             SV = np.ma.masked_where(SV < 0, SV)
-#             BB = np.ma.masked_where(BB < 0, BB)
-#             np.ma.filled(SV, np.nan)
-#             np.ma.filled(BB, np.nan)
 
             if BandName not in self.SV.keys():
                 self.SV[BandName] = SV
@@ -342,13 +336,19 @@ class CLASS_VIRR_L1():
             self.sunZenith = np.concatenate(
                 (self.sunZenith, ary_sunz_idx / 100.))
 
+
 if __name__ == '__main__':
     T1 = datetime.now()
 
-    L1File = 'D:/data/FY3C_VIRR/FY3C_VIRRX_GBAL_L1_20180404_0850_1000M_MS.HDF'
+    L1File = r'D:\nsmc\fix_data\FY3ABC\FY3C_VIRRX_GBAL_L1_20150101_0030_1000M_MS.HDF'
     virr = CLASS_VIRR_L1()
-    virr.LutFile = 'C:\E\py_src\pysrc\OM\FY-3\exe\linux\FY3C-VIRR-LUT-TB-RB.txt'
     virr.Load(L1File)
     T2 = datetime.now()
-    print 'times:', (T2 - T1).total_seconds()
-    print virr.Rad['CH_03'][1000, 1000]
+    print np.nanmean(virr.Rad['CH_03'])
+    print np.nanstd(virr.Rad['CH_03'])
+    print np.nanmax(virr.Rad['CH_03'])
+    print np.nanmin(virr.Rad['CH_03'])
+    print np.nanmean(virr.Rad_non['CH_03'])
+    print np.nanstd(virr.Rad_non['CH_03'])
+    print np.nanmax(virr.Rad_non['CH_03'])
+    print np.nanmin(virr.Rad_non['CH_03'])
