@@ -405,14 +405,17 @@ class CLASS_VIRR_L1(ReadHDF5):
             if channel_name in self.Tbb_coeff:
                 self.extract_data[channel_name]['TBB_COEFF'] = self.Tbb_coeff[channel_name]
 
+        self.extract_data['Longitude'] = self.Lons
+        self.extract_data['Latitude'] = self.Lats
+        self.extract_data['Height'] = self.Height
+        self.extract_data['LandSeaMask'] = self.LandSeaMask
+        self.extract_data['LandCover'] = self.LandCover
+
         self.extract_data['SensorAzimuth'] = self.satAzimuth
         self.extract_data['SensorZenith'] = self.satZenith
         self.extract_data['SolarAzimuth'] = self.sunAzimuth
         self.extract_data['SolarZenith'] = self.sunZenith
 
-        self.extract_data['Height'] = self.Height
-        self.extract_data['LandSeaMask'] = self.LandSeaMask
-        self.extract_data['LandCover'] = self.LandCover
         self.extract_data['Time'] = self.Time
 
 
