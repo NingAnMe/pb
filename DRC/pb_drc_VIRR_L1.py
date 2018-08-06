@@ -60,8 +60,8 @@ class CLASS_VIRR_L1(ReadHDF5):
         self.Rad_pre = {}  # 非线性系数修正前的Rad
         self.nonlinear = None
         self.rad_nonlinear = {}
-        self.Scales = {}
-        self.Offsets = {}
+        self.K0 = {}
+        self.K1 = {}
         self.Tbb_coeff = {}  # 定标系数修正后的TBB
         self.tb_coeff = None  # 不输出
         self.tbb_coeff = {}  # 不输出
@@ -132,6 +132,7 @@ class CLASS_VIRR_L1(ReadHDF5):
             try:
                 with h5py.File(obcFile, 'r') as h5File_R:
                     ary_sv = h5File_R.get('/Calibration/Space_View')[:]
+                    ary_bb = h5File_R.get('/Calibration/Blackbody_View')[:]
             except Exception as e:
                 self.error = True
                 print str(e)
@@ -173,6 +174,7 @@ class CLASS_VIRR_L1(ReadHDF5):
             try:
                 with h5py.File(obcFile, 'r') as h5File_R:
                     ary_sv = h5File_R.get('Space_View')[:]
+                    ary_bb = h5File_R.get('Blackbody_View')[:]
             except Exception as e:
                 self.error = True
                 print (str(e))
@@ -221,8 +223,15 @@ class CLASS_VIRR_L1(ReadHDF5):
                 self.Dn[BandName] = DN
 
                 # 反射率值存放无效值用nan填充
-                Ref = (DN * proj_Cal_Coeff[k][1] + proj_Cal_Coeff[k][0]) / 100.
+                k0 = proj_Cal_Coeff[k][1]
+                k1 = proj_Cal_Coeff[k][0]
+                Ref = (DN * k0 + k1) / 100.
                 self.Ref[BandName] = Ref
+
+                self.K0[BandName] = np.full(dshape, np.nan)
+                self.K0[BandName][:] = k0
+                self.K1[BandName] = np.full(dshape, np.nan)
+                self.K1[BandName][:] = k1
 
             if 2 <= i <= 4:
                 # DN Rad Tbb 值存放,默认 nan填充
@@ -247,10 +256,10 @@ class CLASS_VIRR_L1(ReadHDF5):
                 self.rad_nonlinear[BandName] = (k0, k1, k2, 0)
                 Rad_nonlinearity = Rad ** 2 * k2 + Rad * k1 + k0
 
-                self.Scales[BandName] = np.full((dshape[0], 1), np.nan)
-                self.Scales[BandName][idx[0], 0] = ary_scales[idx[0], k]
-                self.Offsets[BandName] = np.full((dshape[0], 1), np.nan)
-                self.Offsets[BandName][idx[0], 0] = ary_offsets[idx[0], k]
+                self.K0[BandName] = np.full(dshape, np.nan)
+                self.K0[BandName][:] = ary_scales[:, k].reshape(-1, 1)
+                self.K1[BandName] = np.full(dshape, np.nan)
+                self.K1[BandName][:] = ary_offsets[:, k].reshape(-1, 1)
 
                 self.Rad_pre[BandName] = Rad
                 self.Rad[BandName] = Rad + Rad_nonlinearity
@@ -271,6 +280,7 @@ class CLASS_VIRR_L1(ReadHDF5):
             SV = np.full(dshape, np.nan)
             BB = np.full(dshape, np.nan)
             SV[:] = ary_sv[i, :, 0].reshape(-1, 1)
+            BB[:] = ary_bb[i, :, 0].reshape(-1, 1)
 
             if BandName not in self.SV:
                 self.SV[BandName] = SV
@@ -395,15 +405,21 @@ class CLASS_VIRR_L1(ReadHDF5):
             if channel_name in self.Ref:
                 self.extract_data[channel_name]['REF'] = self.Ref[channel_name]
             if channel_name in self.Rad:
-                self.extract_data[channel_name]['RAD'] = self.Rad[channel_name]
+                self.extract_data[channel_name]['RAD_NON'] = self.Rad[channel_name]
             if channel_name in self.Tbb:
                 self.extract_data[channel_name]['TBB'] = self.Tbb[channel_name]
             if channel_name in self.SV:
                 self.extract_data[channel_name]['SV'] = self.SV[channel_name]
+            if channel_name in self.BB:
+                self.extract_data[channel_name]['BB'] = self.BB[channel_name]
             if channel_name in self.Rad_pre:
                 self.extract_data[channel_name]['RAD_PRE'] = self.Rad_pre[channel_name]
             if channel_name in self.Tbb_coeff:
                 self.extract_data[channel_name]['TBB_COEFF'] = self.Tbb_coeff[channel_name]
+            if channel_name in self.K0:
+                self.extract_data[channel_name]['K0'] = self.K0[channel_name]
+            if channel_name in self.K1:
+                self.extract_data[channel_name]['K1'] = self.K1[channel_name]
 
         self.extract_data['Longitude'] = self.Lons
         self.extract_data['Latitude'] = self.Lats
@@ -428,6 +444,8 @@ if __name__ == '__main__':
     T2 = datetime.now()
     print (T2-T1).total_seconds()
 
+    for k, v in  virr.file_attr.items():
+        print k, v
 
     def print_stats(data):
         print 'mean: ', np.nanmean(data)
@@ -456,3 +474,7 @@ if __name__ == '__main__':
         print virr.tbb_coeff[g_channel_name]
         print 'Tbb_coeff'
         print_stats(virr.Tbb_coeff[g_channel_name])
+        print 'Scales'
+        print_stats(virr.K0[g_channel_name])
+        print 'Offsets'
+        print_stats(virr.K1[g_channel_name])
