@@ -1,9 +1,14 @@
 # coding: utf-8
 """
 Created on 2017年9月7日
-
 @author: wangpeng
+
 @modify: anning 2018-07-30
+1 增加了 Height BB 数据集
+@modify: anning 2018-08-07
+1 Time数据集的填充值改为 np.nan，修改了Time数据的获取方法
+原来的数据获取不准确
+2 增加了 self.extract_data 属性，用于提取
 """
 
 from datetime import datetime
@@ -11,7 +16,7 @@ import os
 
 import h5py
 
-from PB import pb_name, pb_sat
+from PB import pb_sat
 from PB.pb_time import get_ymd, get_hm
 import numpy as np
 from pb_drc_hdf import ReadHDF5
