@@ -12,6 +12,7 @@ import os
 import h5py
 
 from PB import pb_name, pb_sat
+from PB.pb_time import get_ymd, get_hm
 import numpy as np
 from pb_drc_hdf import ReadHDF5
 
@@ -290,10 +291,11 @@ class CLASS_VIRR_L1(ReadHDF5):
                 self.BB[BandName] = np.concatenate((self.BB[BandName], BB))
         ##################### 全局信息赋值 ############################
         # 对时间进行赋值合并
-        Time = np.full(dshape, -999.)
-        nameClass = pb_name.nameClassManager()
-        info = nameClass.getInstance(iname)
-        secs = int((info.dt_s - datetime(1970, 1, 1, 0, 0, 0)).total_seconds())
+        Time = np.full(dshape, np.nan)
+        ymd = get_ymd(L1File)
+        hm = get_hm(L1File)
+        file_date = datetime.strptime(ymd+hm, '%Y%m%d%H%M')
+        secs = (file_date - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()
         Time[:] = secs
         if self.Time == []:
             self.Time = Time
