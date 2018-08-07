@@ -10,7 +10,7 @@ Created on 2017年9月7日
 原来的数据获取不准确
 2 增加了 self.extract_data 属性，用于提取
 """
-
+# TODO 增加每个数据集的获取方法，将Load拆开
 from datetime import datetime
 import os
 
