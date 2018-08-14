@@ -280,7 +280,7 @@ class CLASS_VIRR_L1(ReadHDF5):
                 k1_coeff = ary_tb_coeff[k * 2]
                 Tbb_coeff = Tbb * k0_coeff + k1_coeff
 
-                if BandName in self.Dn:
+                if BandName not in self.Dn:
                     self.Dn[BandName] = DN
                     self.Rad[BandName] = Rad
                     self.K0[BandName] = K0
@@ -481,18 +481,10 @@ if __name__ == '__main__':
 
         print 'Rad_pre'
         print_stats(virr.Rad_pre[g_channel_name])
-        print 'nonlinear'
-        print virr.nonlinear
-        print 'rad nonlinear'
-        print virr.rad_nonlinear[g_channel_name]
         print 'Rad_non'
         print_stats(virr.Rad[g_channel_name])
         print 'Tbb'
         print_stats(virr.Tbb[g_channel_name])
-        print 'coeff'
-        print virr.tb_coeff
-        print 'tbb coeff'
-        print virr.tbb_coeff[g_channel_name]
         print 'Tbb_coeff'
         print_stats(virr.Tbb_coeff[g_channel_name])
         print 'Scales'
