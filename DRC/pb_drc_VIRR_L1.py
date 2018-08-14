@@ -10,7 +10,6 @@ Created on 2017年9月7日
 原来的数据获取不准确
 2 增加了 self.extract_data 属性，用于提取
 """
-# TODO 增加每个数据集的获取方法，将Load拆开
 from datetime import datetime
 import os
 
@@ -45,6 +44,8 @@ class CLASS_VIRR_L1(ReadHDF5):
         self.Tbb = {}
         self.SV = {}
         self.BB = {}
+        self.K0 = {}
+        self.K1 = {}
 
         self.Height = []
         self.satAzimuth = []
@@ -64,13 +65,8 @@ class CLASS_VIRR_L1(ReadHDF5):
         self.IR_Coeff = []
         self.VIS_Coeff = []
         self.Rad_pre = {}  # 非线性系数修正前的Rad
-        self.nonlinear = None
-        self.rad_nonlinear = {}
-        self.K0 = {}
-        self.K1 = {}
         self.Tbb_coeff = {}  # 定标系数修正后的TBB
-        self.tb_coeff = None  # 不输出
-        self.tbb_coeff = {}  # 不输出
+
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
         self.WN = {'CH_03': 2673.796, 'CH_04': 925.925, 'CH_05': 833.333}
         # 红外转tbb的修正系数，固定值
@@ -198,8 +194,12 @@ class CLASS_VIRR_L1(ReadHDF5):
             else:
                 waveNum = 10 ** 7 / dictWave['num'][::-1]
             waveRad = dictWave['rad'][::-1]
-            self.waveNum[BandName] = waveNum
-            self.waveRad[BandName] = waveRad
+            if BandName not in self.waveNum:
+                self.waveNum[BandName] = waveNum
+                self.waveRad[BandName] = waveRad
+            else:
+                self.waveNum[BandName] = np.concatenate((self.waveNum[BandName], waveNum))
+                self.waveRad[BandName] = np.concatenate((self.waveRad[BandName], waveRad))
         ############### 数据大小 使用经度维度 ###############
         dshape = ary_lon.shape
 
@@ -226,60 +226,74 @@ class CLASS_VIRR_L1(ReadHDF5):
                 DN = np.full(dshape, np.nan)
                 idx = np.logical_and(ary_ch7[k] < 32767, ary_ch7[k] > 0)
                 DN[idx] = ary_ch7[k][idx]
-                self.Dn[BandName] = DN
+
 
                 # 反射率值存放无效值用nan填充
                 k0 = proj_Cal_Coeff[k][1]
                 k1 = proj_Cal_Coeff[k][0]
                 Ref = (DN * k0 + k1) / 100.
-                self.Ref[BandName] = Ref
-
-                self.K0[BandName] = np.full(dshape, np.nan)
-                self.K0[BandName][:] = k0
-                self.K1[BandName] = np.full(dshape, np.nan)
-                self.K1[BandName][:] = k1
+                K0 = np.full(dshape, k0, dtype=np.float32)
+                K1 = np.full(dshape, k1, dtype=np.float32)
+                if BandName not in self.Dn:
+                    self.Dn[BandName] = DN
+                    self.Ref[BandName] = Ref
+                    self.K0[BandName] = K0
+                    self.K1[BandName] = K1
+                else:
+                    self.Dn[BandName] = np.concatenate((self.Dn[BandName], DN))
+                    self.Ref[BandName] = np.concatenate((self.Ref[BandName], Ref))
+                    self.K0[BandName] = np.concatenate((self.K0[BandName], K0))
+                    self.K1[BandName] = np.concatenate((self.K1[BandName], K1))
 
             if 2 <= i <= 4:
                 # DN Rad Tbb 值存放,默认 nan填充
                 k = i - 2
 
                 DN = np.full(dshape, np.nan)
-                Rad = np.full(dshape, np.nan)
+                Rad_pre = np.full(dshape, np.nan)
 
                 condition = np.logical_and(ary_ch3[k] < 32767, ary_ch3[k] > 0)
                 idx = np.where(condition)
 
                 # 下标i-2 (3,4,5通道DN存放在一个三维数组中)
                 DN[idx] = ary_ch3[k][idx]
-                self.Dn[BandName] = DN
 
-                Rad[idx] = DN[idx] * ary_scales[idx[0], k] + \
+                Rad_pre[idx] = DN[idx] * ary_scales[idx[0], k] + \
                     ary_offsets[idx[0], k]
                 k0 = ary_Nonlinear[k]
                 k1 = ary_Nonlinear[3 + k]
                 k2 = ary_Nonlinear[6 + k]
-                self.nonlinear = ary_Nonlinear
-                self.rad_nonlinear[BandName] = (k0, k1, k2, 0)
-                Rad_nonlinearity = Rad ** 2 * k2 + Rad * k1 + k0
+                Rad_nonlinearity = Rad_pre ** 2 * k2 + Rad_pre * k1 + k0
 
-                self.K0[BandName] = np.full(dshape, np.nan)
-                self.K0[BandName][:] = ary_scales[:, k].reshape(-1, 1)
-                self.K1[BandName] = np.full(dshape, np.nan)
-                self.K1[BandName][:] = ary_offsets[:, k].reshape(-1, 1)
+                K0 = np.full(dshape, np.nan)
+                K0[:] = ary_scales[:, k].reshape(-1, 1)
+                K1 = np.full(dshape, np.nan)
+                K1[:] = ary_offsets[:, k].reshape(-1, 1)
 
-                self.Rad_pre[BandName] = Rad
-                self.Rad[BandName] = Rad + Rad_nonlinearity
+                self.Rad_pre[BandName] = Rad_pre
+                Rad = Rad_pre + Rad_nonlinearity
 
                 Tbb = pb_sat.planck_r2t(
                     Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
-                self.Tbb[BandName] = Tbb
-                k0 = ary_tb_coeff[k * 2 + 1]
-                k1 = ary_tb_coeff[k * 2]
-                self.tb_coeff = ary_tb_coeff
-                self.tbb_coeff[BandName] = (k0, k1)
-                Tbb_coeff = Tbb * k0 + k1
-                self.Tbb_coeff[BandName] = Tbb_coeff
 
+                k0_coeff = ary_tb_coeff[k * 2 + 1]
+                k1_coeff = ary_tb_coeff[k * 2]
+                Tbb_coeff = Tbb * k0_coeff + k1_coeff
+
+                if BandName in self.Dn:
+                    self.Dn[BandName] = DN
+                    self.Rad[BandName] = Rad
+                    self.K0[BandName] = K0
+                    self.K1[BandName] = K1
+                    self.Tbb[BandName] = Tbb
+                    self.Tbb_coeff[BandName] = Tbb_coeff
+                else:
+                    self.Dn[BandName] = np.concatenate((self.Dn[BandName], DN))
+                    self.Rad[BandName] = np.concatenate((self.Rad[BandName], Rad))
+                    self.K0[BandName] = np.concatenate((self.K0[BandName], K0))
+                    self.K1[BandName] = np.concatenate((self.K1[BandName], K1))
+                    self.Tbb[BandName] = np.concatenate((self.Tbb[BandName], Tbb))
+                    self.Tbb_coeff[BandName] = np.concatenate((self.Tbb_coeff[BandName], Tbb_coeff))
         # SV, BB
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
