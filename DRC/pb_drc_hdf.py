@@ -8,6 +8,7 @@
 import h5py
 import numpy as np
 from PB.pb_io import attrs2dict
+from pyhdf.SD import SD, SDC
 
 
 class ReadHDF5(object):
@@ -27,9 +28,8 @@ class ReadHDF5(object):
             print why
             return
 
-    def write_hdf5(self, data_dict, out_file):
+    def write_hdf5(self, data_dict, out_file, dtype=np.float32):
         # 对数据进行循环处理,结果放在 self.result
-        dtype = np.float32
         with h5py.File(out_file, 'w') as hdf5_file:
             for data_name in data_dict:
                 if 'CH_'.lower() in data_name.lower():
@@ -58,3 +58,19 @@ class ReadHDF5(object):
         with open(out_file, 'r') as hdf5_file:
             for k, v in file_attr.items():
                 hdf5_file.attr[k] = v
+
+
+class ReadHDF4(object):
+    """
+    """
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def read_file_attr(in_file):
+        try:
+            hdf4 = SD(in_file, SDC.READ)
+            return attrs2dict(hdf4.attributes())
+        except Exception as why:
+            print 'ReadHDF4.read_file_attr: {}'.format(why)
+            return
