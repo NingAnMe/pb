@@ -6,26 +6,28 @@
 """
 from datetime import datetime, timedelta
 
-from pyhdf.SD import SD, SDC
-
 import numpy as np
-
 from PB.pb_time import time_block
-from DV.dv_map import dv_map
 from congrid import congrid
+from pyhdf.SD import SD, SDC
+from pb_drc_hdf import ReadHDF4
 
 
-class CLASS_MVISR_L1(object):
+class CLASS_MVISR_L1(ReadHDF4):
 
-    def __init__(self):
-
+    def __init__(self, in_file=None):
+        super(CLASS_MVISR_L1, self).__init__()
+        self.error = False
         # 定标使用
         self.sat = 'FY1C'
         self.sensor = 'MVISR'
         self.res = 1100
-        self.Band = None
+        self.Band = 4  # 通道数
         self.obrit_direction = []
         self.obrit_num = []
+
+        self.data_shape = None  # 数据集shape
+        self.in_file = in_file
 
         self.Dn = {}
         self.Ref = {}
@@ -45,8 +47,8 @@ class CLASS_MVISR_L1(object):
         self.LandCover = []
 
         # 新添加
-        self.ir_coeff_k0 = {}
-        self.ir_coeff_k1 = {}
+        self.k0 = {}
+        self.k1 = {}
         self.RelativeAzimuth = []
 
         # 其他程序使用
@@ -64,71 +66,56 @@ class CLASS_MVISR_L1(object):
         self.waveNum = {}
         self.waveRad = {}
 
-    def Load(self, in_file):
-        hdf4 = SD(in_file, SDC.READ)
-        self.Band = hdf4.select('Earth_View')[:].shape[0]
+        self.set_band()
 
+        self.extract_data = {}
+
+    def Load(self, in_file):
+        if self.error:
+            return
         # try:
+        hdf4 = SD(in_file, SDC.READ)
+        # 过滤无效值
         year_dataset = hdf4.select('Year_Count')[:]
+        idx_valid = np.where(year_dataset != 0)[0]
+
+        year = hdf4.select('Year_Count')[:]
+        day = hdf4.select('Day_Count')[:]
         msec_dataset = hdf4.select('Msec_Count')[:]
-        day_dataset = hdf4.select('Day_Count')[:]
+        year = year[idx_valid][0]
+        day = day[idx_valid][0]
+        msec_dataset = msec_dataset[idx_valid]
 
         dn_dataset = hdf4.select('Earth_View')[:]
         sv_dataset = hdf4.select('Space_View')[:]
         bb_dataset = hdf4.select('Black_Body_View')[:]
 
+        dn_dataset = dn_dataset[:, idx_valid, :]
+        sv_dataset = sv_dataset[:, idx_valid, :]
+        bb_dataset = bb_dataset[:, idx_valid, :]
+
         sensor_zenith_dataset = hdf4.select('Sensor_Zenith')[:]
         solar_zenith_dataset = hdf4.select('Solar_Zenith')[:]
         relative_azimuth = hdf4.select('Relative_Azimuth')[:]
+        sensor_zenith_dataset = sensor_zenith_dataset[idx_valid, :]
+        solar_zenith_dataset = solar_zenith_dataset[idx_valid, :]
+        relative_azimuth = relative_azimuth[idx_valid, :]
 
         longitude_dataset = hdf4.select('Longitude')[:]
         latitude_dataset = hdf4.select('Latitude')[:]
+        longitude_dataset = longitude_dataset[idx_valid, :]
+        latitude_dataset = latitude_dataset[idx_valid, :]
 
         coeff_dataset = hdf4.select('Calibration_coeff')[:]
+        coeff_dataset = coeff_dataset[idx_valid, :]
 
-        # 过滤无效值
-        idx_vaild = np.where(year_dataset != 0)[0]
+        time = self.create_time(year, day, msec_dataset)
 
-        year = year_dataset[idx_vaild][0]
-        day = day_dataset[idx_vaild][0]
-        msec_dataset = msec_dataset[idx_vaild]
+        self.data_shape = dn_dataset[0].shape
+        shape = self.data_shape
+        cols_count = shape[1]
 
-        dn_dataset = dn_dataset[:, idx_vaild, :]
-        sv_dataset = sv_dataset[:, idx_vaild, :]
-        bb_dataset = bb_dataset[:, idx_vaild, :]
-
-        sensor_zenith_dataset = sensor_zenith_dataset[idx_vaild, :]
-        solar_zenith_dataset = solar_zenith_dataset[idx_vaild, :]
-        relative_azimuth = relative_azimuth[idx_vaild, :]
-
-        longitude_dataset = longitude_dataset[idx_vaild, :]
-        latitude_dataset = latitude_dataset[idx_vaild, :]
-
-        coeff_dataset = coeff_dataset[idx_vaild, :]
-
-        time = self.create_time(year, day, msec_dataset)  # （x,）
-
-        shape = dn_dataset[0].shape
-        cols_data = dn_dataset[0].shape[1]
-
-        # self.Time = self.extend_matrix_2d(time, 1, cols_data)
-        # self.Lons = self.interpolate_lat_lon(longitude_dataset, 51, cols_data)
-        # self.Lats = self.interpolate_lat_lon(latitude_dataset, 51, cols_data)
-        # self.satZenith = self.extend_matrix_2d(sensor_zenith_dataset, 51, cols_data)
-        # self.sunZenith = self.extend_matrix_2d(solar_zenith_dataset, 51, cols_data)
-        # self.RelativeAzimuth = self.extend_matrix_2d(relative_azimuth, 51, cols_data)
-        #
-        # for i in xrange(self.Band):
-        #     channel_name = 'CH_{:02d}'.format(i + 1)
-        #     self.Dn[channel_name] = dn_dataset[i, :]
-        #     self.SV[channel_name] = self.extend_matrix_2d(sv_dataset[i, :], 10, cols_data)
-        #     self.BB[channel_name] = self.extend_matrix_2d(bb_dataset[i, :], 6, cols_data)
-        #     k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i + 1])
-        #     k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i])
-        #     self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_data)
-        #     self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_data)
-
-        self.Time = self.extend_matrix_2d(time, 1, cols_data)
+        self.Time = self.extend_matrix_2d(time, 1, cols_count)
         self.Lats = congrid(latitude_dataset, shape, method='spline')
         self.Lons = congrid(longitude_dataset, shape, method='spline')
         self.satZenith = congrid(sensor_zenith_dataset, shape, method='spline')
@@ -143,16 +130,52 @@ class CLASS_MVISR_L1(object):
 
             k0_dataset = self.change_1d_to_2d(coeff_dataset[:, i * 2 + 1])
             k1_dataset = self.change_1d_to_2d(coeff_dataset[:, i * 2])
-            self.ir_coeff_k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_data)
-            self.ir_coeff_k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_data)
+            self.k0[channel_name] = self.extend_matrix_2d(k0_dataset, 1, cols_count)
+            self.k1[channel_name] = self.extend_matrix_2d(k1_dataset, 1, cols_count)
+            self.Ref[channel_name] = self.Dn[channel_name] * self.k0[channel_name] + \
+                self.k1[channel_name]
         hdf4.end()
         # except Exception as why:
-        #     print why
-        # finally:
-        #     hdf4.end()
+        #     print "{}.{}: {}".format(self.__class__, 'Load', why)
+        #     self.error = True
 
-        # for i in xrange(self.Band):
-        #     channel_name = 'CH_{:02d}'.format(i + 1)
+    def set_extract_data(self):
+        """
+        提取程序使用的数据
+        :return:
+        """
+        for i in xrange(self.Band):
+            channel_name = 'CH_{:02}'.format(i + 1)
+            self.extract_data[channel_name] = dict()
+            if channel_name in self.Dn:
+                self.extract_data[channel_name]['DN'] = self.filter_invalid_data(
+                    self.Dn[channel_name])
+            if channel_name in self.Ref:
+                self.extract_data[channel_name]['REF'] = self.filter_invalid_data(
+                    self.Ref[channel_name])
+            if channel_name in self.Ref:
+                self.extract_data[channel_name]['SV'] = self.filter_invalid_data(
+                    self.SV[channel_name])
+            if channel_name in self.Ref:
+                self.extract_data[channel_name]['BB'] = self.filter_invalid_data(
+                    self.BB[channel_name])
+            if channel_name in self.Ref:
+                self.extract_data[channel_name]['k0'] = self.filter_invalid_data(
+                    self.k0[channel_name])
+            if channel_name in self.Ref:
+                self.extract_data[channel_name]['k1'] = self.filter_invalid_data(
+                    self.k1[channel_name])
+
+        self.extract_data['Longitude'] = self.filter_invalid_data(self.Lons)
+        self.extract_data['Latitude'] = self.filter_invalid_data(self.Lats)
+        self.extract_data['SensorZenith'] = self.filter_invalid_data(self.satZenith)
+        self.extract_data['SolarZenith'] = self.filter_invalid_data(self.sunZenith)
+        self.extract_data['RelativeAzimuth'] = self.filter_invalid_data(self.RelativeAzimuth)
+        self.extract_data['Time'] = self.filter_invalid_data(self.Time)
+
+    def get_extract_data(self):
+        self.set_extract_data()
+        return self.extract_data
 
     def create_time(self, year, day, msec_dataset):
         time = []
@@ -181,7 +204,7 @@ class CLASS_MVISR_L1(object):
 
     @staticmethod
     def change_1d_to_2d(data):
-        return np.array(data).reshape(len(data), -1)
+        return np.array(data).reshape(-1, 1)
 
     @staticmethod
     def interpolate_lat_lon(data, cols_data, cols_count):
@@ -246,27 +269,62 @@ class CLASS_MVISR_L1(object):
             data_extend = data_extend[:, :cols_count]
         return np.array(data_extend)
 
+    def set_band(self):
+        if self.error:
+            return
+        if self.in_file:
+            try:
+                hdf4 = SD(self.in_file, SDC.READ)
+                self.Band = hdf4.select('Earth_View').shape[0]
+                print self.Band
+            except Exception as why:
+                print "{}.{}: {}".format(self.__class__, 'set_band', why)
+                self.error = True
+                return
+
+    @staticmethod
+    def filter_invalid_data(data):
+        """
+        过滤无效值，将无效值赋值为nan，
+        数据集的dtype改为np.float32
+        :param data:
+        :return:
+        """
+        data = data.astype(np.float32)
+        idx_invalid = np.where(~np.isfinite(data))
+        data[idx_invalid] = np.nan
+        return data
+
 
 if __name__ == '__main__':
     with time_block('all'):
-        in_file = r'E:\projects\six_sv_data\FY1D_L1_GDPT_20020518_1458.HDF'
-        mvisr = CLASS_MVISR_L1()
-        mvisr.Load(in_file)
-        print mvisr.ir_coeff_k0['CH_01'].shape
-        print mvisr.ir_coeff_k1['CH_01'].shape
-        print mvisr.Time.shape
-        print mvisr.Lats.shape
-        print mvisr.Lons.shape
-    lat_0 = 28.550000
-    lon_0 = 23.390000
-    lat_max = lat_0 + 3
-    lat_min = lat_0 - 3
-    lon_max = lon_0 + 3
-    lon_min = lon_0 - 3
-
-    box = [lat_max, lat_min, lon_min, lon_max]
-    # box = [60, 10, 70, 150]
-    p = dv_map()
-    p.easyplot(mvisr.Lats, mvisr.Lons, mvisr.Dn['CH_01'], vmin=None, vmax=None,
-               ptype=None, markersize=0.1, marker='o', box=box)
-    p.savefig('test070701_01.png')
+        t_in_file = r'D:\nsmc\fix_data\FY1CD\FY1D_L1_GDPT_20020518_1458.HDF'
+        t_mvisr = CLASS_MVISR_L1()
+        t_mvisr.Load(t_in_file)
+        t_data = t_mvisr.get_extract_data()
+        t_channel_name = 'CH_'
+        for k in t_data:
+            if t_channel_name in k:
+                for j in t_data[k]:
+                    print k, j, t_data[k][j].shape, np.nanmin(t_data[k][j]), np.nanmax(t_data[k][j])
+            else:
+                print k, t_data[k].shape, np.nanmin(t_data[k]), np.nanmax(t_data[k])
+        # mvisr.Load(in_file)
+        # print mvisr.ir_coeff_k0['CH_01'].shape
+        # print mvisr.ir_coeff_k1['CH_01'].shape
+        # print mvisr.Time.shape
+        # print mvisr.Lats.shape
+        # print mvisr.Lons.shape
+    # lat_0 = 28.550000
+    # lon_0 = 23.390000
+    # lat_max = lat_0 + 3
+    # lat_min = lat_0 - 3
+    # lon_max = lon_0 + 3
+    # lon_min = lon_0 - 3
+    #
+    # box = [lat_max, lat_min, lon_min, lon_max]
+    # # box = [60, 10, 70, 150]
+    # p = dv_map()
+    # p.easyplot(mvisr.Lats, mvisr.Lons, mvisr.Dn['CH_01'], vmin=None, vmax=None,
+    #            ptype=None, markersize=0.1, marker='o', box=box)
+    # p.savefig('test070701_01.png')
