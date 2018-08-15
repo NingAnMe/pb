@@ -25,6 +25,7 @@ class CLASS_MVISR_L1(ReadHDF4):
         self.Band = 4  # 通道数
         self.obrit_direction = []
         self.obrit_num = []
+        self.file_attr = {}
 
         self.data_shape = None  # 数据集shape
         self.in_file = in_file
@@ -138,6 +139,9 @@ class CLASS_MVISR_L1(ReadHDF4):
         # except Exception as why:
         #     print "{}.{}: {}".format(self.__class__, 'Load', why)
         #     self.error = True
+
+        # 复制文件属性
+        self.file_attr = self.read_file_attr(in_file)
 
     def set_extract_data(self):
         """
@@ -309,6 +313,7 @@ if __name__ == '__main__':
                     print k, j, t_data[k][j].shape, np.nanmin(t_data[k][j]), np.nanmax(t_data[k][j])
             else:
                 print k, t_data[k].shape, np.nanmin(t_data[k]), np.nanmax(t_data[k])
+        print t_mvisr.file_attr
         # mvisr.Load(in_file)
         # print mvisr.ir_coeff_k0['CH_01'].shape
         # print mvisr.ir_coeff_k1['CH_01'].shape
