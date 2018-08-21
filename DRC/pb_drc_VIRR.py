@@ -6,67 +6,89 @@
 """
 import os
 import re
+from datetime import datetime
 
 import h5py
+import numpy as np
 from PB.pb_time import get_ymd, get_hm
 from PB.pb_io import attrs2dict
+from PB.pb_sat import planck_r2t
+
+"""
+读取处理 L1 数据，1000m 和 250m
+处理原则
+1 过滤原数据无效值和填充值，过滤后无效数据统一使用 NaN 填充
+2 统一 shape
+3 统一数据 dtype
+4 统一通道相关和通道无关数据的存放格式
+"""
 
 
 class ReadL1(object):
-    def __init__(self, in_file):
+    """
+    读取处理 L1 数据
+    传感器：
+    目前支持卫星：
+    通道数量：
+    可见光通道：
+    红外通道：
+    """
+    def __init__(self, in_file, sensor):
 
+        if not os.path.isfile(in_file):
+            raise ValueError('{} is not exist.'.format(in_file))
         self.in_file = in_file
         self.error = False
 
         # 1数据外部描述信息
         self.satellite = None  # 卫星名
-        self.sensor = 'VIRR'  # 传感器名
+        self.sensor = sensor  # 传感器名
         self.ymd = None  # L1 文件年月日 YYYYMMDD
         self.hms = None  # L1 文件时分秒 HHMMSS
         self.resolution = None  # 分辨率
         self.channels = None  # 通道数量
         self.file_attr = None  # L1 文件属性
-        self.data_shape = None
+        self.data_shape = None  # 处理以后的数据 np.shape
 
         # 2数据内部物理量,按通道存放
         # 通道相关
         # 使用字典储存每个通道的数据，np.ndarray 二维矩阵
         # ch_01_dn_data = np.array(self.shape, np.nan, dtype=float32)
         # self.dn = {'CH_01': ch_01_dn_data, 'CH_02': ch_02_dn_data}
-        self.dn = None
-        self.ref = None
-        self.rad = None
-        self.tbb = None
-        self.sv = None
-        self.bb = None
-        self.k0 = None
-        self.k1 = None
-        self.k2 = None
+        self.dn = {}  # 仪器响应值
+        self.ref = {}  # 反射率
+        self.rad = {}  # 辐亮度
+        self.tbb = {}  # 亮温
+        self.sv = {}  # 空间温度
+        self.bb = {}  # 黑体
+        self.k0 = {}  # 定标系数
+        self.k1 = {}  # 定标系数
+        self.k2 = {}  # 定标系数
 
         # 3数据内部物理量,非通道相关
         # 非通道相关
         # 使用 np.ndarray 二维矩阵存储
         # self.height = np.array(self.shape, np.nan, dtype=float32)
-        self.height = None
-        self.latitude = None
-        self.longitude = None
-        self.land_sea_mask = None
-        self.land_cover = None
-        self.sensor_azimuth = None
-        self.sensor_zenith = None
-        self.sun_azimuth = None
-        self.sun_zenith = None
-        self.relative_azimuth = None
-        self.UTC_timestamp = None
+        self.height = None  # 高度
+        self.latitude = None  # 纬度
+        self.longitude = None  # 经度
+        self.land_sea_mask = None  # 海陆掩码
+        self.land_cover = None  # 地表类型
+        self.sensor_azimuth = None  # 卫星方位角
+        self.sensor_zenith = None  # 卫星天顶角
+        self.sun_azimuth = None  # 太阳方位角
+        self.sun_zenith = None  # 太阳天顶角
+        self.relative_azimuth = None  # 相对方位角
+        self.timestamp = None  # 距离 1970 年 1 月 1 日的时间戳
 
         # 执行初始化相关方法
         # 初始化卫星名
+        self.set_resolution()
+        # L1 文件名中获取并初始化 ymd hms
         self.set_satellite()
         # 初始化与 L1 对应的 GEO 和 OBC 文件，如果有
         self.set_file_geo_obc()
         # 初始化数据的分辨率
-        self.set_resolution()
-        # L1 文件名中获取并初始化 ymd hms
         self.set_ymd_hms()
         # 初始化文件属性
         self.set_file_attr()
@@ -89,6 +111,13 @@ class ReadL1(object):
         """
         pass
 
+    def set_resolution(self):
+        """
+        根据 self.satellite set self.sensor_resolution_ratio
+        :return:
+        """
+        pass
+
     def set_ymd_hms(self):
         """
         根据 self.file_level_1 set self.level_1_ymd 和 self.level_1_ymd
@@ -112,13 +141,6 @@ class ReadL1(object):
         """
         pass
 
-    def set_resolution(self):
-        """
-        根据 self.satellite set self.sensor_resolution_ratio
-        :return:
-        """
-        pass
-
     def set_channels(self):
         """
         根据 self.satellite set self.sensor_channel_amount
@@ -126,40 +148,100 @@ class ReadL1(object):
         """
         pass
 
-    def set_dn(self):
-        """
-        从数据文件中获取 DN 值, set self.dn
-        :return:
-        """
+    def get_dn(self):
         pass
 
-    def get_dn(self):
-        """
-        如果self.dn已经获取，返回 self.dn
-        否则执行 self.set_dn 以后，再返回 self.dn
-        :return:
-        """
+    def get_ref(self):
+        pass
+
+    def get_rad(self):
+        pass
+
+    def get_tbb(self):
+        pass
+
+    def get_sv(self):
+        pass
+
+    def get_bb(self):
+        pass
+
+    def get_k0(self):
+        pass
+
+    def get_k1(self):
+        pass
+
+    def get_k2(self):
+        pass
+
+    def get_height(self):
+        pass
+
+    def get_latitude(self):
+        pass
+
+    def get_longitude(self):
+        pass
+
+    def get_land_sea_mask(self):
+        pass
+
+    def get_land_cover(self):
+        pass
+
+    def get_sensor_azimuth(self):
+        pass
+
+    def get_sensor_zenith(self):
+        pass
+
+    def get_sun_azimuth(self):
+        pass
+
+    def get_sun_zenith(self):
+        pass
+
+    def get_relative_azimuth(self):
+        pass
+
+    def get_timestamp(self):
         pass
 
 
 class ReadVirrL1(ReadL1):
     """
     读取VIRR传感器的L1数据
-    目前支持 FY3A FY3B FY3C
+    目前支持卫星： FY3A FY3B FY3C
+    通道数量：10
+    可见光通道：1 2 6 7 8 9 10
+    红外通道：3 4 5
     """
     def __init__(self, in_file):
-        super(ReadVirrL1, self).__init__(in_file)
+        sensor = 'VIRR'
+        super(ReadVirrL1, self).__init__(in_file, sensor)
 
         # 固定值
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
-        self.WN = {'CH_03': 2673.796, 'CH_04': 925.925, 'CH_05': 833.333}
-        # 红外转tbb的修正系数，固定值
-        self.TeA = {'CH_03': 1, 'CH_04': 1, 'CH_05': 1}
-        self.TeB = {'CH_03': 0, 'CH_04': 0, 'CH_05': 0}
+        self.wave_number = {'CH_03': 2673.796, 'CH_04': 925.925, 'CH_05': 833.333}
+
+    def set_resolution(self):
+        """
+        根据L1文件名 set self.resolution 分辨率
+        :return:
+        """
+        file_name = os.path.basename(self.in_file)
+        if '1000M' in file_name:
+            self.resolution = 1000
+        # elif '0250M' in file_name:
+        #     self.resolution = 250
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
 
     def set_satellite(self):
         """
-        根据文件名 set self.satellite
+        根据L1文件名 set self.satellite 卫星名
         :return:
         """
         file_name = os.path.basename(self.in_file)
@@ -172,14 +254,22 @@ class ReadVirrL1(ReadL1):
 
     def set_file_geo_obc(self):
         """
-        根据 self.file_level_1 set self.file_geo 和 self.file_obc
+        根据 L1 文件名 set self.file_geo 和 self.file_obc
         :return:
         """
-        pass
+        dir_path = os.path.dirname(self.in_file)
+        file_name = os.path.basename(self.in_file)
+        geo_file = os.path.join(dir_path, file_name[0:-12] + 'GEOXX_MS.HDF')
+        obc_file = os.path.join(dir_path, file_name[0:-12] + 'OBCXX_MS.HDF')
+        setattr(self, 'geo_file', geo_file)
+        setattr(self, 'obc_file', obc_file)
+        print 'Read L1 <<< {}'.format(self.in_file)
+        print 'Read L1 <<< {}'.format(geo_file)
+        print 'Read L1 <<< {}'.format(obc_file)
 
     def set_ymd_hms(self):
         """
-        根据 self.file_level_1 set self.level_1_ymd 和 self.level_1_ymd
+        根据根据L1文件名 set self.level_1_ymd 和 self.level_1_ymd
         :return:
         """
         file_name = os.path.basename(self.in_file)
@@ -193,8 +283,15 @@ class ReadVirrL1(ReadL1):
         储存格式是字典
         :return:
         """
-        with h5py.File(self.in_file, 'r') as hdf5_file:
-            return attrs2dict(hdf5_file.attrs)
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    self.file_attr = attrs2dict(hdf5_file.attrs)
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError("Cant handle this resolution: ".format(self.resolution))
 
     def set_dataset_shape(self):
         """
@@ -203,53 +300,791 @@ class ReadVirrL1(ReadL1):
         """
         # 如果分辨率是 1000 米
         if self.resolution == 1000:
-            self.data_shape = (1800, 2048)
-        # 如果分辨率是 250 米
-        elif self.resolution == 250:
-            self.data_shape = ()
-
-    def set_resolution(self):
-        """
-        根据 self.satellite set self.sensor_resolution_ratio
-        :return:
-        """
-        pass
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                self.data_shape = (1800, 2048)
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        # elif self.resolution == 250:
+        else:
+            raise ValueError("Cant handle this resolution: ".format(self.resolution))
 
     def set_channels(self):
         """
         根据 self.satellite set self.sensor_channel_amount
         :return:
         """
-        pass
+        if self.resolution == 1000:
+            self.channels = 10
+        # elif self.resolution == 250:
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
 
-    def set_dn(self):
+    def get_dn(self):
         """
         从数据文件中获取 DN 值, set self.dn
         :return:
         """
-        pass
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
 
-    def get_dn(self):
+            if self.satellite in satellite_type1:
+                # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+                s = self.data_shape
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    emissive = hdf5_file.get('/EV_Emissive')[:, :s[0], :s[1]]
+                    ref_sb = hdf5_file.get('/EV_RefSB')[:, :s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    emissive = hdf5_file.get('/Data/EV_Emissive').value
+                    ref_sb = hdf5_file.get('/Data/EV_RefSB').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 1 2 6 7 8 9 10 为可见光通道，dn 值为 ref_sb
+            # 3 4 5 为红外通道，dn 值为 emissive
+            for i in xrange(self.channels):
+                channel_name = 'CH_{:02d}'.format(i + 1)
+                if i < 2:
+                    k = i
+                    data_pre = ref_sb
+                elif 2 <= i <= 4:
+                    data_pre = emissive
+                    k = i - 2
+                else:
+                    data_pre = ref_sb
+                    k = i - 3
+                # 将无效值使用NaN填充
+                channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
+                valid_index = np.logical_and(data_pre[k] < 32767, data_pre[k] > 0)
+                channel_data[valid_index] = data_pre[k][valid_index]
+                data[channel_name] = channel_data
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_k0(self):
         """
-        如果self.dn已经获取，返回 self.dn
-        否则执行 self.set_dn 以后，再返回 self.dn
+        vis: 可见光缩写
+        ir: 红外缩写
         :return:
         """
-        if self.dn is not None:
-            return self.dn
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            if self.satellite in satellite_type1:
+                s = self.data_shape
+                k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    k0_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
+                    # k1_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
+            elif self.satellite in satellite_type2:
+                k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
+                    # k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+            for i in xrange(self.channels):
+                channel_name = 'CH_{:02d}'.format(i + 1)
+                if i < 2:
+                    k = i * 2
+                    k0 = k0_k1_vis[k]
+                    # k1 = k0_k1_vis[k + 1]
+                    channel_data = np.full(self.data_shape, k0, dtype=np.float32)
+                    data[channel_name] = channel_data
+                elif 2 <= i <= 4:
+                    k = i - 2
+                    data_pre = k0_ir[:, k].reshape(-1, 1)
+                    # data_pre = k1_ir[:, k].reshape(-1, 1)
+                    invalid_index = np.logical_and(data_pre < 0, data_pre > 50000)
+                    data_pre[invalid_index] = np.nan
+                    channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
+                    channel_data[:] = data_pre
+                    data[channel_name] = channel_data
+                else:
+                    k = (i - 3) * 2
+                    k0 = k0_k1_vis[k]
+                    # k1 = k0_k1_vis[k + 1]
+                    channel_data = np.full(self.data_shape, k0, dtype=np.float32)
+                    data[channel_name] = channel_data
         else:
-            self.set_dn()
-            return self.dn
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_k1(self):
+        """
+        vis: 可见光缩写
+        ir: 红外缩写
+        :return:
+        """
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            if self.satellite in satellite_type1:
+                s = self.data_shape
+                k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    # k0_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
+                    k1_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
+            elif self.satellite in satellite_type2:
+                k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    # k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
+                    k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+            for i in xrange(self.channels):
+                channel_name = 'CH_{:02d}'.format(i + 1)
+                if i < 2:
+                    k = i * 2
+                    # k0 = k0_k1_vis[k]
+                    k1 = k0_k1_vis[k + 1]
+                    channel_data = np.full(self.data_shape, k1, dtype=np.float32)
+                    data[channel_name] = channel_data
+                elif 2 <= i <= 4:
+                    k = i - 2
+                    # data_pre = k0_ir[:, k].reshape(-1, 1)
+                    data_pre = k1_ir[:, k].reshape(-1, 1)
+                    invalid_index = np.logical_and(data_pre < 0, data_pre > 50000)
+                    data_pre[invalid_index] = np.nan
+                    channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
+                    channel_data[:] = data_pre
+                    data[channel_name] = channel_data
+                else:
+                    k = (i - 3) * 2
+                    # k0 = k0_k1_vis[k]
+                    k1 = k0_k1_vis[k + 1]
+                    channel_data = np.full(self.data_shape, k1, dtype=np.float32)
+                    data[channel_name] = channel_data
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_ref(self):
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            ref_channels = ['CH_{:02d}'.format(i) for i in [1, 2, 6, 7, 8, 9, 10]]
+            if self.satellite in satellite_type1:
+                dn = self.get_dn()
+                k0 = self.get_k0()
+                k1 = self.get_k1()
+                for channel_name in dn:
+                    if channel_name not in ref_channels:
+                        continue
+                    channel_data = dn[channel_name] * k0[channel_name] + k1[channel_name]
+                    data[channel_name] = channel_data
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_rad_pre(self):
+        """
+        RAD预处理
+        :return:
+        """
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            ref_channels = ['CH_{:02d}'.format(i) for i in [3, 4, 5]]
+            if self.satellite in satellite_type1:
+                dn = self.get_dn()
+                k0 = self.get_k0()
+                k1 = self.get_k1()
+                for channel_name in dn:
+                    if channel_name not in ref_channels:
+                        continue
+                    channel_data = dn[channel_name] * k0[channel_name] + k1[channel_name]
+                    data[channel_name] = channel_data
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_rad(self):
+        """
+        经非线性校正后的RAD
+        :return:
+        """
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                rad_pres = self.get_rad_pre()
+                b0_b1_b2_nonlinear = self.file_attr.get('Prelaunch_Nonlinear_Coefficients')
+
+                # 通道 3 4 5
+                for i in xrange(3):
+                    channel_name = 'CH_{:02d}'.format(i + 3)
+                    b0 = b0_b1_b2_nonlinear[i]
+                    b1 = b0_b1_b2_nonlinear[3 + i]
+                    b2 = b0_b1_b2_nonlinear[6 + i]
+                    rad_pre = rad_pres[channel_name]
+                    rad_nonlinear = rad_pre ** 2 * b2 + rad_pre * b1 + b0
+                    rad = rad_pre + rad_nonlinear
+                    data[channel_name] = rad
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb(self):
+        """
+        TBB
+        :return:
+        """
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            # 红外转tbb的修正系数，所有时次都是固定值
+            rad2tbb_k0 = {'CH_03': 1, 'CH_04': 1, 'CH_05': 1}
+            rad2tbb_k1 = {'CH_03': 0, 'CH_04': 0, 'CH_05': 0}
+            if self.satellite in satellite_type1:
+                rads = self.get_rad()
+                for channel_name in rads:
+                    rad = rads[channel_name]
+                    center_wave_number = self.wave_number[channel_name]
+                    k0 = rad2tbb_k0[channel_name]
+                    k1 = rad2tbb_k1[channel_name]
+                    tbb = planck_r2t(rad, center_wave_number, k0, k1)
+                    data[channel_name] = tbb
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb_coeff(self):
+        """
+        校正后的TBB
+        :return:
+        """
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                tbbs = self.get_tbb()
+                if 'Emmisive_BT_Coefficients' in self.file_attr:
+                    coeffs_name = 'Emmisive_BT_Coefficients'
+                else:
+                    coeffs_name = 'Emissive_BT_Coefficients'
+                coeffs = self.file_attr.get(coeffs_name)
+                for i in xrange(3):
+                    channel_name = 'CH_{:02d}'.format(i + 3)
+                    tbb = tbbs[channel_name]
+                    k0 = coeffs[i * 2 + 1]
+                    k1 = coeffs[i * 2]
+                    tbb_coeff = tbb * k0 + k1
+                    data[channel_name] = tbb_coeff
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_sv(self):
+        data = dict()
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            obc_file = getattr(self, 'obc_file')
+            if not os.path.isfile(obc_file):
+                raise ValueError('OBC file is not exist. {}'.format(obc_file))
+            if self.satellite in satellite_type1:
+                with h5py.File(obc_file, 'r') as hdf5_file:
+                    # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+                    s = self.data_shape
+                    data_pre = hdf5_file.get('Space_View')[:, :s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                with h5py.File(obc_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Calibration/Space_View').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < 1, data_pre > 1023)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+
+            for i in xrange(self.channels):
+                channel_name = 'CH_{:02d}'.format(i + 1)
+                channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
+                channel_data[:] = data_pre[i, :, 0].reshape(-1, 1)
+                data[channel_name] = channel_data
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_bb(self):
+        data = dict()
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            obc_file = getattr(self, 'obc_file')
+            if not os.path.isfile(obc_file):
+                raise ValueError('OBC file is not exist. {}'.format(obc_file))
+            if self.satellite in satellite_type1:
+                with h5py.File(obc_file, 'r') as hdf5_file:
+                    # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+                    s = self.data_shape
+                    data_pre = hdf5_file.get('Blackbody_View')[:, :s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                with h5py.File(obc_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Calibration/Blackbody_View').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < 1, data_pre > 1023)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+
+            for i in xrange(self.channels):
+                channel_name = 'CH_{:02d}'.format(i + 1)
+                channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
+                channel_data[:] = data_pre[i, :, 0].reshape(-1, 1)
+                data[channel_name] = channel_data
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_height(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('Height')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/DEM').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_latitude(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('Latitude')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/Latitude').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_longitude(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('Longitude')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/Longitude').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_land_sea_mask(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('LandSeaMask')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/LandSeaMask').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_land_cover(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('LandCover')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/LandCover').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_sensor_azimuth(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('SensorAzimuth')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/SensorAzimuth').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre / 100.
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_sensor_zenith(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('SensorZenith')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/SensorZenith').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre / 100.
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_sun_azimuth(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('SolarAzimuth')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/SolarAzimuth').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre / 100.
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_sun_zenith(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            geo_file = getattr(self, 'geo_file')
+
+            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                if not os.path.isfile(self.in_file):
+                    raise ValueError('L1 file is not exist. {}'.format(self.in_file))
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('SolarZenith')[:s[0], :s[1]]
+            elif self.satellite in satellite_type2:
+                if not os.path.isfile(geo_file):
+                    raise ValueError('L1 file is not exist. {}'.format(geo_file))
+                with h5py.File(geo_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/SolarZenith').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre / 100.
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_timestamp(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                seconds_of_file = 300  # 一个时次持续 300 秒
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+            file_date = datetime.strptime(self.ymd + self.hms, '%Y%m%d%H%M%S')
+            timestamp = (file_date - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()
+            row_length = self.data_shape[0]
+            delta = np.linspace(0, seconds_of_file - 1, row_length)
+            data = np.full(self.data_shape, np.nan, dtype=np.float64)
+            data[:] = (delta + timestamp).reshape(-1, 1)
+            data = data.astype(np.int32)
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
 
 
 if __name__ == '__main__':
-    t_in_file = r'D:\nsmc\fix_data\FY3ABC\FY3A_VIRRX_GBAL_L1_20081106_2055_1000M_MS.HDF'
+    t_in_file = r'D:\nsmc\L1\FY3A\VIRR\FY3A_VIRRX_GBAL_L1_20150101_0000_1000M_MS.HDF'
     t_read_l1 = ReadVirrL1(t_in_file)
+    print 'attribute', '-' * 50
     print t_read_l1.satellite  # 卫星名
     print t_read_l1.sensor  # 传感器名
     print t_read_l1.ymd  # L1 文件年月日 YYYYMMDD
     print t_read_l1.hms  # L1 文件时分秒 HHMMSS
     print t_read_l1.resolution  # 分辨率
     print t_read_l1.channels  # 通道数量
-    print t_read_l1.file_attr  # L1 文件属性
     print t_read_l1.data_shape
+    print t_read_l1.file_attr  # L1 文件属性
+
+    print 'Channel', '-' * 50
+
+    def print_channel_data(datas):
+        if not isinstance(datas, dict):
+            return
+        keys = list(datas.viewkeys())
+        keys.sort()
+        for t_channel_name in keys:
+            channel_data = datas[t_channel_name]
+            data_shape = channel_data.shape
+            data_min = np.nanmin(channel_data)
+            data_max = np.nanmax(channel_data)
+            print t_channel_name, data_shape, data_min, data_max
+
+    print 'dn:'
+    t_data = t_read_l1.get_dn()
+    print_channel_data(t_data)
+
+    print 'k0:'
+    t_data = t_read_l1.get_k0()
+    print_channel_data(t_data)
+
+    print 'k1:'
+    t_data = t_read_l1.get_k1()
+    print_channel_data(t_data)
+
+    print 'ref:'
+    t_data = t_read_l1.get_ref()
+    print_channel_data(t_data)
+
+    print 'rad_pre:'
+    t_data = t_read_l1.get_ref()
+    print_channel_data(t_data)
+
+    print 'rad'
+    t_data = t_read_l1.get_rad()
+    print_channel_data(t_data)
+
+    print 'tbb:'
+    t_data = t_read_l1.get_tbb()
+    print_channel_data(t_data)
+
+    print 'tbb_coeff:'
+    t_data = t_read_l1.get_tbb_coeff()
+    print_channel_data(t_data)
+
+    print 'sv:'
+    t_data = t_read_l1.get_sv()
+    print_channel_data(t_data)
+
+    print 'bb:'
+    t_data = t_read_l1.get_bb()
+    print_channel_data(t_data)
+
+    print 'No channel', '-' * 50
+
+    def print_data_status(datas):
+        data_shape = datas.shape
+        data_min = np.nanmin(datas)
+        data_max = np.nanmax(datas)
+        print data_shape, data_min, data_max
+
+    t_data = t_read_l1.get_height()
+    print 'height'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_latitude()
+    print 'latitude:'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_longitude()
+    print 'longitude:'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_land_cover()
+    print 'land_cover:'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_land_sea_mask()
+    print 'land_sea_mask:'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_sensor_azimuth()
+    print 'sensor_azimuth:'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_sensor_zenith()
+    print 'sensor_zenith:'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_sun_azimuth()
+    print 'sun_azimuth:'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_sun_zenith()
+    print 'sun_zenith:'
+    print_data_status(t_data)
+
+    t_data = t_read_l1.get_timestamp()
+    print 'Timestamp'
+    print_data_status(t_data)
+    datetime_timestamp = datetime.utcfromtimestamp(t_data[0][0])
+    datetime_file = datetime.strptime(t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')
+    if datetime_timestamp != datetime_file:
+        print 'Error', '-' * 100
+        print t_data[0][0], datetime_timestamp
+        print t_read_l1.ymd + t_read_l1.hms, datetime_file
+        raise ValueError('Please check the get_timestamp')
