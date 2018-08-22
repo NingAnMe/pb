@@ -703,7 +703,7 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_sun_azimuth(self):
+    def get_solar_azimuth(self):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -734,7 +734,7 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_sun_zenith(self):
+    def get_solar_zenith(self):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -912,12 +912,12 @@ if __name__ == '__main__':
     print 'sensor_zenith:'
     print_data_status(t_data)
 
-    t_data = t_read_l1.get_sun_azimuth()
-    print 'sun_azimuth:'
+    t_data = t_read_l1.get_solar_azimuth()
+    print 'solar_azimuth:'
     print_data_status(t_data)
 
-    t_data = t_read_l1.get_sun_zenith()
-    print 'sun_zenith:'
+    t_data = t_read_l1.get_solar_zenith()
+    print 'solar_zenith:'
     print_data_status(t_data)
 
     t_data = t_read_l1.get_timestamp()

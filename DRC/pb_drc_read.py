@@ -58,8 +58,8 @@ class ReadL1(object):
         self.land_cover = None  # 地表类型
         self.sensor_azimuth = None  # 卫星方位角
         self.sensor_zenith = None  # 卫星天顶角
-        self.sun_azimuth = None  # 太阳方位角
-        self.sun_zenith = None  # 太阳天顶角
+        self.solar_azimuth = None  # 太阳方位角
+        self.solar_zenith = None  # 太阳天顶角
         self.relative_azimuth = None  # 相对方位角
         self.timestamp = None  # 距离 1970 年 1 月 1 日的时间戳
         self.wave_number = None  # 传感器的中心波
@@ -179,10 +179,10 @@ class ReadL1(object):
     def get_sensor_zenith(self):
         return
 
-    def get_sun_azimuth(self):
+    def get_solar_azimuth(self):
         return
 
-    def get_sun_zenith(self):
+    def get_solar_zenith(self):
         return
 
     def get_relative_azimuth(self):
