@@ -21,7 +21,6 @@ class ReadL1(object):
         if not os.path.isfile(in_file):
             raise ValueError('{} is not exist.'.format(in_file))
         self.in_file = in_file
-        self.error = False
 
         # 1数据外部描述信息
         self.satellite = None  # 卫星名
@@ -63,15 +62,16 @@ class ReadL1(object):
         self.sun_zenith = None  # 太阳天顶角
         self.relative_azimuth = None  # 相对方位角
         self.timestamp = None  # 距离 1970 年 1 月 1 日的时间戳
+        self.wave_number = None  # 传感器的中心波
 
         # 执行初始化相关方法
-        # 初始化卫星名
+        # 初始化数据的分辨率
         self.set_resolution()
-        # L1 文件名中获取并初始化 ymd hms
+        # 初始化卫星名
         self.set_satellite()
         # 初始化与 L1 对应的 GEO 和 OBC 文件，如果有
         self.set_file_geo_obc()
-        # 初始化数据的分辨率
+        # L1 文件名中获取并初始化 ymd hms
         self.set_ymd_hms()
         # 初始化文件属性
         self.set_file_attr()
@@ -132,61 +132,70 @@ class ReadL1(object):
         pass
 
     def get_dn(self):
-        pass
+        return
 
     def get_ref(self):
-        pass
+        return
 
     def get_rad(self):
-        pass
+        return
 
     def get_tbb(self):
-        pass
+        return
 
     def get_sv(self):
-        pass
+        return
 
     def get_bb(self):
-        pass
+        return
 
     def get_k0(self):
-        pass
+        return
 
     def get_k1(self):
-        pass
+        return
 
     def get_k2(self):
-        pass
+        return
 
     def get_height(self):
-        pass
+        return
 
     def get_latitude(self):
-        pass
+        return
 
     def get_longitude(self):
-        pass
+        return
 
     def get_land_sea_mask(self):
-        pass
+        return
 
     def get_land_cover(self):
-        pass
+        return
 
     def get_sensor_azimuth(self):
-        pass
+        return
 
     def get_sensor_zenith(self):
-        pass
+        return
 
     def get_sun_azimuth(self):
-        pass
+        return
 
     def get_sun_zenith(self):
-        pass
+        return
 
     def get_relative_azimuth(self):
-        pass
+        return
 
     def get_timestamp(self):
-        pass
+        return
+
+    def get_wave_number(self):
+        return
+
+    def get_wave_length(self):
+        return
+
+    def get_response_value(self):
+        return

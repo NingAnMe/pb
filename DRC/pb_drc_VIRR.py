@@ -784,6 +784,26 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
+    def get_wave_number(self):
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                data = self.wave_number
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    # TODO
+    def get_wave_length(self):
+        pass
+
+    # TODO
+    def get_response_value(self):
+        pass
+
 
 if __name__ == '__main__':
     t_in_file = r'D:\nsmc\L1\FY3A\VIRR\FY3A_VIRRX_GBAL_L1_20150101_0000_1000M_MS.HDF'
@@ -852,6 +872,10 @@ if __name__ == '__main__':
     t_data = t_read_l1.get_bb()
     print_channel_data(t_data)
 
+    t_data = t_read_l1.get_wave_number()
+    print 'wave_number:'
+    print print_channel_data(t_data)
+
     print 'No channel', '-' * 50
 
     def print_data_status(datas):
@@ -897,7 +921,7 @@ if __name__ == '__main__':
     print_data_status(t_data)
 
     t_data = t_read_l1.get_timestamp()
-    print 'Timestamp'
+    print 'timestamp:'
     print_data_status(t_data)
     datetime_timestamp = datetime.utcfromtimestamp(t_data[0][0])
     datetime_file = datetime.strptime(t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')
