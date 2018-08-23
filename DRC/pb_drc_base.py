@@ -5,24 +5,98 @@
 @Author  : AnNing
 """
 import os
+"""
+类名：
+ReadSensorL1
+
+# 初始化
+self.__init__(in_file)
+self.in_file = in_file  # L1 文件的完整路径 （str）
+
+# 数据外部描述信息
+self.satellite = None # 卫星名  （str）
+self.sensor = sensor # 传感器名  （str）
+self.ymd = None # L1 文件年月日 YYYYMMDD  （str）
+self.hms = None # L1 文件时分秒 HHMMSS  （str）
+self.resolution = None # 传感器分辨率  （int）
+self.channels = None # 通道数量，（int）
+self.file_attr = None # L1 文件属性，（dict）
+self.data_shape = None # 处理以后的数据 np.shape （tuple）
+
+# 初始化执行的方法
+self.set_resolution()  # 设置 self.resolution
+self.set_satellite()  # 设置  self.satellite
+self.set_ymd_hms()  # 设置  self.ymd 和 self.hms
+self.set_file_attr()  # 设置  self.file_attr
+self.set_dataset_shape()  # 设置  self.data_shape
+self.set_channels()  # 设置  self.channels
+
+数据获取方法实现原则
+
+需要完成的功能：
+1 过滤原数据无效值和填充值，过滤后无效数据统一使用 np.nan 填充
+2 统一 shape 为 self.shape 大小
+3 统一数据 dtype 为 np.float32
+4 统一通道相关和通道无关数据的存放格式，通道相关使用字典类型储存，键名为‘CH_01’ ‘CH_02’等
+分通道数据格式：
+channel_data = np.full(self.data_shape, np.nan, dtype=float32)
+data = {"CH_01":channel_data}
+不分通道数据格式：
+data = np.full(self.data_shape, np.nan, dtype=float32)
+5 返回的数据使用 np.ndarray 类
+
+# 1通道相关数据获取方法
+self.get_dn(self)  # 太阳反射通道地球观测值和发射通道地球观测值
+self.get_k0(self)  # 定标系数 a
+self.get_k1(self)  # 定标系数 b
+self.get_k2(self)  # 定标系数 c
+self.get_ref(self)  # 反射率
+self.get_rad(self)  # 辐射值
+self.get_tbb(self)  # 亮温值
+self.get_sv(self)  # 空间观测值
+self.get_bb(self)  # 黑体观测值
+
+# 2通道相关，但数据的 shape 与 self.data_shape 不同
+self.get_central_wave_number(self)  # 中心波数，shape = （1，）
+self.get_wave_number(self)  # 波数需从大到小排列（相当于波长从小到大排列），shape =（n，1）
+self.get_wave_response(self)  # 波数对应的响应值 ，shape =（n，1）
+
+# 3非通道数据获取方法
+self.get_height(self)  # 高度
+self.get_latitude(self)  # 纬度
+self.get_longitude(self)  # 经度
+self.get_land_sea_mask(self)  # 海陆类型
+self.get_land_cover(self)  # 地表覆盖类型
+self.get_sensor_azimuth(self)  # 卫星方位角
+self.get_sensor_zenith(self)  # 卫星天顶角
+self.get_solar_azimuth(self)  # 太阳方位角
+self.get_solar_zenith(self)  # 太阳高度角
+self.get_relative_azimuth(self)  # 相对方位角
+self.get_timestamp(self)  # UTC 时间戳（距离1970年1月1日0时的秒数）
+
+# 4非通道数据，但数据的 shape 与 self.data_shape 不同
+"""
 
 
 class ReadL1(object):
     """
     读取处理 L1 数据
     传感器：
-    目前支持卫星：
-    通道数量：
-    可见光通道：
-    红外通道：
+    分辨率：
+        目前支持卫星：
+        通道数量：
+        可见光通道：
+        红外通道：
     """
     def __init__(self, in_file, sensor):
 
         if not os.path.isfile(in_file):
             raise ValueError('{} is not exist.'.format(in_file))
+        else:
+            print 'Read {} L1 : <<< {}'.format(sensor, in_file)
+
         self.in_file = in_file
 
-        # 1数据外部描述信息
         self.satellite = None  # 卫星名
         self.sensor = sensor  # 传感器名
         self.ymd = None  # L1 文件年月日 YYYYMMDD
@@ -31,95 +105,32 @@ class ReadL1(object):
         self.channels = None  # 通道数量
         self.file_attr = None  # L1 文件属性
         self.data_shape = None  # 处理以后的数据 np.shape
-
-        # 2数据内部物理量,按通道存放
-        # 通道相关
-        # 使用字典储存每个通道的数据，np.ndarray 二维矩阵
-        # ch_01_dn_data = np.array(self.shape, np.nan, dtype=float32)
-        # self.dn = {'CH_01': ch_01_dn_data, 'CH_02': ch_02_dn_data}
-        self.dn = {}  # 仪器响应值
-        self.ref = {}  # 反射率
-        self.rad = {}  # 辐亮度
-        self.tbb = {}  # 亮温
-        self.sv = {}  # 空间温度
-        self.bb = {}  # 黑体
-        self.k0 = {}  # 定标系数
-        self.k1 = {}  # 定标系数
-        self.k2 = {}  # 定标系数
-
-        # 3数据内部物理量,非通道相关
-        # 非通道相关
-        # 使用 np.ndarray 二维矩阵存储
-        # self.height = np.array(self.shape, np.nan, dtype=float32)
-        self.height = None  # 高度
-        self.latitude = None  # 纬度
-        self.longitude = None  # 经度
-        self.land_sea_mask = None  # 海陆掩码
-        self.land_cover = None  # 地表类型
-        self.sensor_azimuth = None  # 卫星方位角
-        self.sensor_zenith = None  # 卫星天顶角
-        self.solar_azimuth = None  # 太阳方位角
-        self.solar_zenith = None  # 太阳天顶角
-        self.relative_azimuth = None  # 相对方位角
-        self.timestamp = None  # 距离 1970 年 1 月 1 日的时间戳
-        self.wave_number = None  # 传感器的中心波
+        self.central_wave_number = None  # 中心波数: wn(cm-1) = 10 ^ 7 / wave_length(nm)
 
         # 执行初始化相关方法
-        # 初始化数据的分辨率
-        self.set_resolution()
-        # 初始化卫星名
-        self.set_satellite()
-        # L1 文件名中获取并初始化 ymd hms
-        self.set_ymd_hms()
-        # 初始化文件属性
-        self.set_file_attr()
-        # 初始化获取数据处理完成以后的大小。
-        self.set_dataset_shape()
-        # 初始化通道数
-        self.set_channels()
+        self.set_resolution()  # 设置 self.resolution
+        self.set_satellite()  # 设置  self.satellite
+        self.set_ymd_hms()  # 设置  self.ymd 和 self.hms
+        self.set_file_attr()  # 设置  self.file_attr
+        self.set_dataset_shape()  # 设置  self.data_shape
+        self.set_channels()  # 设置  self.channels
 
     def set_satellite(self):
-        """
-        根据文件名 set self.satellite
-        :return:
-        """
         pass
 
     def set_resolution(self):
-        """
-        根据 self.satellite set self.sensor_resolution_ratio
-        :return:
-        """
         pass
 
     def set_ymd_hms(self):
-        """
-        根据 self.file_level_1 set self.level_1_ymd 和 self.level_1_ymd
-        :return:
-        """
         pass
 
     def set_file_attr(self):
-        """
-        根据 self.file_level_1 获取 L1 文件的属性
-        set self.level_1_attr
-        储存格式是字典
-        :return:
-        """
         pass
 
     def set_dataset_shape(self):
-        """
-        根据 self.satellite set self.dataset_shape
-        :return:
-        """
         pass
 
     def set_channels(self):
-        """
-        根据 self.satellite set self.sensor_channel_amount
-        :return:
-        """
         pass
 
     def get_dn(self):
