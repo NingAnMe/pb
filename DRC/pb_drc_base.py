@@ -193,11 +193,11 @@ class ReadL1(object):
     def get_timestamp(self):
         return
 
+    def get_central_wave_number(self):
+        return
+
     def get_wave_number(self):
         return
 
-    def get_wave_length(self):
-        return
-
-    def get_response_value(self):
+    def get_response(self):
         return

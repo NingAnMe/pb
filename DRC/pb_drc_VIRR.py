@@ -25,6 +25,7 @@ from pb_drc_base import ReadL1
 3 统一数据 dtype
 4 统一通道相关和通道无关数据的存放格式
 """
+g_main_path, g_main_file = os.path.split(os.path.realpath(__file__))
 
 
 class ReadVirrL1(ReadL1):
@@ -84,7 +85,7 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3C']
             if self.satellite in satellite_type1:
-                geo_file = self.in_file[0: 12] + 'GEOXX_MS.HDF'
+                geo_file = self.in_file[:-12] + 'GEOXX_MS.HDF'
             else:
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
@@ -99,7 +100,7 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
             if self.satellite in satellite_type1:
-                obc_file = self.in_file[0: 12] + 'OBCXX_MS.HDF'
+                obc_file = self.in_file[:-12] + 'OBCXX_MS.HDF'
             else:
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
@@ -191,17 +192,28 @@ class ReadVirrL1(ReadL1):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 if i < 2:
                     k = i
-                    data_pre = ref_sb
+                    data_pre = ref_sb[k]
+                    # 开始处理
+                    data_pre = data_pre.astype(np.float32)
+                    invalid_index = np.logical_or(data_pre < 0, data_pre > 32767)
+                    data_pre[invalid_index] = np.nan
+                    channel_data = data_pre
                 elif 2 <= i <= 4:
-                    data_pre = emissive
                     k = i - 2
+                    data_pre = emissive[k]
+                    # 开始处理
+                    data_pre = data_pre.astype(np.float32)
+                    invalid_index = np.logical_or(data_pre < 0, data_pre > 50000)
+                    data_pre[invalid_index] = np.nan
+                    channel_data = data_pre
                 else:
-                    data_pre = ref_sb
                     k = i - 3
-                # 将无效值使用NaN填充
-                channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
-                valid_index = np.logical_and(data_pre[k] < 32767, data_pre[k] > 0)
-                channel_data[valid_index] = data_pre[k][valid_index]
+                    data_pre = ref_sb[k]
+                    # 开始处理
+                    data_pre = data_pre.astype(np.float32)
+                    invalid_index = np.logical_or(data_pre < 0, data_pre > 32767)
+                    data_pre[invalid_index] = np.nan
+                    channel_data = data_pre
                 data[channel_name] = channel_data
         else:
             raise ValueError(
@@ -243,8 +255,6 @@ class ReadVirrL1(ReadL1):
                     k = i - 2
                     data_pre = k0_ir[:, k].reshape(-1, 1)
                     # data_pre = k1_ir[:, k].reshape(-1, 1)
-                    invalid_index = np.logical_and(data_pre < 0, data_pre > 50000)
-                    data_pre[invalid_index] = np.nan
                     channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
                     channel_data[:] = data_pre
                     data[channel_name] = channel_data
@@ -294,8 +304,6 @@ class ReadVirrL1(ReadL1):
                     k = i - 2
                     # data_pre = k0_ir[:, k].reshape(-1, 1)
                     data_pre = k1_ir[:, k].reshape(-1, 1)
-                    invalid_index = np.logical_and(data_pre < 0, data_pre > 50000)
-                    data_pre[invalid_index] = np.nan
                     channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
                     channel_data[:] = data_pre
                     data[channel_name] = channel_data
@@ -464,7 +472,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < 1, data_pre > 1023)
+            invalid_index = np.logical_or(data_pre < 1, data_pre > 1023)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
 
@@ -500,7 +508,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < 1, data_pre > 1023)
+            invalid_index = np.logical_or(data_pre < 1, data_pre > 1023)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
 
@@ -536,7 +544,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -1000, data_pre > 10000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -567,7 +575,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -180, data_pre > 180)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -598,7 +606,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -180, data_pre > 180)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -629,7 +637,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < 0, data_pre > 7)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -660,7 +668,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < 0, data_pre > 17)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -691,7 +699,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -18000, data_pre > 18000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre / 100.
@@ -722,7 +730,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < 0, data_pre > 18000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre / 100.
@@ -753,7 +761,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -18000, data_pre > 18000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre / 100.
@@ -784,7 +792,7 @@ class ReadVirrL1(ReadL1):
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < 0, data_pre > 18000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre / 100.
@@ -824,12 +832,23 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_wave_length(self):
+    def get_wave_number(self):
+        data = dict()
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
             if self.satellite in satellite_type1:
-                # TODO
-                pass
+                dtype = {'names': ('wave_length', 'response'), 'formats': ('f4', 'f4')}
+                for i in xrange(self.channels):
+                    k = i + 1
+                    channel_name = "CH_{:02d}".format(k)
+                    file_name = '{}_{}_SRF_CH{:02d}_Pub.txt'.format(self.satellite, self.sensor, k)
+                    data_file = os.path.join(g_main_path, 'SRF', file_name)
+                    if not os.path.isfile(data_file):
+                        continue
+                    datas = np.loadtxt(data_file, dtype=dtype)
+                    wave_length = datas['wave_length'][::-1]
+                    channel_data = 10 ** 7 / wave_length
+                    data[channel_name] = channel_data
             else:
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
@@ -837,12 +856,23 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_response_value(self):
+    def get_response(self):
+        data = dict()
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
             if self.satellite in satellite_type1:
-                # TODO
-                pass
+                dtype = {'names': ('wave_length', 'response'), 'formats': ('f4', 'f4')}
+                for i in xrange(self.channels):
+                    k = i + 1
+                    channel_name = "CH_{:02d}".format(k)
+                    file_name = '{}_{}_SRF_CH{:02d}_Pub.txt'.format(self.satellite, self.sensor, k)
+                    data_file = os.path.join(g_main_path, 'SRF', file_name)
+                    if not os.path.isfile(data_file):
+                        continue
+                    datas = np.loadtxt(data_file, dtype=dtype)
+                    wave_length = datas['response'][::-1]
+                    channel_data = wave_length
+                    data[channel_name] = channel_data
             else:
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
@@ -852,7 +882,7 @@ class ReadVirrL1(ReadL1):
 
 
 if __name__ == '__main__':
-    t_in_file = r'D:\nsmc\L1\FY3A\VIRR\FY3A_VIRRX_GBAL_L1_20150101_0000_1000M_MS.HDF'
+    t_in_file = r'D:\nsmc\L1\FY3C\VIRR\FY3C_VIRRX_GBAL_L1_20150101_0030_1000M_MS.HDF'
     t_read_l1 = ReadVirrL1(t_in_file)
     print 'attribute', '-' * 50
     print t_read_l1.satellite  # 卫星名
@@ -866,6 +896,15 @@ if __name__ == '__main__':
 
     print 'Channel', '-' * 50
 
+    def print_data_status(datas, name=None):
+        data_shape = datas.shape
+        data_min = np.nanmin(datas)
+        data_max = np.nanmax(datas)
+        data_mean = np.nanmean(datas)
+        data_median = np.nanmedian(datas)
+        print "{}: shape: {}, min: {}, max: {}, mean: {}, median: {}".format(
+            name, data_shape, data_min, data_max, data_mean, data_median)
+
     def print_channel_data(datas):
         if not isinstance(datas, dict):
             return
@@ -873,62 +912,61 @@ if __name__ == '__main__':
         keys.sort()
         for t_channel_name in keys:
             channel_data = datas[t_channel_name]
-            data_shape = channel_data.shape
-            data_min = np.nanmin(channel_data)
-            data_max = np.nanmax(channel_data)
-            print t_channel_name, data_shape, data_min, data_max
+            print_data_status(channel_data, name=t_channel_name)
 
-    print 'dn:'
-    t_data = t_read_l1.get_dn()
-    print_channel_data(t_data)
-
-    print 'k0:'
-    t_data = t_read_l1.get_k0()
-    print_channel_data(t_data)
-
-    print 'k1:'
-    t_data = t_read_l1.get_k1()
-    print_channel_data(t_data)
-
-    print 'ref:'
-    t_data = t_read_l1.get_ref()
-    print_channel_data(t_data)
-
-    print 'rad_pre:'
-    t_data = t_read_l1.get_ref()
-    print_channel_data(t_data)
-
-    print 'rad'
-    t_data = t_read_l1.get_rad()
-    print_channel_data(t_data)
-
-    print 'tbb:'
-    t_data = t_read_l1.get_tbb()
-    print_channel_data(t_data)
-
-    print 'tbb_coeff:'
-    t_data = t_read_l1.get_tbb_coeff()
-    print_channel_data(t_data)
-
-    print 'sv:'
-    t_data = t_read_l1.get_sv()
-    print_channel_data(t_data)
-
-    print 'bb:'
-    t_data = t_read_l1.get_bb()
-    print_channel_data(t_data)
+    # print 'dn:'
+    # t_data = t_read_l1.get_dn()
+    # print_channel_data(t_data)
+    #
+    # print 'k0:'
+    # t_data = t_read_l1.get_k0()
+    # print_channel_data(t_data)
+    #
+    # print 'k1:'
+    # t_data = t_read_l1.get_k1()
+    # print_channel_data(t_data)
+    #
+    # print 'ref:'
+    # t_data = t_read_l1.get_ref()
+    # print_channel_data(t_data)
+    #
+    # print 'rad_pre:'
+    # t_data = t_read_l1.get_rad_pre()
+    # print_channel_data(t_data)
+    #
+    # print 'rad'
+    # t_data = t_read_l1.get_rad()
+    # print_channel_data(t_data)
+    #
+    # print 'tbb:'
+    # t_data = t_read_l1.get_tbb()
+    # print_channel_data(t_data)
+    #
+    # print 'tbb_coeff:'
+    # t_data = t_read_l1.get_tbb_coeff()
+    # print_channel_data(t_data)
+    #
+    # print 'sv:'
+    # t_data = t_read_l1.get_sv()
+    # print_channel_data(t_data)
+    #
+    # print 'bb:'
+    # t_data = t_read_l1.get_bb()
+    # print_channel_data(t_data)
+    #
+    # t_data = t_read_l1.get_central_wave_number()
+    # print 'central_wave_number:'
+    # print t_data
 
     t_data = t_read_l1.get_wave_number()
     print 'wave_number:'
-    print print_channel_data(t_data)
+    print_channel_data(t_data)
+
+    t_data = t_read_l1.get_response()
+    print 'response:'
+    print_channel_data(t_data)
 
     print 'No channel', '-' * 50
-
-    def print_data_status(datas):
-        data_shape = datas.shape
-        data_min = np.nanmin(datas)
-        data_max = np.nanmax(datas)
-        print data_shape, data_min, data_max
 
     t_data = t_read_l1.get_height()
     print 'height'
