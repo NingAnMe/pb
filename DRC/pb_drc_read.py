@@ -69,8 +69,6 @@ class ReadL1(object):
         self.set_resolution()
         # 初始化卫星名
         self.set_satellite()
-        # 初始化与 L1 对应的 GEO 和 OBC 文件，如果有
-        self.set_file_geo_obc()
         # L1 文件名中获取并初始化 ymd hms
         self.set_ymd_hms()
         # 初始化文件属性
@@ -83,13 +81,6 @@ class ReadL1(object):
     def set_satellite(self):
         """
         根据文件名 set self.satellite
-        :return:
-        """
-        pass
-
-    def set_file_geo_obc(self):
-        """
-        根据 self.file_level_1 set self.file_geo 和 self.file_obc
         :return:
         """
         pass
