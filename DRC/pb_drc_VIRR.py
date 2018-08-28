@@ -4,6 +4,19 @@
 @Time    : 2018/8/16 14:12
 @Author  : AnNing
 """
+import os
+import re
+from datetime import datetime
+
+import h5py
+import numpy as np
+
+from PB.pb_time import get_ymd, get_hm
+from PB.pb_io import attrs2dict
+from PB.pb_sat import planck_r2t
+
+from pb_drc_base import ReadL1
+
 """
 读取处理 L1 数据，1000m 和 250m
 处理原则
@@ -12,37 +25,30 @@
 3 统一数据 dtype
 4 统一通道相关和通道无关数据的存放格式
 """
-
-from datetime import datetime
-import os
-import re
-
-import h5py
-
-from PB.pb_io import attrs2dict
-from PB.pb_sat import planck_r2t
-from PB.pb_time import get_ymd, get_hm
-from pb_drc_read import ReadL1
-import numpy as np
+g_main_path, g_main_file = os.path.split(os.path.realpath(__file__))
 
 
 class ReadVirrL1(ReadL1):
     """
-    读取VIRR传感器的L1数据
-    目前支持卫星： FY3A FY3B FY3C
-    通道数量：10
-    可见光通道：1 2 6 7 8 9 10
-    红外通道：3 4 5
+    读取 VIRR 传感器的 L1 数据
+    分辨率：1000
+        卫星： FY3A FY3B FY3C
+        通道数量：10
+        可见光通道：1 2 6 7 8 9 10
+        红外通道：3 4 5
+    分辨率：250
+        卫星：
+        通道数量：
+        可见光通道：
+        红外通道：
     """
-
     def __init__(self, in_file):
         sensor = 'VIRR'
         super(ReadVirrL1, self).__init__(in_file, sensor)
 
         # 固定值
-        # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
-        self.wave_number = {
-            'CH_03': 2673.796, 'CH_04': 925.925, 'CH_05': 833.333}
+        # 中心波数: wn(cm-1) = 10 ^ 7 / wave_length(nm)
+        self.central_wave_number = {'CH_03': 2673.796, 'CH_04': 925.925, 'CH_05': 833.333}
 
     def set_resolution(self):
         """
@@ -71,20 +77,35 @@ class ReadVirrL1(ReadL1):
         else:
             raise ValueError('Cant get the satellite name from file name.')
 
-    def set_file_geo_obc(self):
+    def __get_geo_file(self):
         """
-        根据 L1 文件名 set self.file_geo 和 self.file_obc
+        返回 GEO 文件
         :return:
         """
-        dir_path = os.path.dirname(self.in_file)
-        file_name = os.path.basename(self.in_file)
-        geo_file = os.path.join(dir_path, file_name[0:-12] + 'GEOXX_MS.HDF')
-        obc_file = os.path.join(dir_path, file_name[0:-12] + 'OBCXX_MS.HDF')
-        setattr(self, 'geo_file', geo_file)
-        setattr(self, 'obc_file', obc_file)
-        print 'Read L1 <<< {}'.format(self.in_file)
-        print 'Read L1 <<< {}'.format(geo_file)
-        print 'Read L1 <<< {}'.format(obc_file)
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3C']
+            if self.satellite in satellite_type1:
+                geo_file = self.in_file[:-12] + 'GEOXX_MS.HDF'
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError("Cant handle this resolution: ".format(self.resolution))
+        return geo_file
+
+    def __get_obc_file(self):
+        """
+        返回 OBC 文件
+        :return:
+        """
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                obc_file = self.in_file[:-12] + 'OBCXX_MS.HDF'
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError("Cant handle this resolution: ".format(self.resolution))
+        return obc_file
 
     def set_ymd_hms(self):
         """
@@ -108,11 +129,9 @@ class ReadVirrL1(ReadL1):
                 with h5py.File(self.in_file, 'r') as hdf5_file:
                     self.file_attr = attrs2dict(hdf5_file.attrs)
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
-            raise ValueError(
-                "Cant handle this resolution: ".format(self.resolution))
+            raise ValueError("Cant handle this resolution: ".format(self.resolution))
 
     def set_dataset_shape(self):
         """
@@ -125,12 +144,10 @@ class ReadVirrL1(ReadL1):
             if self.satellite in satellite_type1:
                 self.data_shape = (1800, 2048)
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         # elif self.resolution == 250:
         else:
-            raise ValueError(
-                "Cant handle this resolution: ".format(self.resolution))
+            raise ValueError("Cant handle this resolution: ".format(self.resolution))
 
     def set_channels(self):
         """
@@ -153,20 +170,21 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-
             if self.satellite in satellite_type1:
-                # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-                s = self.data_shape
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
+                with h5py.File(data_file, 'r') as hdf5_file:
                     emissive = hdf5_file.get('/EV_Emissive')[:, :s[0], :s[1]]
                     ref_sb = hdf5_file.get('/EV_RefSB')[:, :s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                with h5py.File(data_file, 'r') as hdf5_file:
                     emissive = hdf5_file.get('/Data/EV_Emissive').value
                     ref_sb = hdf5_file.get('/Data/EV_RefSB').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 1 2 6 7 8 9 10 为可见光通道，dn 值为 ref_sb
             # 3 4 5 为红外通道，dn 值为 emissive
@@ -174,19 +192,28 @@ class ReadVirrL1(ReadL1):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 if i < 2:
                     k = i
-                    data_pre = ref_sb
+                    data_pre = ref_sb[k]
+                    # 开始处理
+                    data_pre = data_pre.astype(np.float32)
+                    invalid_index = np.logical_or(data_pre < 0, data_pre > 32767)
+                    data_pre[invalid_index] = np.nan
+                    channel_data = data_pre
                 elif 2 <= i <= 4:
-                    data_pre = emissive
                     k = i - 2
+                    data_pre = emissive[k]
+                    # 开始处理
+                    data_pre = data_pre.astype(np.float32)
+                    invalid_index = np.logical_or(data_pre < 0, data_pre > 50000)
+                    data_pre[invalid_index] = np.nan
+                    channel_data = data_pre
                 else:
-                    data_pre = ref_sb
                     k = i - 3
-                # 将无效值使用NaN填充
-                channel_data = np.full(
-                    self.data_shape, np.nan, dtype=np.float32)
-                valid_index = np.logical_and(
-                    data_pre[k] < 32767, data_pre[k] > 0)
-                channel_data[valid_index] = data_pre[k][valid_index]
+                    data_pre = ref_sb[k]
+                    # 开始处理
+                    data_pre = data_pre.astype(np.float32)
+                    invalid_index = np.logical_or(data_pre < 0, data_pre > 32767)
+                    data_pre[invalid_index] = np.nan
+                    channel_data = data_pre
                 data[channel_name] = channel_data
         else:
             raise ValueError(
@@ -212,38 +239,30 @@ class ReadVirrL1(ReadL1):
             elif self.satellite in satellite_type2:
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
-                    k0_ir = hdf5_file.get(
-                        '/Data/Emissive_Radiance_Scales').value
+                    k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
                     # k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
             for i in xrange(self.channels):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 if i < 2:
                     k = i * 2
                     k0 = k0_k1_vis[k]
                     # k1 = k0_k1_vis[k + 1]
-                    channel_data = np.full(
-                        self.data_shape, k0, dtype=np.float32)
+                    channel_data = np.full(self.data_shape, k0, dtype=np.float32)
                     data[channel_name] = channel_data
                 elif 2 <= i <= 4:
                     k = i - 2
                     data_pre = k0_ir[:, k].reshape(-1, 1)
                     # data_pre = k1_ir[:, k].reshape(-1, 1)
-                    invalid_index = np.logical_and(
-                        data_pre < 0, data_pre > 50000)
-                    data_pre[invalid_index] = np.nan
-                    channel_data = np.full(
-                        self.data_shape, np.nan, dtype=np.float32)
+                    channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
                     channel_data[:] = data_pre
                     data[channel_name] = channel_data
                 else:
                     k = (i - 3) * 2
                     k0 = k0_k1_vis[k]
                     # k1 = k0_k1_vis[k + 1]
-                    channel_data = np.full(
-                        self.data_shape, k0, dtype=np.float32)
+                    channel_data = np.full(self.data_shape, k0, dtype=np.float32)
                     data[channel_name] = channel_data
         else:
             raise ValueError(
@@ -261,7 +280,7 @@ class ReadVirrL1(ReadL1):
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
             if self.satellite in satellite_type1:
-                s = self.data_shape
+                s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
                     # k0_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
@@ -270,37 +289,29 @@ class ReadVirrL1(ReadL1):
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
                     # k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
-                    k1_ir = hdf5_file.get(
-                        '/Data/Emissive_Radiance_Offsets').value
+                    k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
             for i in xrange(self.channels):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 if i < 2:
                     k = i * 2
                     # k0 = k0_k1_vis[k]
                     k1 = k0_k1_vis[k + 1]
-                    channel_data = np.full(
-                        self.data_shape, k1, dtype=np.float32)
+                    channel_data = np.full(self.data_shape, k1, dtype=np.float32)
                     data[channel_name] = channel_data
                 elif 2 <= i <= 4:
                     k = i - 2
                     # data_pre = k0_ir[:, k].reshape(-1, 1)
                     data_pre = k1_ir[:, k].reshape(-1, 1)
-                    invalid_index = np.logical_and(
-                        data_pre < 0, data_pre > 50000)
-                    data_pre[invalid_index] = np.nan
-                    channel_data = np.full(
-                        self.data_shape, np.nan, dtype=np.float32)
+                    channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
                     channel_data[:] = data_pre
                     data[channel_name] = channel_data
                 else:
                     k = (i - 3) * 2
                     # k0 = k0_k1_vis[k]
                     k1 = k0_k1_vis[k + 1]
-                    channel_data = np.full(
-                        self.data_shape, k1, dtype=np.float32)
+                    channel_data = np.full(self.data_shape, k1, dtype=np.float32)
                     data[channel_name] = channel_data
         else:
             raise ValueError(
@@ -311,8 +322,7 @@ class ReadVirrL1(ReadL1):
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
-            ref_channels = ['CH_{:02d}'.format(i)
-                            for i in [1, 2, 6, 7, 8, 9, 10]]
+            ref_channels = ['CH_{:02d}'.format(i) for i in [1, 2, 6, 7, 8, 9, 10]]
             if self.satellite in satellite_type1:
                 dn = self.get_dn()
                 k0 = self.get_k0()
@@ -320,12 +330,10 @@ class ReadVirrL1(ReadL1):
                 for channel_name in dn:
                     if channel_name not in ref_channels:
                         continue
-                    channel_data = dn[channel_name] * \
-                        k0[channel_name] + k1[channel_name]
+                    channel_data = dn[channel_name] * k0[channel_name] + k1[channel_name]
                     data[channel_name] = channel_data
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -347,12 +355,10 @@ class ReadVirrL1(ReadL1):
                 for channel_name in dn:
                     if channel_name not in ref_channels:
                         continue
-                    channel_data = dn[channel_name] * \
-                        k0[channel_name] + k1[channel_name]
+                    channel_data = dn[channel_name] * k0[channel_name] + k1[channel_name]
                     data[channel_name] = channel_data
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -368,8 +374,7 @@ class ReadVirrL1(ReadL1):
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
             if self.satellite in satellite_type1:
                 rad_pres = self.get_rad_pre()
-                b0_b1_b2_nonlinear = self.file_attr.get(
-                    'Prelaunch_Nonlinear_Coefficients')
+                b0_b1_b2_nonlinear = self.file_attr.get('Prelaunch_Nonlinear_Coefficients')
 
                 # 通道 3 4 5
                 for i in xrange(3):
@@ -382,8 +387,7 @@ class ReadVirrL1(ReadL1):
                     rad = rad_pre + rad_nonlinear
                     data[channel_name] = rad
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -402,17 +406,16 @@ class ReadVirrL1(ReadL1):
             rad2tbb_k1 = {'CH_03': 0, 'CH_04': 0, 'CH_05': 0}
             if self.satellite in satellite_type1:
                 rads = self.get_rad()
+                central_wave_numbers = self.get_central_wave_number()
                 for channel_name in rads:
                     rad = rads[channel_name]
-                    center_wave_number = self.wave_number[channel_name]
+                    central_wave_number = central_wave_numbers[channel_name]
                     k0 = rad2tbb_k0[channel_name]
                     k1 = rad2tbb_k1[channel_name]
-                    tbb = planck_r2t(rad, center_wave_number, k0, k1)
-
+                    tbb = planck_r2t(rad, central_wave_number, k0, k1)
                     data[channel_name] = tbb
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -441,8 +444,7 @@ class ReadVirrL1(ReadL1):
                     tbb_coeff = tbb * k0 + k1
                     data[channel_name] = tbb_coeff
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -453,30 +455,30 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            obc_file = getattr(self, 'obc_file')
-            if not os.path.isfile(obc_file):
-                raise ValueError('OBC file is not exist. {}'.format(obc_file))
             if self.satellite in satellite_type1:
-                with h5py.File(obc_file, 'r') as hdf5_file:
-                    # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-                    s = self.data_shape
+                data_file = self.__get_obc_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('Space_View')[:, :s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                with h5py.File(obc_file, 'r') as hdf5_file:
+                data_file = self.__get_obc_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Calibration/Space_View').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < 1, data_pre > 1023)
+            invalid_index = np.logical_or(data_pre < 1, data_pre > 1023)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
 
             for i in xrange(self.channels):
                 channel_name = 'CH_{:02d}'.format(i + 1)
-                channel_data = np.full(
-                    self.data_shape, np.nan, dtype=np.float32)
+                channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
                 channel_data[:] = data_pre[i, :, 0].reshape(-1, 1)
                 data[channel_name] = channel_data
         else:
@@ -489,31 +491,30 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            obc_file = getattr(self, 'obc_file')
-            if not os.path.isfile(obc_file):
-                raise ValueError('OBC file is not exist. {}'.format(obc_file))
             if self.satellite in satellite_type1:
-                with h5py.File(obc_file, 'r') as hdf5_file:
-                    # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-                    s = self.data_shape
+                data_file = self.__get_obc_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('Blackbody_View')[:, :s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                with h5py.File(obc_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get(
-                        '/Calibration/Blackbody_View').value
+                data_file = self.__get_obc_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Calibration/Blackbody_View').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < 1, data_pre > 1023)
+            invalid_index = np.logical_or(data_pre < 1, data_pre > 1023)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
 
             for i in xrange(self.channels):
                 channel_name = 'CH_{:02d}'.format(i + 1)
-                channel_data = np.full(
-                    self.data_shape, np.nan, dtype=np.float32)
+                channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
                 channel_data[:] = data_pre[i, :, 0].reshape(-1, 1)
                 data[channel_name] = channel_data
         else:
@@ -525,28 +526,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('Height')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Geolocation/DEM').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -1000, data_pre > 10000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -559,28 +557,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('Latitude')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Geolocation/Latitude').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -180, data_pre > 180)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -593,28 +588,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('Longitude')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Geolocation/Longitude').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -180, data_pre > 180)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -627,28 +619,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('LandSeaMask')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Geolocation/LandSeaMask').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < 0, data_pre > 7)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -661,28 +650,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('LandCover')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Geolocation/LandCover').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < 0, data_pre > 17)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre
@@ -695,29 +681,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('SensorAzimuth')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get(
-                        '/Geolocation/SensorAzimuth').value
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    data_pre = hdf5_file.get('/Geolocation/SensorAzimuth').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -18000, data_pre > 18000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre / 100.
@@ -730,28 +712,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('SensorZenith')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Geolocation/SensorZenith').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < 0, data_pre > 18000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre / 100.
@@ -764,28 +743,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('SolarAzimuth')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Geolocation/SolarAzimuth').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < -18000, data_pre > 18000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre / 100.
@@ -798,28 +774,25 @@ class ReadVirrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
-            geo_file = getattr(self, 'geo_file')
 
-            # 因为FY3A数据不规整，存在 1810,2048 的数据，所以，取数据的时候，取 1800,2048
-            s = self.data_shape
             if self.satellite in satellite_type1:
-                if not os.path.isfile(self.in_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(self.in_file))
-                with h5py.File(self.in_file, 'r') as hdf5_file:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
+                    s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                     data_pre = hdf5_file.get('SolarZenith')[:s[0], :s[1]]
             elif self.satellite in satellite_type2:
-                if not os.path.isfile(geo_file):
-                    raise ValueError(
-                        'L1 file is not exist. {}'.format(geo_file))
-                with h5py.File(geo_file, 'r') as hdf5_file:
+                data_file = self.__get_geo_file()
+                if not os.path.isfile(data_file):
+                    raise ValueError('Data file is not exist. {}'.format(data_file))
+                with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get('/Geolocation/SolarZenith').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
 
             # 过滤无效值
-            invalid_index = np.logical_and(data_pre < -1000, data_pre > 10000)
+            invalid_index = np.logical_or(data_pre < 0, data_pre > 18000)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
             data = data_pre / 100.
@@ -834,11 +807,9 @@ class ReadVirrL1(ReadL1):
             if self.satellite in satellite_type1:
                 seconds_of_file = 300  # 一个时次持续 300 秒
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
             file_date = datetime.strptime(self.ymd + self.hms, '%Y%m%d%H%M%S')
-            timestamp = (
-                file_date - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()
+            timestamp = (file_date - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()
             row_length = self.data_shape[0]
             delta = np.linspace(0, seconds_of_file - 1, row_length)
             data = np.full(self.data_shape, np.nan, dtype=np.float64)
@@ -849,26 +820,65 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_wave_number(self):
+    def get_central_wave_number(self):
         if self.resolution == 1000:
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
             if self.satellite in satellite_type1:
-                data = self.wave_number
+                data = self.central_wave_number
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    # TODO
-    def get_wave_length(self):
-        pass
+    def get_wave_number(self):
+        data = dict()
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                dtype = {'names': ('wave_length', 'response'), 'formats': ('f4', 'f4')}
+                for i in xrange(self.channels):
+                    k = i + 1
+                    channel_name = "CH_{:02d}".format(k)
+                    file_name = '{}_{}_SRF_CH{:02d}_Pub.txt'.format(self.satellite, self.sensor, k)
+                    data_file = os.path.join(g_main_path, 'SRF', file_name)
+                    if not os.path.isfile(data_file):
+                        continue
+                    datas = np.loadtxt(data_file, dtype=dtype)
+                    wave_length = datas['wave_length'][::-1]
+                    channel_data = 10 ** 7 / wave_length
+                    data[channel_name] = channel_data
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
 
-    # TODO
-    def get_response_value(self):
-        pass
+    def get_response(self):
+        data = dict()
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                dtype = {'names': ('wave_length', 'response'), 'formats': ('f4', 'f4')}
+                for i in xrange(self.channels):
+                    k = i + 1
+                    channel_name = "CH_{:02d}".format(k)
+                    file_name = '{}_{}_SRF_CH{:02d}_Pub.txt'.format(self.satellite, self.sensor, k)
+                    data_file = os.path.join(g_main_path, 'SRF', file_name)
+                    if not os.path.isfile(data_file):
+                        continue
+                    datas = np.loadtxt(data_file, dtype=dtype)
+                    wave_length = datas['response'][::-1]
+                    channel_data = wave_length
+                    data[channel_name] = channel_data
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
 
 
 if __name__ == '__main__':
@@ -886,6 +896,15 @@ if __name__ == '__main__':
 
     print 'Channel', '-' * 50
 
+    def print_data_status(datas, name=None):
+        data_shape = datas.shape
+        data_min = np.nanmin(datas)
+        data_max = np.nanmax(datas)
+        data_mean = np.nanmean(datas)
+        data_median = np.nanmedian(datas)
+        print "{}: shape: {}, min: {}, max: {}, mean: {}, median: {}".format(
+            name, data_shape, data_min, data_max, data_mean, data_median)
+
     def print_channel_data(datas):
         if not isinstance(datas, dict):
             return
@@ -893,10 +912,7 @@ if __name__ == '__main__':
         keys.sort()
         for t_channel_name in keys:
             channel_data = datas[t_channel_name]
-            data_shape = channel_data.shape
-            data_min = np.nanmin(channel_data)
-            data_max = np.nanmax(channel_data)
-            print t_channel_name, data_shape, data_min, data_max
+            print_data_status(channel_data, name=t_channel_name)
 
     print 'dn:'
     t_data = t_read_l1.get_dn()
@@ -915,7 +931,7 @@ if __name__ == '__main__':
     print_channel_data(t_data)
 
     print 'rad_pre:'
-    t_data = t_read_l1.get_ref()
+    t_data = t_read_l1.get_rad_pre()
     print_channel_data(t_data)
 
     print 'rad'
@@ -938,17 +954,19 @@ if __name__ == '__main__':
     t_data = t_read_l1.get_bb()
     print_channel_data(t_data)
 
+    t_data = t_read_l1.get_central_wave_number()
+    print 'central_wave_number:'
+    print t_data
+
     t_data = t_read_l1.get_wave_number()
     print 'wave_number:'
-    print print_channel_data(t_data)
+    print_channel_data(t_data)
+
+    t_data = t_read_l1.get_response()
+    print 'response:'
+    print_channel_data(t_data)
 
     print 'No channel', '-' * 50
-
-    def print_data_status(datas):
-        data_shape = datas.shape
-        data_min = np.nanmin(datas)
-        data_max = np.nanmax(datas)
-        print data_shape, data_min, data_max
 
     t_data = t_read_l1.get_height()
     print 'height'
@@ -990,8 +1008,7 @@ if __name__ == '__main__':
     print 'timestamp:'
     print_data_status(t_data)
     datetime_timestamp = datetime.utcfromtimestamp(t_data[0][0])
-    datetime_file = datetime.strptime(
-        t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')
+    datetime_file = datetime.strptime(t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')
     if datetime_timestamp != datetime_file:
         print 'Error', '-' * 100
         print t_data[0][0], datetime_timestamp
