@@ -1,6 +1,8 @@
 # coding: utf-8
-import numpy as np
 from datetime import datetime
+
+import numpy as np
+
 
 __author__ = 'wangpeng'
 
@@ -175,7 +177,7 @@ def spec_convolution(WaveNum, WaveRad, RealRad):
     return S
 
 
-def planck_r2t(r, w, a=None, b=None):
+def planck_r2t(r, w):
     '''
     function radiance2tbb: convert radiance data into brightness temperature (i.e., equivalent blackbody temperature)
     r: spectral radiance data in w/m2/sr/um  单位(mW/(m2.cm-1.sr))
@@ -187,12 +189,7 @@ def planck_r2t(r, w, a=None, b=None):
     c1 = 1.1910439e-16  # 1.19104*10-5 mW/m2.sr.cm-1
     c2 = 1.438769e-2  # 1.43877 K/cm-1
     vs = 1.0E+2 * w
-    te = c2 * vs / np.log(c1 * vs ** 3 / (1.0E-5 * r) + 1.0)
-
-    if a and b is not None:
-        tbb = te * a + b
-    else:
-        tbb = te
+    tbb = c2 * vs / np.log(c1 * vs ** 3 / (1.0E-5 * r) + 1.0)
 
     return tbb
 
