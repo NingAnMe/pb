@@ -277,4 +277,5 @@ if __name__ == '__main__':
 #
 #     p.easyplot(iras2.Lats, iras2.Lons, iras2.Tbb[
 #                'CH_01'], vmin=0, vmax=300, markersize=1.5, marker='.')
+
 #     p.savefig('test.png')
