@@ -98,9 +98,9 @@ class ReadMersiL1(ReadL1):
             raise ValueError(
                 "Cant handle this resolution: ".format(self.resolution))
 
-    def set_dataset_shape(self):
+    def set_data_shape(self):
         """
-        根据 self.satellite set self.dataset_shape
+        根据 self.satellite set self.data_shape
         :return:
         """
         # 如果分辨率是 1000 米
@@ -743,14 +743,17 @@ class ReadMersiL1(ReadL1):
                     band = "CH_{:02d}".format(k)
                     file_name = '{}_{}_SRF_CH{:02d}_Pub.txt'.format(
                         self.satellite, self.sensor, k)
-                    data_file = os.path.join(g_main_path, 'SRF', file_name)
+                    data_file = os.path.join(MainPath, 'SRF', file_name)
                     if not os.path.isfile(data_file):
                         continue
                     datas = np.loadtxt(data_file, dtype=dtype)
+                    # 波长转波数
                     wave_length = datas['wave_length'][::-1]
+                    wave_number = 10 ** 7 / wave_length
+                    # 响应
                     response = datas['response'][::-1]
-                    channel_data = 10 ** 7 / wave_length
-                    data1[band] = channel_data
+
+                    data1[band] = wave_number
                     data2[band] = response
             else:
                 raise ValueError(
@@ -812,10 +815,9 @@ if __name__ == '__main__':
 #     print_channel_data(t_data)
 
     print 'longitude:'
-    t_data = mersi.get_sensor_zenith()
+    t_data, t_data2 = mersi.get_spectral_response()
 #     print t_data.keys()
-    print t_data.shape
-    print_data_status(t_data)
+    print_channel_data(t_data2)
 
 
 #     print mersi.file_attr  # L1 文件属性

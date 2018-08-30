@@ -28,7 +28,7 @@ self.set_resolution()  # 设置 self.resolution
 self.set_satellite()  # 设置  self.satellite
 self.set_ymd_hms()  # 设置  self.ymd 和 self.hms
 self.set_file_attr()  # 设置  self.file_attr
-self.set_dataset_shape()  # 设置  self.data_shape
+self.set_data_shape()  # 设置  self.data_shape
 self.set_channels()  # 设置  self.channels
 
 数据获取方法实现原则
@@ -111,7 +111,7 @@ class ReadL1(object):
         self.set_satellite()  # 设置  self.satellite
         self.set_ymd_hms()  # 设置  self.ymd 和 self.hms
         self.set_file_attr()  # 设置  self.file_attr
-        self.set_dataset_shape()  # 设置  self.data_shape
+        self.set_data_shape()  # 设置  self.data_shape
         self.set_channels()  # 设置  self.channels
 
     def set_satellite(self):
@@ -126,7 +126,7 @@ class ReadL1(object):
     def set_file_attr(self):
         pass
 
-    def set_dataset_shape(self):
+    def set_data_shape(self):
         pass
 
     def set_channels(self):
