@@ -730,6 +730,36 @@ class ReadMersiL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
+    def get_spectral_response(self):
+        data1 = dict()
+        data2 = dict()
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                dtype = {
+                    'names': ('wave_length', 'response'), 'formats': ('f4', 'f4')}
+                for i in xrange(self.channels):
+                    k = i + 1
+                    band = "CH_{:02d}".format(k)
+                    file_name = '{}_{}_SRF_CH{:02d}_Pub.txt'.format(
+                        self.satellite, self.sensor, k)
+                    data_file = os.path.join(g_main_path, 'SRF', file_name)
+                    if not os.path.isfile(data_file):
+                        continue
+                    datas = np.loadtxt(data_file, dtype=dtype)
+                    wave_length = datas['wave_length'][::-1]
+                    response = datas['response'][::-1]
+                    channel_data = 10 ** 7 / wave_length
+                    data1[band] = channel_data
+                    data2[band] = response
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data1, data2
+
 if __name__ == '__main__':
     L1File = 'D:/data/FY3C_MERSI/FY3C_MERSI_GBAL_L1_20150223_2340_1000M_MS.HDF'
     mersi = ReadMersiL1(L1File)

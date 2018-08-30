@@ -56,8 +56,7 @@ self.get_bb(self)  # 黑体观测值
 
 # 2通道相关，但数据的 shape 与 self.data_shape 不同
 self.get_central_wave_number(self)  # 中心波数，shape = （1，）
-self.get_wave_number(self)  # 波数有小到大（根据波长转换而来）, unit: cm-1，shape =（n，1）
-self.get_wave_response(self)  # 波数对应的响应值 ，shape =（n，1）
+self.get_spectral_response(self)  # 波数和响应，波数有小到大（根据波长转换而来）, unit: cm-1，shape =（n，1）
 
 # 3非通道数据获取方法
 self.get_height(self)  # 高度
@@ -190,8 +189,5 @@ class ReadL1(object):
     def get_central_wave_number(self):
         return
 
-    def get_wave_number(self):
-        return
-
-    def get_response(self):
+    def get_spectral_response(self):
         return
