@@ -26,7 +26,7 @@ WGS84_E2 = 2 * WGS84_F - WGS84_F ** 2
 
 # Rotational angular velocity of Earth in radians/sec from IERS
 #   Conventions (2003).
-ANGVEL = 7.2921150e-5;
+ANGVEL = 7.2921150e-5
 
 
 def getasol6s(jday, GMT, lats, lons):
@@ -56,30 +56,36 @@ def getasol6s(jday, GMT, lats, lons):
     a4 = 0.014615
     a5 = 0.040849
     A = 2 * np.pi * jday / 365.0
-    delta = b1 - b2 * cos(A) + b3 * sin(A) - b4 * cos(2 * A) + b5 * sin(2 * A) - b6 * cos(3 * A) + b7 * sin(3 * A)
-    ET = 12 * (a1 + a2 * cos(A) - a3 * sin(A) - a4 * cos(2 * A) - a5 * sin(2 * A)) / np.pi
+    delta = b1 - b2 * cos(A) + b3 * sin(A) - b4 * cos(2 * A) + \
+        b5 * sin(2 * A) - b6 * cos(3 * A) + b7 * sin(3 * A)
+    ET = 12 * (a1 + a2 * cos(A) - a3 * sin(A) - a4 *
+               cos(2 * A) - a5 * sin(2 * A)) / np.pi
     MST = GMT + lons / 15.0
     TST = MST + ET
     t = 15.0 * np.pi / 180.0 * (TST - 12.0)
 
-    asol = np.arccos(np.cos(delta) * np.cos(lats) * np.cos(t) + np.sin(delta) * np.sin(lats))
+    asol = np.arccos(
+        np.cos(delta) * np.cos(lats) * np.cos(t) + np.sin(delta) * np.sin(lats))
 
     return asol
 
+
 def cal_G(lon, lat):
-#     sqrt((earth_b/1000)^2*(cos(lat*!dtor))^2+(earth_a/1000)^2*(sin(lat*!dtor))^2)) ;曲率半径
+    # sqrt((earth_b/1000)^2*(cos(lat*!dtor))^2+(earth_a/1000)^2*(sin(lat*!dtor))^2))
+    # ;曲率半径
     a = WGS84_A / 1000.
     b = WGS84_B / 1000.
     coslat = np.cos(np.deg2rad(lat))
     sinlat = np.sin(np.deg2rad(lat))
     # wangpeng  modify the old code bug 20180401
 #     rad_earth2 = (a * b) / 1000. / np.sqrt(b ** 2 * (coslat ** 2 + a ** 2 + sinlat ** 2))
-    rad_earth = (a * b) * 1000. / np.sqrt(b ** 2 * coslat ** 2 + a ** 2 * sinlat ** 2)
+    rad_earth = (a * b) * 1000. / \
+        np.sqrt(b ** 2 * coslat ** 2 + a ** 2 * sinlat ** 2)
     N_lat = rad_earth
 
     G = np.full((3,), 0.)
     H = 0
-    G[0] = 1.*(N_lat + H) * np.cos(np.deg2rad(lat)) * np.cos(np.deg2rad(lon))
+    G[0] = 1. * (N_lat + H) * np.cos(np.deg2rad(lat)) * np.cos(np.deg2rad(lon))
     G[1] = (N_lat + H) * np.cos(np.deg2rad(lat)) * np.sin(np.deg2rad(lon))
     G[2] = (N_lat + H) * np.sin(np.deg2rad(lat))
 
@@ -131,7 +137,7 @@ def RAE2ENU(azimuthIn, zenithIn, rangeIn):
     return east, north, up
 
 
-def ENU2ECEF (east, north, up, lon, lat):
+def ENU2ECEF(east, north, up, lon, lat):
     """
     Convert local East, North, Up (ENU) coordinates to the (x,y,z) Earth Centred Earth Fixed (ECEF) coordinates
     Reference is here:  
@@ -154,14 +160,18 @@ def ENU2ECEF (east, north, up, lon, lat):
     lm = np.deg2rad(np.asarray(lon, dtype=np.float64))
     ph = np.deg2rad(np.asarray(lat, dtype=np.float64))
 
-    x = -1.0 * x0 * np.sin(lm) - y0 * np.cos(lm) * np.sin(ph) + z0 * np.cos(lm) * np.cos(ph)
-    y = x0 * np.cos(lm) - y0 * np.sin(lm) * np.sin(ph) + z0 * np.sin(lm) * np.cos(ph)
+    x = -1.0 * x0 * np.sin(lm) - y0 * np.cos(lm) * \
+        np.sin(ph) + z0 * np.cos(lm) * np.cos(ph)
+    y = x0 * np.cos(lm) - y0 * np.sin(lm) * np.sin(ph) + \
+        z0 * np.sin(lm) * np.cos(ph)
     z = x0 * 0 + y0 * np.cos(ph) + z0 * np.sin(ph)
 
     return x, y, z
 
+
 def deg2meter(deg):
     return deg * np.pi * EARTH_EQUATOR_RADIUS_KM * 1000. / 180.
+
 
 def distance_Flat(lat1, lon1, lat2, lon2):
     '''
@@ -173,9 +183,10 @@ def distance_Flat(lat1, lon1, lat2, lon2):
     mean_lat = (lat1 + lat2) / 2.
 
     distance = EARTH_MEAN_RADIUS_KM * sqrt((delta_lat * DEGREES_TO_RADIANS) ** 2 +
-                    (cos(mean_lat * DEGREES_TO_RADIANS) * delta_lon * DEGREES_TO_RADIANS) ** 2)
+                                           (cos(mean_lat * DEGREES_TO_RADIANS) * delta_lon * DEGREES_TO_RADIANS) ** 2)
 
     return distance
+
 
 def distance_GreatCircle(lat1, lon1, lat2, lon2):
     '''
@@ -184,8 +195,9 @@ def distance_GreatCircle(lat1, lon1, lat2, lon2):
     delta_lon = lon1 - lon2
 
     distance = EARTH_MEAN_RADIUS_KM * acos(sin(lat1 * DEGREES_TO_RADIANS) * sin(lat2 * DEGREES_TO_RADIANS) +
-                cos(lat1 * DEGREES_TO_RADIANS) * cos(lat2 * DEGREES_TO_RADIANS) * cos(delta_lon * DEGREES_TO_RADIANS))
+                                           cos(lat1 * DEGREES_TO_RADIANS) * cos(lat2 * DEGREES_TO_RADIANS) * cos(delta_lon * DEGREES_TO_RADIANS))
     return distance
+
 
 def distance_GreatCircle_np(lat1, lon1, lat2, lon2):
     '''
@@ -195,15 +207,14 @@ def distance_GreatCircle_np(lat1, lon1, lat2, lon2):
     delta_lon = lon1 - lon2
 
     distance = EARTH_MEAN_RADIUS_KM * np.arccos(np.sin(lat1 * DEGREES_TO_RADIANS) * np.sin(lat2 * DEGREES_TO_RADIANS) +
-                np.cos(lat1 * DEGREES_TO_RADIANS) * np.cos(lat2 * DEGREES_TO_RADIANS) * np.cos(delta_lon * DEGREES_TO_RADIANS))
+                                                np.cos(lat1 * DEGREES_TO_RADIANS) * np.cos(lat2 * DEGREES_TO_RADIANS) * np.cos(delta_lon * DEGREES_TO_RADIANS))
     return distance
+
 
 def myfunc(Lats1, Lons1, Lats2, Lons2):
 
     dis = distance_GreatCircle_np(Lats1, Lons1, Lats2, Lons2)
     return dis
-
-
 
 
 def sub_rodrigues_rotate(V, satZ, k):
@@ -224,14 +235,16 @@ def sub_rodrigues_rotate(V, satZ, k):
     # 根据罗格里德旋转公式，计算旋转矢量
     v_unit_rot[0, 0] = np.cos(th_d) + k[0] ** 2 * (1 - np.cos(th_d))
     v_unit_rot[1, 0] = k[0] * k[1] * (1 - np.cos(th_d)) + k[2] * np.sin(th_d)
-    v_unit_rot[2, 0] = -1.*k[1] * np.sin(th_d) + k[0] * k[2] * (1 - np.cos(th_d))
+    v_unit_rot[2, 0] = -1. * k[1] * \
+        np.sin(th_d) + k[0] * k[2] * (1 - np.cos(th_d))
 
     v_unit_rot[0, 1] = k[0] * k[1] * (1 - np.cos(th_d)) - k[2] * np.sin(th_d)
     v_unit_rot[1, 1] = np.cos(th_d) + k[1] ** 2 * (1 - np.cos(th_d))
     v_unit_rot[2, 1] = k[0] * np.sin(th_d) + k[1] * k[2] * (1 - np.cos(th_d))
 
     v_unit_rot[0, 2] = k[1] * np.sin(th_d) + k[0] * k[2] * (1 - np.cos(th_d))
-    v_unit_rot[1, 2] = -1.* k[0] * np.sin(th_d) + k[1] * k[2] * (1 - np.cos(th_d))
+    v_unit_rot[1, 2] = -1. * k[0] * \
+        np.sin(th_d) + k[1] * k[2] * (1 - np.cos(th_d))
     v_unit_rot[2, 2] = np.cos(th_d) + k[2] ** 2 * (1 - np.cos(th_d))
     #     print v_unit_rot
 
@@ -240,6 +253,7 @@ def sub_rodrigues_rotate(V, satZ, k):
     #     print V_ROT
 
     return V_ROT
+
 
 def computing_L_R(SAT, FOVS):
     '''
@@ -250,12 +264,15 @@ def computing_L_R(SAT, FOVS):
     earth_b = 6356.752e3
 
     l_root = np.full((2,), 0.)
-    a = FOVS[0] ** 2 * earth_b ** 2 + FOVS[1] ** 2 * earth_b ** 2 + FOVS[2] ** 2 * earth_a ** 2
-    b = 2 * FOVS[0] * SAT[0] * earth_b ** 2 + 2 * FOVS[1] * SAT[1] * earth_b ** 2 + 2 * FOVS[2] * SAT[2] * earth_a ** 2
-    c = SAT[0] ** 2 * earth_b ** 2 + SAT[1] ** 2 * earth_b ** 2 + SAT[2] ** 2 * earth_a ** 2 - earth_a ** 2 * earth_b ** 2
+    a = FOVS[0] ** 2 * earth_b ** 2 + FOVS[1] ** 2 * \
+        earth_b ** 2 + FOVS[2] ** 2 * earth_a ** 2
+    b = 2 * FOVS[0] * SAT[0] * earth_b ** 2 + 2 * FOVS[1] * \
+        SAT[1] * earth_b ** 2 + 2 * FOVS[2] * SAT[2] * earth_a ** 2
+    c = SAT[0] ** 2 * earth_b ** 2 + SAT[1] ** 2 * earth_b ** 2 + \
+        SAT[2] ** 2 * earth_a ** 2 - earth_a ** 2 * earth_b ** 2
 
-    l_root[0] = (-1.*b + np.sqrt(b ** 2 - 4 * a * c)) / (2.*a)
-    l_root[1] = (-1.*b - np.sqrt(b ** 2 - 4 * a * c)) / (2.*a)
+    l_root[0] = (-1. * b + np.sqrt(b ** 2 - 4 * a * c)) / (2. * a)
+    l_root[1] = (-1. * b - np.sqrt(b ** 2 - 4 * a * c)) / (2. * a)
 
     L = np.min(l_root)
     R = np.full((3,), 0.)
@@ -263,7 +280,8 @@ def computing_L_R(SAT, FOVS):
     R[1] = SAT[1] + L * FOVS[1]
     R[2] = SAT[2] + L * FOVS[2]
 
-    return  R
+    return R
+
 
 def ggp_footpoint(LOS_ECEF, LOS_SAT_ECEF, th, fai, lat, lon, dfai):
 
@@ -279,14 +297,15 @@ def ggp_footpoint(LOS_ECEF, LOS_SAT_ECEF, th, fai, lat, lon, dfai):
     k = np.full((3,), 0.)
     k[0] = 0
     k[2] = np.sqrt(b ** 2 / (c ** 2 + b ** 2))
-    k[1] = -1.*c * k[2] / b
+    k[1] = -1. * c * k[2] / b
     dfai = 0.5 * dfai
     fov_unit = sub_rodrigues_rotate(LOS_ECEF, dfai, k)
 #     print 'fov_unit', fov_unit
-    los_unit = LOS_ECEF / (np.sqrt(LOS_ECEF[0] ** 2 + LOS_ECEF[1] ** 2 + LOS_ECEF[2] ** 2))
+    los_unit = LOS_ECEF / \
+        (np.sqrt(LOS_ECEF[0] ** 2 + LOS_ECEF[1] ** 2 + LOS_ECEF[2] ** 2))
 
     for i in xrange(37):
-#         print i
+        #         print i
         th_i = i * 10
         fovs_unit = sub_rodrigues_rotate(fov_unit, th_i, los_unit)
 
@@ -298,27 +317,28 @@ def ggp_footpoint(LOS_ECEF, LOS_SAT_ECEF, th, fai, lat, lon, dfai):
         r_lon = np.arctan(R[1] / R[0])
         if R[0] < 0 and R[1] > 0:
             r_lon = r_lon + np.pi
-        elif R[0] < 0 and R[1] < 0 :
+        elif R[0] < 0 and R[1] < 0:
             r_lon = r_lon - np.pi
 #         r_lat = np.arctan(R[2] * np.sin(r_lon) / R[1])
 #         r_lat = np.arctan(R[2] * np.sin(r_lon) / R[1])
-        r_lat = np.arctan(np.sqrt((earth_a ** 2 / (earth_b ** 2) ** 2) / (1.0 / R[2] ** 2 - 1.0 / earth_b ** 2)))
+        r_lat = np.arctan(np.sqrt(
+            (earth_a ** 2 / (earth_b ** 2) ** 2) / (1.0 / R[2] ** 2 - 1.0 / earth_b ** 2)))
 
         fov_foot_lon[i] = np.rad2deg(r_lon)
         fov_foot_lat[i] = np.rad2deg(r_lat)
 
-        if lat < 0 :
+        if lat < 0:
             fov_foot_lat = fov_foot_lat * -1
 
     return fov_foot_lon, fov_foot_lat
 
 if __name__ == '__main__':
 
-#     print distance_Flat(-73.78, 172.40, -73.84, 172.38)
-#     print distance_GreatCircle(9.684, -42.625, 9.684, -42.653999)
+    #     print distance_Flat(-73.78, 172.40, -73.84, 172.38)
+    #     print distance_GreatCircle(9.684, -42.625, 9.684, -42.653999)
     # 和C程序经过验证结果一致100%
-#     print getasol6s(165, 23.75, 6.55584, 105.447)
-#     print getasol6s(156, 0.602368324944, 29.9398, 80.0413)
+    #     print getasol6s(165, 23.75, 6.55584, 105.447)
+    #     print getasol6s(156, 0.602368324944, 29.9398, 80.0413)
     print getasol6s(156, 0.618181666667, 29.9452, 80.0361)
 #     print solar_zen(2014, 6, 5, 23.5, 105.447, 6.55584)
 #     print sun_glint_cal(-44, 33, 44, 55)

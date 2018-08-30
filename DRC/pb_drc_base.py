@@ -47,9 +47,7 @@ data = np.full(self.data_shape, np.nan, dtype=float32)
 
 # 1通道相关数据获取方法
 self.get_dn(self)  # 太阳反射通道地球观测值和发射通道地球观测值
-self.get_k0(self)  # 定标系数 a
-self.get_k1(self)  # 定标系数 b
-self.get_k2(self)  # 定标系数 c
+self.get_coefficient(self)  # 定标系数 a,b,c(k0,k1,k2)
 self.get_ref(self)  # 反射率
 self.get_rad(self)  # 辐射值
 self.get_tbb(self)  # 亮温值
@@ -58,8 +56,8 @@ self.get_bb(self)  # 黑体观测值
 
 # 2通道相关，但数据的 shape 与 self.data_shape 不同
 self.get_central_wave_number(self)  # 中心波数，shape = （1，）
-self.get_wave_number(self)  # 波数需从大到小排列（相当于波长从小到大排列），shape =（n，1）
-self.get_wave_response(self)  # 波数对应的响应值 ，shape =（n，1）
+self.get_wave_length(self)  # 波长从小到大排列 , unit: nm，shape =（n，1）
+self.get_wave_response(self)  # 波长对应的响应值 ，shape =（n，1）
 
 # 3非通道数据获取方法
 self.get_height(self)  # 高度
@@ -88,6 +86,7 @@ class ReadL1(object):
         可见光通道：
         红外通道：
     """
+
     def __init__(self, in_file, sensor):
 
         if not os.path.isfile(in_file):
@@ -105,7 +104,8 @@ class ReadL1(object):
         self.channels = None  # 通道数量
         self.file_attr = None  # L1 文件属性
         self.data_shape = None  # 处理以后的数据 np.shape
-        self.central_wave_number = None  # 中心波数: wn(cm-1) = 10 ^ 7 / wave_length(nm)
+        # 中心波数: wn(cm-1) = 10 ^ 7 / wave_length(nm)
+        self.central_wave_number = None
 
         # 执行初始化相关方法
         self.set_resolution()  # 设置 self.resolution
@@ -151,13 +151,7 @@ class ReadL1(object):
     def get_bb(self):
         return
 
-    def get_k0(self):
-        return
-
-    def get_k1(self):
-        return
-
-    def get_k2(self):
+    def get_coefficient(self):
         return
 
     def get_height(self):
@@ -196,7 +190,7 @@ class ReadL1(object):
     def get_central_wave_number(self):
         return
 
-    def get_wave_number(self):
+    def get_wave_length(self):
         return
 
     def get_response(self):
