@@ -150,7 +150,16 @@ class ReadL1(object):
     def get_bb(self):
         return
 
-    def get_coefficient(self):
+    def get_k0(self):
+        return
+
+    def get_k1(self):
+        return
+
+    def get_k2(self):
+        return
+
+    def get_k3(self):
         return
 
     def get_height(self):
