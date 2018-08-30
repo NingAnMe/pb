@@ -230,21 +230,11 @@ class ReadMersiL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_k0():
-        k0, _ = self.get_coefficient()
-
-    def get_k1():
-        _, k0, _ = self.get_coefficient()
-
-    def __get_coefficient(self):
+    def get_k0(self):
         """
-        return K0,K1,K2,K3
+        return K0
         """
-
-        data0 = dict()
-        data1 = dict()
-        data2 = dict()
-        data3 = dict()
+        data = dict()
 
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B']
@@ -262,6 +252,13 @@ class ReadMersiL1(ReadL1):
                 # 变成20*3  k0,k1,k2
                 values = np.array([0, 1, 0])
                 K = np.insert(K, 4, values, 0)
+                # 逐个通道处理
+                for i in xrange(self.channels):
+                    band = 'CH_{:02d}'.format(i + 1)
+                    # k0
+                    channel_data = np.full(
+                        self.data_shape, K[i, 0], dtype=np.float32)
+                    data[band] = channel_data
             # FY3C
             elif self.satellite in satellite_type2:
                 with h5py.File(self.in_file, 'r') as h5r:
@@ -269,37 +266,54 @@ class ReadMersiL1(ReadL1):
 
                 # 19*3 变成20*3 红外通道给定值不影响原dn值
                 values = np.array([0, 1, 0])
-                k = np.insert(ary_vis_coeff, 4, values, 0)
+                K = np.insert(ary_vis_coeff, 4, values, 0)
+                # 逐个通道处理
+                for i in xrange(self.channels):
+                    band = 'CH_{:02d}'.format(i + 1)
+                    # k0
+                    channel_data = np.full(
+                        self.data_shape, K[i, 0], dtype=np.float32)
+                    data[band] = channel_data
 
             # FY3D
             if self.satellite in satellite_type3:
                 with h5py.File(self.in_file, 'r') as h5r:
                     ary_ir_coeff = h5r.get('/Calibration/IR_Cal_Coeff')[:]
                     ary_vis_coeff = h5r.get('/Calibration/VIS_Cal_Coeff')[:]
+                    print ary_ir_coeff.shape
+                    # 转维度
+                    s = self.data_shape
+                    ary_ir_coeff1 = np.repeat(ary_vis_coeff[i, 0], s[0] * s[1])
+                    ary_ir_coeff = ary_ir_coeff.reshape(19, 1, 3)
+                    tt = np.swapaxes(ary_ir_coeff, 1, 2)
+                    print tt.shape
+                    # 逐个通道处理
+#                     s = self.data_shape
+#                     for i in xrange(self.channels):
+#                         band = 'CH_{:02d}'.format(i + 1)
+#                         K = np.repeat(ary_vis_coeff[i, 0], s[0] * s[1])
+#
+#                         data[band] = K.reshape(self.data_shape)
+#                         print data[band].shape
+#                         print data[band]
+
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
 
-            # 逐个通道处理
-            for i in xrange(self.channels):
-                band = 'CH_{:02d}'.format(i + 1)
-                # k0
-                channel_data = np.full(
-                    self.data_shape, k[i, 0], dtype=np.float32)
-                data0[band] = channel_data
-                # k1
-                channel_data = np.full(
-                    self.data_shape, k[i, 1], dtype=np.float32)
-                data1[band] = channel_data
-                # k2
-                channel_data = np.full(
-                    self.data_shape, k[i, 2], dtype=np.float32)
-                data2[band] = channel_data
-
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
-        return data0, data1, data2
+        return data
+
+    def get_k1(self):
+        pass
+
+    def get_k2(self):
+        pass
+
+    def get_k3(self):
+        pass
 
     def get_ref(self):
         """
@@ -796,19 +810,15 @@ if __name__ == '__main__':
             channel_data = datas[t_channel_name]
             print_data_status(channel_data, name=t_channel_name)
 
-    print 'dn:'
-    t_data = mersi.get_dn()
-    print_channel_data(t_data)
+#     print 'dn:'
+#     t_data = mersi.get_dn()
+#     print_channel_data(t_data)
     print 'k0:'
-    k0, k1, k2 = mersi.get_coefficient()
+    k0 = mersi.get_k0()
     print_channel_data(k0)
-    print 'k1:'
-    print_channel_data(k1)
-    print 'k2:'
-    print_channel_data(k2)
-    print 'ref:'
-    t_data = mersi.get_ref()
-    print_channel_data(t_data)
+#     print 'ref:'
+#     t_data = mersi.get_ref()
+#     print_channel_data(t_data)
 #
 #     print 'rad:'
 #     t_data = mersi.get_rad()
@@ -818,10 +828,10 @@ if __name__ == '__main__':
 #     t_data = mersi.get_tbb()
 #     print_channel_data(t_data)
 
-    print 'longitude:'
-    t_data, t_data2 = mersi.get_spectral_response()
-#     print t_data.keys()
-    print_channel_data(t_data2)
+#     print 'longitude:'
+#     t_data, t_data2 = mersi.get_spectral_response()
+# #     print t_data.keys()
+#     print_channel_data(t_data2)
 
 
 #     print mersi.file_attr  # L1 文件属性
