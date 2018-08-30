@@ -35,7 +35,7 @@ self.set_channels()  # 设置  self.channels
 
 需要完成的功能：
 1 过滤原数据无效值和填充值，过滤后无效数据统一使用 np.nan 填充
-2 统一 shape 为 self.shape 大小
+2 统一 shape 为 self.data_shape 大小
 3 统一数据 dtype 为 np.float32
 4 统一通道相关和通道无关数据的存放格式，通道相关使用字典类型储存，键名为‘CH_01’ ‘CH_02’等
 分通道数据格式：
@@ -47,7 +47,9 @@ data = np.full(self.data_shape, np.nan, dtype=float32)
 
 # 1通道相关数据获取方法
 self.get_dn(self)  # 太阳反射通道地球观测值和发射通道地球观测值
-self.get_coefficient(self)  # 定标系数 a,b,c(k0,k1,k2)
+self.get_k0(self)  # 定标系数 a
+self.get_k1(self)  # 定标系数 b
+self.get_k2(self)  # 定标系数 c
 self.get_ref(self)  # 反射率
 self.get_rad(self)  # 辐射值
 self.get_tbb(self)  # 亮温值
@@ -55,8 +57,8 @@ self.get_sv(self)  # 空间观测值
 self.get_bb(self)  # 黑体观测值
 
 # 2通道相关，但数据的 shape 与 self.data_shape 不同
-self.get_central_wave_number(self)  # 中心波数，shape = （1，）
-self.get_spectral_response(self)  # 波数和响应，波数有小到大（根据波长转换而来）, unit: cm-1，shape =（n，1）
+self.get_central_wave_number(self)  # 中心波数，单位 cm^-1，shape = （1，）
+self.get_spectral_response(self)  # 波数和波数对应的响应值（波数从大到小排列，波数单位 cm^-1），shape = （n，1）
 
 # 3非通道数据获取方法
 self.get_height(self)  # 高度
