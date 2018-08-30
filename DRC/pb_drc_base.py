@@ -28,7 +28,7 @@ self.set_resolution()  # 设置 self.resolution
 self.set_satellite()  # 设置  self.satellite
 self.set_ymd_hms()  # 设置  self.ymd 和 self.hms
 self.set_file_attr()  # 设置  self.file_attr
-self.set_dataset_shape()  # 设置  self.data_shape
+self.set_data_shape()  # 设置  self.data_shape
 self.set_channels()  # 设置  self.channels
 
 数据获取方法实现原则
@@ -56,8 +56,7 @@ self.get_bb(self)  # 黑体观测值
 
 # 2通道相关，但数据的 shape 与 self.data_shape 不同
 self.get_central_wave_number(self)  # 中心波数，shape = （1，）
-self.get_wave_length(self)  # 波长从小到大排列 , unit: nm，shape =（n，1）
-self.get_wave_response(self)  # 波长对应的响应值 ，shape =（n，1）
+self.get_spectral_response(self)  # 波数和响应，波数有小到大（根据波长转换而来）, unit: cm-1，shape =（n，1）
 
 # 3非通道数据获取方法
 self.get_height(self)  # 高度
@@ -112,7 +111,7 @@ class ReadL1(object):
         self.set_satellite()  # 设置  self.satellite
         self.set_ymd_hms()  # 设置  self.ymd 和 self.hms
         self.set_file_attr()  # 设置  self.file_attr
-        self.set_dataset_shape()  # 设置  self.data_shape
+        self.set_data_shape()  # 设置  self.data_shape
         self.set_channels()  # 设置  self.channels
 
     def set_satellite(self):
@@ -127,7 +126,7 @@ class ReadL1(object):
     def set_file_attr(self):
         pass
 
-    def set_dataset_shape(self):
+    def set_data_shape(self):
         pass
 
     def set_channels(self):
@@ -190,8 +189,5 @@ class ReadL1(object):
     def get_central_wave_number(self):
         return
 
-    def get_wave_length(self):
-        return
-
-    def get_response(self):
+    def get_spectral_response(self):
         return
