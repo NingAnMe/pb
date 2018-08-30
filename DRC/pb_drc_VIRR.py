@@ -882,7 +882,7 @@ class ReadVirrL1(ReadL1):
 
 
 if __name__ == '__main__':
-    t_in_file = r'D:\nsmc\L1\FY3C\VIRR\FY3C_VIRRX_GBAL_L1_20150101_0030_1000M_MS.HDF'
+    t_in_file = r'D:\nsmc\L1\FY3A\VIRR\FY3A_VIRRX_GBAL_L1_20150101_0000_1000M_MS.HDF'
     t_read_l1 = ReadVirrL1(t_in_file)
     print 'attribute', '-' * 50
     print t_read_l1.satellite  # 卫星名
@@ -914,49 +914,49 @@ if __name__ == '__main__':
             channel_data = datas[t_channel_name]
             print_data_status(channel_data, name=t_channel_name)
 
-    # print 'dn:'
-    # t_data = t_read_l1.get_dn()
-    # print_channel_data(t_data)
-    #
-    # print 'k0:'
-    # t_data = t_read_l1.get_k0()
-    # print_channel_data(t_data)
-    #
-    # print 'k1:'
-    # t_data = t_read_l1.get_k1()
-    # print_channel_data(t_data)
-    #
-    # print 'ref:'
-    # t_data = t_read_l1.get_ref()
-    # print_channel_data(t_data)
-    #
-    # print 'rad_pre:'
-    # t_data = t_read_l1.get_rad_pre()
-    # print_channel_data(t_data)
-    #
-    # print 'rad'
-    # t_data = t_read_l1.get_rad()
-    # print_channel_data(t_data)
-    #
-    # print 'tbb:'
-    # t_data = t_read_l1.get_tbb()
-    # print_channel_data(t_data)
-    #
-    # print 'tbb_coeff:'
-    # t_data = t_read_l1.get_tbb_coeff()
-    # print_channel_data(t_data)
-    #
-    # print 'sv:'
-    # t_data = t_read_l1.get_sv()
-    # print_channel_data(t_data)
-    #
-    # print 'bb:'
-    # t_data = t_read_l1.get_bb()
-    # print_channel_data(t_data)
-    #
-    # t_data = t_read_l1.get_central_wave_number()
-    # print 'central_wave_number:'
-    # print t_data
+    print 'dn:'
+    t_data = t_read_l1.get_dn()
+    print_channel_data(t_data)
+
+    print 'k0:'
+    t_data = t_read_l1.get_k0()
+    print_channel_data(t_data)
+
+    print 'k1:'
+    t_data = t_read_l1.get_k1()
+    print_channel_data(t_data)
+
+    print 'ref:'
+    t_data = t_read_l1.get_ref()
+    print_channel_data(t_data)
+
+    print 'rad_pre:'
+    t_data = t_read_l1.get_rad_pre()
+    print_channel_data(t_data)
+
+    print 'rad'
+    t_data = t_read_l1.get_rad()
+    print_channel_data(t_data)
+
+    print 'tbb:'
+    t_data = t_read_l1.get_tbb()
+    print_channel_data(t_data)
+
+    print 'tbb_coeff:'
+    t_data = t_read_l1.get_tbb_coeff()
+    print_channel_data(t_data)
+
+    print 'sv:'
+    t_data = t_read_l1.get_sv()
+    print_channel_data(t_data)
+
+    print 'bb:'
+    t_data = t_read_l1.get_bb()
+    print_channel_data(t_data)
+
+    t_data = t_read_l1.get_central_wave_number()
+    print 'central_wave_number:'
+    print t_data
 
     t_data = t_read_l1.get_wave_number()
     print 'wave_number:'
