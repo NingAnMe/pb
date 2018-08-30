@@ -7,9 +7,12 @@ Created on 2018年5月2日
 
 from datetime import datetime
 import os
+import pdb
+import sys
 import time
 
 import h5py
+sys.path.append('E:\KY\git')
 
 from DV.dv_map import dv_map
 from PB import pb_name, pb_sat
@@ -79,6 +82,7 @@ class CLASS_IRAS_L1():
         #################### 读取L1文件 ######################
         print u'读取 L1所有数据信息...... %s ' % L1File
         try:
+
             h5File_R = h5py.File(L1File, 'r')
             ary_ch26_dn = h5File_R.get('/Data/IRAS_DN')[:]
             ary_ch26_tb = h5File_R.get('/Data/IRAS_TB')[:]
@@ -100,7 +104,6 @@ class CLASS_IRAS_L1():
 
         finally:
             h5File_R.close()
-
         # 通道的中心波数和光谱响应
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
@@ -240,35 +243,39 @@ class CLASS_IRAS_L1():
         else:
             self.sunZenith = np.concatenate(
                 (self.sunZenith, ary_sunz_idx / 100.))
+        print self.sunZenith
+
 
 if __name__ == '__main__':
     T1 = datetime.now()
 
-    L1File = 'D:/data/FY3C_IRAS/FY3C_IRASX_GBAL_L1_20180502_0537_017KM_MS.HDF'
+#     L1File = 'E:\TEST\data\FY3A_IRASX_GBAL_L1_20160813_1606_017KM_MS.HDF'
+    L1File = 'E:\TEST\data\FY3C_IRASX_GBAL_L1_20180101_0124_017KM_MS.HDF'
     iras = CLASS_IRAS_L1()
     iras.Load(L1File)
-    iras2 = CLASS_IRAS_L1()
-    L1File = 'D:/data/FY3C_IRAS/FY3C_IRASX_GBAL_L1_20180502_0719_017KM_MS.HDF'
-    iras2.Load(L1File)
-    T2 = datetime.now()
-#     print iras.Time.shape
-    print iras.Time[0, 0]
-    print time.gmtime(iras.Time[0, 0])
-    print iras.Time[-1, -1]
-    print time.gmtime(iras.Time[-1, -1])
-#     print iras.waveRad['CH_01']
-#     print iras.Tbb['CH_01']
-#     print iras.Rad['CH_01']
-    for band in sorted(iras.Tbb.keys()):
-        print band, np.nanmin(iras.Tbb[band]), np.nanmax(iras.Tbb[band])
-#         print  band, np.nanmin(iras.Rad[band]), np.nanmax(iras.Rad[band])
-    print 'times:', (T2 - T1).total_seconds()
-    value = np.full(iras.Lons.shape, 999)
-    p = dv_map(figsize=(6, 5))
-    p.easyplot(
-        iras.Lats, iras.Lons, value, vmin=0, vmax=300,
-        markersize=1.5, marker='.')
+#     iras2 = CLASS_IRAS_L1()
+#     L1File = 'D:/data/FY3C_IRAS/FY3C_IRASX_GBAL_L1_20180502_0719_017KM_MS.HDF'
+#     iras2.Load(L1File)
+#     T2 = datetime.now()
+# #     print iras.Time.shape
+#     print iras.Time[0, 0]
+#     print time.gmtime(iras.Time[0, 0])
+#     print iras.Time[-1, -1]
+#     print time.gmtime(iras.Time[-1, -1])
+# #     print iras.waveRad['CH_01']
+    print iras.Tbb.keys()
+# #     print iras.Rad['CH_01']
+#     for band in sorted(iras.Tbb.keys()):
+#         print band, np.nanmin(iras.Tbb[band]), np.nanmax(iras.Tbb[band])
+# #         print  band, np.nanmin(iras.Rad[band]), np.nanmax(iras.Rad[band])
+#     print 'times:', (T2 - T1).total_seconds()
+#     value = np.full(iras.Lons.shape, 999)
+#     p = dv_map(figsize=(6, 5))
+#     p.easyplot(
+#         iras.Lats, iras.Lons, value, vmin=0, vmax=300,
+#         markersize=1.5, marker='.')
+#
+#     p.easyplot(iras2.Lats, iras2.Lons, iras2.Tbb[
+#                'CH_01'], vmin=0, vmax=300, markersize=1.5, marker='.')
 
-    p.easyplot(iras2.Lats, iras2.Lons, iras2.Tbb[
-               'CH_01'], vmin=0, vmax=300, markersize=1.5, marker='.')
 #     p.savefig('test.png')
