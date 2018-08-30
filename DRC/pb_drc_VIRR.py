@@ -141,12 +141,16 @@ class ReadVirrL1(ReadL1):
                 s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(data_file, 'r') as hdf5_file:
                     emissive = hdf5_file.get('/EV_Emissive')[:, :s[0], :s[1]]
+                    valid_range_emissive = (0, 50000)
                     ref_sb = hdf5_file.get('/EV_RefSB')[:, :s[0], :s[1]]
+                    valid_range_ref = (0, 32767)
             elif self.satellite in satellite_type2:
                 data_file = self.in_file
                 with h5py.File(data_file, 'r') as hdf5_file:
                     emissive = hdf5_file.get('/Data/EV_Emissive').value
+                    valid_range_emissive = (0, 32767)
                     ref_sb = hdf5_file.get('/Data/EV_RefSB').value
+                    valid_range_ref = (0, 32767)
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -159,27 +163,27 @@ class ReadVirrL1(ReadL1):
                     k = i
                     data_pre = ref_sb[k]
                     # 开始处理
+                    v = valid_range_ref
                     data_pre = data_pre.astype(np.float32)
-                    invalid_index = np.logical_or(
-                        data_pre < 0, data_pre > 32767)
+                    invalid_index = np.logical_or(data_pre <= v[0], data_pre > v[1])
                     data_pre[invalid_index] = np.nan
                     channel_data = data_pre
                 elif 2 <= i <= 4:
                     k = i - 2
                     data_pre = emissive[k]
                     # 开始处理
+                    v = valid_range_emissive
                     data_pre = data_pre.astype(np.float32)
-                    invalid_index = np.logical_or(
-                        data_pre < 0, data_pre > 50000)
+                    invalid_index = np.logical_or(data_pre <= v[0], data_pre > v[1])
                     data_pre[invalid_index] = np.nan
                     channel_data = data_pre
                 else:
                     k = i - 3
                     data_pre = ref_sb[k]
                     # 开始处理
+                    v = valid_range_ref
                     data_pre = data_pre.astype(np.float32)
-                    invalid_index = np.logical_or(
-                        data_pre < 0, data_pre > 32767)
+                    invalid_index = np.logical_or(data_pre <= v[0], data_pre > v[1])
                     data_pre[invalid_index] = np.nan
                     channel_data = data_pre
                 data[channel_name] = channel_data
@@ -885,7 +889,7 @@ class ReadVirrL1(ReadL1):
 
 
 if __name__ == '__main__':
-    t_in_file = r'D:\nsmc\L1\FY3A\VIRR\FY3A_VIRRX_GBAL_L1_20150101_0000_1000M_MS.HDF'
+    t_in_file = r'D:\nsmc\L1\FY3C\VIRR\FY3C_VIRRX_GBAL_L1_20150101_0030_1000M_MS.HDF'
     t_read_l1 = ReadVirrL1(t_in_file)
     print 'attribute', '-' * 50
     print t_read_l1.satellite  # 卫星名
