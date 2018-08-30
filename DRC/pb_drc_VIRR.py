@@ -124,6 +124,7 @@ class ReadVirrL1(ReadL1):
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
 
+    # TODO 确定 DN 值是否保留 0
     def get_dn(self):
         """
         从数据文件中获取 DN 值, set self.dn
@@ -366,6 +367,7 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
+    # TODO 确定 TBB 使用tbb 还是 tbb_coeff
     def get_tbb(self):
         """
         TBB
