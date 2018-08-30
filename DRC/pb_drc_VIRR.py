@@ -192,15 +192,13 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_coefficient(self):
+    def get_k0(self):
         """
         vis: 可见光缩写
         ir: 红外缩写
         :return:
         """
-        k0_dict = dict()
-        k1_dict = dict()
-        k2_dict = dict()
+        data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -209,66 +207,105 @@ class ReadVirrL1(ReadL1):
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
                     k0_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
-                    k1_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
+                    # k1_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
             elif self.satellite in satellite_type2:
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
                     k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
-                    k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
+                    # k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
             for i in xrange(self.channels):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 if i < 2:
                     k = i * 2
                     k0 = k0_k1_vis[k]
-                    k1 = k0_k1_vis[k + 1]
-                    k0_channel = np.full(self.data_shape, k0, dtype=np.float32)
-                    k1_channel = np.full(self.data_shape, k1, dtype=np.float32)
-                    k0_dict[channel_name] = k0_channel
-                    k1_dict[channel_name] = k1_channel
+                    # k1 = k0_k1_vis[k + 1]
+                    channel_data = np.full(self.data_shape, k0, dtype=np.float32)
+                    data[channel_name] = channel_data
                 elif 2 <= i <= 4:
                     k = i - 2
-                    k0_pre = k0_ir[:, k].reshape(-1, 1)
-                    k1_pre = k1_ir[:, k].reshape(-1, 1)
-                    k0_channel = np.full(self.data_shape, np.nan, dtype=np.float32)
-                    k0_channel[:] = k0_pre
-                    k0_dict[channel_name] = k0_channel
-                    k1_channel = np.full(self.data_shape, np.nan, dtype=np.float32)
-                    k1_channel[:] = k1_pre
-                    k1_dict[channel_name] = k1_channel
+                    data_pre = k0_ir[:, k].reshape(-1, 1)
+                    # data_pre = k1_ir[:, k].reshape(-1, 1)
+                    channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
+                    channel_data[:] = data_pre
+                    data[channel_name] = channel_data
                 else:
                     k = (i - 3) * 2
                     k0 = k0_k1_vis[k]
-                    k1 = k0_k1_vis[k + 1]
-                    k0_channel = np.full(self.data_shape, k0, dtype=np.float32)
-                    k1_channel = np.full(self.data_shape, k1, dtype=np.float32)
-                    k0_dict[channel_name] = k0_channel
-                    k1_dict[channel_name] = k1_channel
+                    # k1 = k0_k1_vis[k + 1]
+                    channel_data = np.full(self.data_shape, k0, dtype=np.float32)
+                    data[channel_name] = channel_data
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
-        return k0_dict, k1_dict, k2_dict
+        return data
+
+    def get_k1(self):
+        """
+        vis: 可见光缩写
+        ir: 红外缩写
+        :return:
+        """
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C']
+            if self.satellite in satellite_type1:
+                s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
+                k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    # k0_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
+                    k1_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
+            elif self.satellite in satellite_type2:
+                k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
+                with h5py.File(self.in_file, 'r') as hdf5_file:
+                    # k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
+                    k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
+            else:
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
+            for i in xrange(self.channels):
+                channel_name = 'CH_{:02d}'.format(i + 1)
+                if i < 2:
+                    k = i * 2
+                    # k0 = k0_k1_vis[k]
+                    k1 = k0_k1_vis[k + 1]
+                    channel_data = np.full(self.data_shape, k1, dtype=np.float32)
+                    data[channel_name] = channel_data
+                elif 2 <= i <= 4:
+                    k = i - 2
+                    # data_pre = k0_ir[:, k].reshape(-1, 1)
+                    data_pre = k1_ir[:, k].reshape(-1, 1)
+                    channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
+                    channel_data[:] = data_pre
+                    data[channel_name] = channel_data
+                else:
+                    k = (i - 3) * 2
+                    # k0 = k0_k1_vis[k]
+                    k1 = k0_k1_vis[k + 1]
+                    channel_data = np.full(self.data_shape, k1, dtype=np.float32)
+                    data[channel_name] = channel_data
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
 
     def get_ref(self):
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
-            ref_channels = ['CH_{:02d}'.format(i)
-                            for i in [1, 2, 6, 7, 8, 9, 10]]
+            ref_channels = ['CH_{:02d}'.format(i) for i in [1, 2, 6, 7, 8, 9, 10]]
             if self.satellite in satellite_type1:
                 dn = self.get_dn()
-                k0, k1, _ = self.get_coefficient()
+                k0 = self.get_k0()
+                k1 = self.get_k1()
                 for channel_name in dn:
                     if channel_name not in ref_channels:
                         continue
-                    channel_data = dn[channel_name] * \
-                        k0[channel_name] + k1[channel_name]
+                    channel_data = dn[channel_name] * k0[channel_name] + k1[channel_name]
                     data[channel_name] = channel_data
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -282,19 +319,18 @@ class ReadVirrL1(ReadL1):
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
-            ref_channels = ['CH_{:02d}'.format(i) for i in [3, 4, 5]]
+            rad_channels = ['CH_{:02d}'.format(i) for i in [3, 4, 5]]
             if self.satellite in satellite_type1:
                 dn = self.get_dn()
-                k0, k1, _ = self.get_coefficient()
+                k0 = self.get_k0()
+                k1 = self.get_k1()
                 for channel_name in dn:
-                    if channel_name not in ref_channels:
+                    if channel_name not in rad_channels:
                         continue
-                    channel_data = dn[channel_name] * \
-                        k0[channel_name] + k1[channel_name]
+                    channel_data = dn[channel_name] * k0[channel_name] + k1[channel_name]
                     data[channel_name] = channel_data
             else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+                raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -925,15 +961,17 @@ if __name__ == '__main__':
     t_data = t_read_l1.get_dn()
     print_channel_data(t_data)
 
-    t_k0, t_k1, t_k2 = t_read_l1.get_coefficient()
     print 'k0:'
-    print_channel_data(t_k0)
+    t_data = t_read_l1.get_k0()
+    print_channel_data(t_data)
 
     print 'k1:'
-    print_channel_data(t_k1)
+    t_data = t_read_l1.get_k1()
+    print_channel_data(t_data)
 
     print 'k2:'
-    print_channel_data(t_k2)
+    t_data = t_read_l1.get_k2()
+    print_channel_data(t_data)
 
     print 'ref:'
     t_data = t_read_l1.get_ref()
@@ -972,10 +1010,6 @@ if __name__ == '__main__':
     print_channel_data(t_data1)
     print 'response:'
     print_channel_data(t_data2)
-
-    t_data = t_read_l1.get_response()
-    print 'response:'
-    print_channel_data(t_data)
 
     print 'No channel', '-' * 50
 
