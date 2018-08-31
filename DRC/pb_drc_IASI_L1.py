@@ -73,6 +73,7 @@ class CLASS_IASI_L1():
             print 'product_format', product_format
             print 'product_size', product_size
             record = beatl2.ingest(L1File)
+            print record
 
             SAT_angle = coda.fetch(fp, 'MDR', -1, 'MDR', 'GGeoSondAnglesMETOP')
             SUN_angle = coda.fetch(fp, 'MDR', -1, 'MDR', 'GGeoSondAnglesSUN')
@@ -142,16 +143,16 @@ if __name__ == '__main__':
     L1File = 'D:/data/METOP/IASI_xxx_1C_M02_20180502061457Z_20180502061752Z_N_O_20180502072608Z__20180502073251'
     iasi3 = CLASS_IASI_L1(BandLst)
     iasi3.Load(L1File)
-
-    lons = np.concatenate((iasi1.Lons, iasi2.Lons, iasi3.Lons))
-    lats = np.concatenate((iasi1.Lats, iasi2.Lats, iasi3.Lats))
-
-#     iasi.get_rad_tbb('FY3D', 'MERSI2', BandLst)
-    T2 = datetime.now()
-    print 'times:', (T2 - T1).total_seconds()
-    value = np.full(lons.shape, 111)
-    p = dv_map(figsize=(6, 5))
-    p.easyplot(
-        lats, lons, value, vmin=0, vmax=300, markersize=1.5, marker='.')
-    p.savefig('test.png')
-    pass
+#
+#     lons = np.concatenate((iasi1.Lons, iasi2.Lons, iasi3.Lons))
+#     lats = np.concatenate((iasi1.Lats, iasi2.Lats, iasi3.Lats))
+#
+# #     iasi.get_rad_tbb('FY3D', 'MERSI2', BandLst)
+#     T2 = datetime.now()
+#     print 'times:', (T2 - T1).total_seconds()
+#     value = np.full(lons.shape, 111)
+#     p = dv_map(figsize=(6, 5))
+#     p.easyplot(
+#         lats, lons, value, vmin=0, vmax=300, markersize=1.5, marker='.')
+#     p.savefig('test.png')
+#     pass

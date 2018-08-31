@@ -89,7 +89,6 @@ class ReadL1(object):
     """
 
     def __init__(self, in_file, sensor):
-
         if not os.path.isfile(in_file):
             raise ValueError('{} is not exist.'.format(in_file))
         else:
@@ -144,6 +143,12 @@ class ReadL1(object):
         return
 
     def get_tbb(self):
+        return
+
+    def get_tbb_k0(self):
+        return
+
+    def get_tbb_k1(self):
         return
 
     def get_sv(self):

@@ -369,6 +369,7 @@ if __name__ == '__main__':
     L1File = 'D:/data/FY3D+MERSI_HIRAS/FY3D_MERSI_GBAL_L1_20180326_0045_1000M_MS.HDF'
     mersi = CLASS_MERSI2_L1()
     mersi.Load(L1File)
-
+    print np.nanmin(mersi.BB['CH_20'])
+    print np.nanmax(mersi.BB['CH_20'])
     print type(mersi.orbit_num)
     pass
