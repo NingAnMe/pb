@@ -292,7 +292,6 @@ class ReadIrasL1(ReadL1):
         """
             从数据文件中获取 纬度值, set self.latitude
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -323,7 +322,6 @@ class ReadIrasL1(ReadL1):
         """
             从数据文件中获取 经度值, set self.longitude
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -354,7 +352,6 @@ class ReadIrasL1(ReadL1):
         """
             从数据文件中获取海陆类型, set self.land_sea_mask
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -386,7 +383,6 @@ class ReadIrasL1(ReadL1):
         """
             从数据文件中获取土地覆盖, set self.land_cover
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -418,7 +414,6 @@ class ReadIrasL1(ReadL1):
         """
             从数据文件中获取卫星方位角 , set self.sensor_azimuth
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -450,7 +445,6 @@ class ReadIrasL1(ReadL1):
         """
             从数据文件中获取卫星天顶角 , set self.sensor_zenith
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -482,7 +476,6 @@ class ReadIrasL1(ReadL1):
         """
             从数据文件中获取太阳的方位角 , set self.solar_azimuth
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -514,7 +507,6 @@ class ReadIrasL1(ReadL1):
         """
             从数据文件中获取太阳的天顶角 , set self.solar_zenith
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -543,7 +535,6 @@ class ReadIrasL1(ReadL1):
         return data
 
     def get_timestamp(self):
-
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
