@@ -312,24 +312,25 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_rad_pre(self):
-        """
-        RAD预处理
-        :return:
-        """
+    def get_rad(self):
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
-            rad_channels = ['CH_{:02d}'.format(i) for i in [3, 4, 5]]
             if self.satellite in satellite_type1:
                 dn = self.get_dn()
                 k0 = self.get_k0()
                 k1 = self.get_k1()
-                for channel_name in dn:
-                    if channel_name not in rad_channels:
-                        continue
-                    channel_data = dn[channel_name] * k0[channel_name] + k1[channel_name]
-                    data[channel_name] = channel_data
+                b0_b1_b2_nonlinear = self.file_attr.get('Prelaunch_Nonlinear_Coefficients')
+                # 通道 3 4 5
+                for i in xrange(3):
+                    channel_name = 'CH_{:02d}'.format(i + 3)
+                    b0 = b0_b1_b2_nonlinear[i]
+                    b1 = b0_b1_b2_nonlinear[3 + i]
+                    b2 = b0_b1_b2_nonlinear[6 + i]
+                    rad_pre = dn[channel_name] * k0[channel_name] + k1[channel_name]
+                    rad_nonlinear = rad_pre ** 2 * b2 + rad_pre * b1 + b0
+                    rad_channel = rad_pre + rad_nonlinear
+                    data[channel_name] = rad_channel
             else:
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
@@ -337,56 +338,21 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_rad(self):
-        """
-        经非线性校正后的RAD
-        :return:
-        """
-        data = dict()
-        if self.resolution == 1000:  # 分辨率为 1000
-            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
-            if self.satellite in satellite_type1:
-                rad_pres = self.get_rad_pre()
-                b0_b1_b2_nonlinear = self.file_attr.get(
-                    'Prelaunch_Nonlinear_Coefficients')
-                # 通道 3 4 5
-                for i in xrange(3):
-                    channel_name = 'CH_{:02d}'.format(i + 3)
-                    b0 = b0_b1_b2_nonlinear[i]
-                    b1 = b0_b1_b2_nonlinear[3 + i]
-                    b2 = b0_b1_b2_nonlinear[6 + i]
-                    rad_pre = rad_pres[channel_name]
-                    rad_nonlinear = rad_pre ** 2 * b2 + rad_pre * b1 + b0
-                    rad = rad_pre + rad_nonlinear
-                    data[channel_name] = rad
-            else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
-        else:
-            raise ValueError(
-                'Cant read this data, please check its resolution: {}'.format(self.in_file))
-        return data
-
-    # TODO 确定 TBB 使用tbb 还是 tbb_coeff
     def get_tbb(self):
-        """
-        TBB
-        :return:
-        """
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
             # 红外转tbb的修正系数，所有时次都是固定值
-            rad2tbb_k0 = {'CH_03': 1, 'CH_04': 1, 'CH_05': 1}
-            rad2tbb_k1 = {'CH_03': 0, 'CH_04': 0, 'CH_05': 0}
+            tbb_k0 = self.get_tbb_k0()
+            tbb_k1 = self.get_tbb_k1()
             if self.satellite in satellite_type1:
                 rads = self.get_rad()
                 central_wave_numbers = self.get_central_wave_number()
                 for channel_name in rads:
                     rad = rads[channel_name]
                     central_wave_number = central_wave_numbers[channel_name]
-                    k0 = rad2tbb_k0[channel_name]
-                    k1 = rad2tbb_k1[channel_name]
+                    k0 = tbb_k0[channel_name]
+                    k1 = tbb_k1[channel_name]
                     tbb = planck_r2t(rad, central_wave_number)
                     tbb = tbb * k0 + k1
                     data[channel_name] = tbb
@@ -398,28 +364,52 @@ class ReadVirrL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_tbb_coeff(self):
+    def get_tbb_k0(self):
         """
-        校正后的TBB
+        # TBB 非线性校正系数
         :return:
         """
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
             if self.satellite in satellite_type1:
-                tbbs = self.get_tbb()
                 if 'Emmisive_BT_Coefficients' in self.file_attr:
-                    coeffs_name = 'Emmisive_BT_Coefficients'
+                    coeffs_name = 'Emmisive_BT_Coefficients'  # TBB 非线性校正系数
                 else:
-                    coeffs_name = 'Emissive_BT_Coefficients'
+                    coeffs_name = 'Emissive_BT_Coefficients'  # TBB 非线性校正系数
                 coeffs = self.file_attr.get(coeffs_name)
                 for i in xrange(3):
                     channel_name = 'CH_{:02d}'.format(i + 3)
-                    tbb = tbbs[channel_name]
                     k0 = coeffs[i * 2 + 1]
+                    # k1 = coeffs[i * 2]
+                    data[channel_name] = k0
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb_k1(self):
+        """
+        # TBB 非线性校正系数
+        :return:
+        """
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            if self.satellite in satellite_type1:
+                if 'Emmisive_BT_Coefficients' in self.file_attr:
+                    coeffs_name = 'Emmisive_BT_Coefficients'  # TBB 非线性校正系数
+                else:
+                    coeffs_name = 'Emissive_BT_Coefficients'  # TBB 非线性校正系数
+                coeffs = self.file_attr.get(coeffs_name)
+                for i in xrange(3):
+                    channel_name = 'CH_{:02d}'.format(i + 3)
+                    # k0 = coeffs[i * 2 + 1]
                     k1 = coeffs[i * 2]
-                    tbb_coeff = tbb * k0 + k1
-                    data[channel_name] = tbb_coeff
+                    data[channel_name] = k1
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
