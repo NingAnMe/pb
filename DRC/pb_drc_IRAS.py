@@ -247,7 +247,6 @@ class ReadIrasL1(ReadL1):
                 idx = np.logical_or(
                     ary_ch26_tb[i] >= 350, ary_ch26_tb[i] <= 150)
                 tbb[idx] = np.nan
-                rad = np.full(self.data_shape, np.nan)
                 rad = pb_sat.plank_iras_tb2rad(
                     tbb, central_wave_number[channel_name])
                 data[channel_name] = rad
@@ -261,7 +260,6 @@ class ReadIrasL1(ReadL1):
               从数据文件中获取 DNTBB值, set self.height
         :return:
         """
-        data = None
         if self.resolution == 17000:  # 分辨率为 17000
             satellite_type1 = ['FY3A', 'FY3B']
             satellite_type2 = ['FY3C']
@@ -570,7 +568,8 @@ class ReadIrasL1(ReadL1):
         # 固定值
         # 中心波数: wn(cm-1) = 10 ^ 7 / wave_length(nm)
         # 红外通道的中心波数，固定值，MERSI_Equiv Mid_wn (cm-1)
-        central_wave_number = {'CH_01': 669.976914, 'CH_02': 680.162001, 'CH_03': 691.391561, 'CH_04': 702.858560,
+        central_wave_number = {'CH_01': 669.976914, 'CH_02': 680.162001, 'CH_03': 691.391561,
+                               'CH_04': 702.858560,
                                'CH_05': 715.270436, 'CH_06': 732.203858, 'CH_07': 749.383836,
                                'CH_08': 801.671379, 'CH_09': 899.414299, 'CH_10': 1032.591246,
                                'CH_11': 1343.617931, 'CH_12': 1364.298075, 'CH_13': 1529.295554,
