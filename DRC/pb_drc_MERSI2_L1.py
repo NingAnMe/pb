@@ -214,8 +214,8 @@ class CLASS_MERSI2_L1():
             idx = np.logical_and(indata < 65500, indata > 0)
             DN[idx] = indata[idx]
             Rad[idx] = DN[idx] * a[i] + b[i]
-            Tbb = pb_sat.planck_r2t(
-                Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
+            Tbb = pb_sat.planck_r2t(Rad, self.WN[BandName])
+            Tbb = Tbb * self.TeA[BandName] + self.TeB[BandName]
             # 对类成员进行赋值
             if BandName not in self.Dn.keys():
                 self.Dn[BandName] = DN
