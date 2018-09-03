@@ -246,9 +246,11 @@ if __name__ == '__main__':
     virr.Load(L1File)
 #     virr.Load(L1File)
     print virr.Rad['CH_15'].shape
-    print np.nanmin(virr.Tbb['CH_15'])
-    print np.nanmax(virr.Tbb['CH_15'])
+    print np.nanmin(virr.Tbb['CH_13'])
+    print np.nanmax(virr.Tbb['CH_13'])
     T2 = datetime.now()
     print 'times:', (T2 - T1).total_seconds()
+    print time.gmtime(virr.Time[0, 0])
+    print time.gmtime(virr.Time[-1, -1])
 #
     pass

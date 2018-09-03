@@ -209,7 +209,7 @@ class CLASS_CRIS_L1():
 
         self.Time = T1.reshape(T1.size, 1)
 
-#         print u'切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值'
+        # 切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值
         # 开头和结尾不参与计算
         real_lw[:, :, :, 1:-1] = w0 * real_lw[:, :, :, :-2] + \
             w1 * real_lw[:, :, :, 1:-1] + w2 * real_lw[:, :, :, 2:]
@@ -328,6 +328,7 @@ if __name__ == '__main__':
     print cris.wavenumber_old.shape
     print cris.radiance.shape
     print cris.radiance_old.shape
+    print np.nanmin(cris.radiance), np.nanmax(cris.radiance)
     p = dv_plt.dv_scatter(figsize=(7, 5))
     p.xlim_min = 1000
     p.xlim_max = 1200
