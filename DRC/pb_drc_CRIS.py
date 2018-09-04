@@ -124,8 +124,8 @@ class ReadCrisL1(ReadL1):
                 s = self.data_shape
                 # 增加切趾计算
                 w0 = 0.23
-                w1 = 1 - 2 * w0
-                w2 = w0
+                w1 = 0.54
+                w2 = 0.23
                 data_file = self.in_file
                 with h5py.File(data_file, 'r') as h5r:
                     sds_name = '/All_Data/CrIS-FS-SDR_All/ES_RealLW'
@@ -192,6 +192,62 @@ class ReadCrisL1(ReadL1):
                 response = np.concatenate(
                     (real_lw, real_lw_e, real_mw, real_mw_e, real_sw, real_sw_e), axis=1)
                 print wave_number_old.shape, response_old.shape
+
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return wave_number, response
+
+    def get_spectral_response_low(self):
+        """
+        return 光谱波数和响应值，1维，2维, 处理低分辨率的cris
+        """
+
+        if self.resolution == 16000:
+            satellite_type1 = ['NPP']
+            if self.satellite in satellite_type1:
+
+                s = self.data_shape
+                # 增加切趾计算
+                w0 = 0.23
+                w1 = 1 - 2 * w0
+                w2 = w0
+                data_file = self.in_file
+                with h5py.File(data_file, 'r') as h5r:
+                    sds_name = '/All_Data/CrIS-SDR_All/ES_RealLW'
+                    real_lw = h5r.get(sds_name).value
+
+                    sds_name = '/All_Data/CrIS-SDR_All/ES_RealMW'
+                    real_mw = h5r.get(sds_name).value
+
+                    sds_name = '/All_Data/CrIS-SDR_All/ES_RealSW'
+                    real_sw = h5r.get(sds_name).value
+
+                # 切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值
+                # 开头和结尾不参与计算
+                real_lw[:, :, :, 1:-1] = w0 * real_lw[:, :, :, :-2] + \
+                    w1 * real_lw[:, :, :, 1:-1] + w2 * real_lw[:, :, :, 2:]
+                real_mw[:, :, :, 1:-1] = w0 * real_mw[:, :, :, :-2] + \
+                    w1 * real_mw[:, :, :, 1:-1] + w2 * real_mw[:, :, :, 2:]
+                real_sw[:, :, :, 1:-1] = w0 * real_sw[:, :, :, :-2] + \
+                    w1 * real_sw[:, :, :, 1:-1] + w2 * real_sw[:, :, :, 2:]
+
+                real_lw = real_lw[:, :, :, 2:-2]
+                real_mw = real_mw[:, :, :, 2:-2]
+                real_sw = real_sw[:, :, :, 2:-2]
+
+                # 波数范围和步长
+                wave_lw = np.arange(650., 1095.0 + 0.625, 0.625)
+                wave_mw = np.arange(1210.0, 1750 + 1.25, 1.25)
+                wave_sw = np.arange(2155.0, 2550.0 + 2.5, 2.5)
+
+                wave_number = np.concatenate((wave_lw, wave_mw, wave_sw))
+                response = np.concatenate((real_lw, real_mw, real_sw), axis=3)
+                last_shape = self.radiance.shape[-1]
+                response = response.reshape(s[0], last_shape)
 
             else:
                 raise ValueError(
