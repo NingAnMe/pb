@@ -1202,6 +1202,7 @@ if __name__ == '__main__':
     print 'tbb:'
     t_data = mersi.get_tbb()
     print_channel_data(t_data)
+#     print t_data['CH_20']
 
 #     print 'sv:'
 #     t_data = mersi.get_sv()
@@ -1227,21 +1228,22 @@ if __name__ == '__main__':
 #     t_data = mersi.get_land_cover()
 #     print_data_status(t_data)
 
-    print 'sensor_azimuth:'
-    t_data = mersi.get_sensor_azimuth()
-    print_data_status(t_data)
-    print 'sensor_zenith:'
-    t_data = mersi.get_sensor_zenith()
-    print_data_status(t_data)
-    print 'solar_azimuth:'
-    t_data = mersi.get_solar_azimuth()
-    print_data_status(t_data)
-    print 'solar_zenith:'
-    t_data = mersi.get_solar_zenith()
-    print_data_status(t_data)
-    print 'timestamp:'
-    t_data = mersi.get_timestamp()
-    print_data_status(t_data)
+#     print 'sensor_azimuth:'
+#     t_data = mersi.get_sensor_azimuth()
+#     print_data_status(t_data)
+#     print 'sensor_zenith:'
+#     t_data = mersi.get_sensor_zenith()
+#     print_data_status(t_data)
+#     print 'solar_azimuth:'
+#     t_data = mersi.get_solar_azimuth()
+#     print_data_status(t_data)
+#     print 'solar_zenith:'
+#     t_data = mersi.get_solar_zenith()
+#     print_data_status(t_data)
+#     print 'timestamp:'
+#     t_data = mersi.get_timestamp()
+#     print_data_status(t_data)
+
 
 #     print 'get_spectral_response:'
 #     wavenums, wave_spec = mersi.get_spectral_response()

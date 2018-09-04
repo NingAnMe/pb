@@ -3,18 +3,16 @@
 from datetime import datetime
 import os
 import re
-import sys
+import time
 
 import beatl2
 import coda
 
 from PB.pb_sat import planck_r2t, spec_interp, spec_convolution
-from PB.pb_time import metop_ymd2seconds
 from pb_drc_base import ReadL1
 import numpy as np
 
 
-# from PB.pb_io import attrs2dict
 __description__ = u'IASI传感器读取'
 __author__ = 'wangpeng'
 __date__ = '2018-08-28'
@@ -469,6 +467,36 @@ class ReadIasiL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
+    def get_timestamp(self):
+        """
+        return from 1970-01-01 00:00:00 seconds
+        """
+        if self.resolution == 24000:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+                s = self.data_shape
+                try:
+                    record = beatl2.ingest(self.in_file)
+                    ary_time = record.time
+                    # IASI 数据的时间单位是距离 2000年1月1日 UTC时间的秒
+                    secs = int(
+                        (datetime(2000, 1, 1, 0, 0, 0) - datetime(1970, 1, 1, 0, 0, 0)).total_seconds())
+
+                    ary_time = ary_time + secs
+                    data = ary_time.reshape(s)
+                    data = data.astype(np.int32)
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
 if __name__ == '__main__':
     T1 = datetime.now()
     BandLst = ['CH_20', 'CH_21', 'CH_22', 'CH_23', 'CH_24', 'CH_25']
@@ -495,28 +523,36 @@ if __name__ == '__main__':
         print "{}: shape: {}, min: {}, max: {}, mean: {}, median: {}".format(
             name, data_shape, data_min, data_max, data_mean, data_median)
 
-    print 'get_spectral_response:'
-    wavenums, response = iasi1.get_spectral_response()
-    print_data_status(wavenums)
-    print_data_status(response)
+#     print 'get_spectral_response:'
+#     wavenums, response = iasi1.get_spectral_response()
+#     print_data_status(wavenums)
+#     print_data_status(response)
+#
+#     print 'longitude:'
+#     t_data = iasi1.get_longitude()
+#     print_data_status(t_data)
+#
+#     print 'longitude:'
+#     t_data = iasi1.get_latitude()
+#     print_data_status(t_data)
+#
+#     print 'sensor_azimuth:'
+#     t_data = iasi1.get_sensor_azimuth()
+#     print_data_status(t_data)
+#     print 'sensor_zenith:'
+#     t_data = iasi1.get_sensor_zenith()
+#     print_data_status(t_data)
+#     print 'solar_azimuth:'
+#     t_data = iasi1.get_solar_azimuth()
+#     print_data_status(t_data)
+#     print 'solar_zenith:'
+#     t_data = iasi1.get_solar_zenith()
+#     print_data_status(t_data)
 
-    print 'longitude:'
-    t_data = iasi1.get_longitude()
-    print_data_status(t_data)
-
-    print 'longitude:'
-    t_data = iasi1.get_latitude()
-    print_data_status(t_data)
-
-    print 'sensor_azimuth:'
-    t_data = iasi1.get_sensor_azimuth()
-    print_data_status(t_data)
-    print 'sensor_zenith:'
-    t_data = iasi1.get_sensor_zenith()
-    print_data_status(t_data)
-    print 'solar_azimuth:'
-    t_data = iasi1.get_solar_azimuth()
-    print_data_status(t_data)
-    print 'solar_zenith:'
-    t_data = iasi1.get_solar_zenith()
+    print 'timestamp:'
+    t_data = iasi1.get_timestamp()
+    print type(t_data)
+    print type(t_data[0, 0])
+    print time.gmtime(t_data[0, 0])
+    print time.gmtime(t_data[-1, -1])
     print_data_status(t_data)
