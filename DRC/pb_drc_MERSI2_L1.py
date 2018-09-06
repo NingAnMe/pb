@@ -9,6 +9,7 @@ Created on 2017年9月7日
 import os
 
 import h5py
+import time
 
 from PB import pb_sat
 from PB import pb_space
@@ -372,4 +373,6 @@ if __name__ == '__main__':
     print np.nanmin(mersi.BB['CH_20'])
     print np.nanmax(mersi.BB['CH_20'])
     print type(mersi.orbit_num)
+    print time.gmtime(mersi.Time[0, 0])
+    print time.gmtime(mersi.Time[-1, -1])
     pass
