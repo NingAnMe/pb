@@ -124,7 +124,6 @@ class ReadVirrL1(ReadL1):
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
 
-    # TODO 确定 DN 值是否保留 0
     def get_dn(self):
         """
         从数据文件中获取 DN 值, set self.dn
@@ -195,6 +194,7 @@ class ReadVirrL1(ReadL1):
 
     def get_k0(self):
         """
+        0次项
         vis: 可见光缩写
         ir: 红外缩写
         :return:
@@ -207,34 +207,34 @@ class ReadVirrL1(ReadL1):
                 s = self.data_shape
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
-                    k0_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
-                    # k1_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
+                    # k1_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
+                    k0_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
             elif self.satellite in satellite_type2:
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
-                    k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
-                    # k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
+                    # k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
+                    k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
             else:
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
             for i in xrange(self.channels):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 if i < 2:
                     k = i * 2
-                    k0 = k0_k1_vis[k]
-                    # k1 = k0_k1_vis[k + 1]
+                    # k1 = k0_k1_vis[k]
+                    k0 = k0_k1_vis[k + 1]
                     channel_data = np.full(self.data_shape, k0, dtype=np.float32)
                     data[channel_name] = channel_data
                 elif 2 <= i <= 4:
                     k = i - 2
-                    data_pre = k0_ir[:, k].reshape(-1, 1)
                     # data_pre = k1_ir[:, k].reshape(-1, 1)
+                    data_pre = k0_ir[:, k].reshape(-1, 1)
                     channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
                     channel_data[:] = data_pre
                     data[channel_name] = channel_data
                 else:
                     k = (i - 3) * 2
-                    k0 = k0_k1_vis[k]
-                    # k1 = k0_k1_vis[k + 1]
+                    # k1 = k0_k1_vis[k]
+                    k0 = k0_k1_vis[k + 1]
                     channel_data = np.full(self.data_shape, k0, dtype=np.float32)
                     data[channel_name] = channel_data
         else:
@@ -244,6 +244,7 @@ class ReadVirrL1(ReadL1):
 
     def get_k1(self):
         """
+        1次项
         vis: 可见光缩写
         ir: 红外缩写
         :return:
@@ -256,34 +257,34 @@ class ReadVirrL1(ReadL1):
                 s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
-                    # k0_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
-                    k1_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
+                    k1_ir = hdf5_file.get('Emissive_Radiance_Scales')[0: s[0]]
+                    # k0_ir = hdf5_file.get('Emissive_Radiance_Offsets')[0: s[0]]
             elif self.satellite in satellite_type2:
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
-                    # k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
-                    k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
+                    k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
+                    # k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
             else:
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
             for i in xrange(self.channels):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 if i < 2:
                     k = i * 2
-                    # k0 = k0_k1_vis[k]
-                    k1 = k0_k1_vis[k + 1]
+                    k1 = k0_k1_vis[k]
+                    # k0 = k0_k1_vis[k + 1]
                     channel_data = np.full(self.data_shape, k1, dtype=np.float32)
                     data[channel_name] = channel_data
                 elif 2 <= i <= 4:
                     k = i - 2
-                    # data_pre = k0_ir[:, k].reshape(-1, 1)
                     data_pre = k1_ir[:, k].reshape(-1, 1)
+                    # data_pre = k0_ir[:, k].reshape(-1, 1)
                     channel_data = np.full(self.data_shape, np.nan, dtype=np.float32)
                     channel_data[:] = data_pre
                     data[channel_name] = channel_data
                 else:
                     k = (i - 3) * 2
-                    # k0 = k0_k1_vis[k]
-                    k1 = k0_k1_vis[k + 1]
+                    k1 = k0_k1_vis[k]
+                    # k0 = k0_k1_vis[k + 1]
                     channel_data = np.full(self.data_shape, k1, dtype=np.float32)
                     data[channel_name] = channel_data
         else:
@@ -303,7 +304,7 @@ class ReadVirrL1(ReadL1):
                 for channel_name in dn:
                     if channel_name not in ref_channels:
                         continue
-                    channel_data = dn[channel_name] * k0[channel_name] + k1[channel_name]
+                    channel_data = dn[channel_name] * k1[channel_name] + k0[channel_name]
                     data[channel_name] = channel_data
             else:
                 raise ValueError('Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -327,7 +328,7 @@ class ReadVirrL1(ReadL1):
                     b0 = b0_b1_b2_nonlinear[i]
                     b1 = b0_b1_b2_nonlinear[3 + i]
                     b2 = b0_b1_b2_nonlinear[6 + i]
-                    rad_pre = dn[channel_name] * k0[channel_name] + k1[channel_name]
+                    rad_pre = dn[channel_name] * k1[channel_name] + k0[channel_name]
                     rad_nonlinear = rad_pre ** 2 * b2 + rad_pre * b1 + b0
                     rad_channel = rad_pre + rad_nonlinear
                     data[channel_name] = rad_channel
@@ -354,7 +355,7 @@ class ReadVirrL1(ReadL1):
                     k0 = tbb_k0[channel_name]
                     k1 = tbb_k1[channel_name]
                     tbb = planck_r2t(rad, central_wave_number)
-                    tbb = tbb * k0 + k1
+                    tbb = tbb * k1 + k0
                     data[channel_name] = tbb
             else:
                 raise ValueError(
@@ -366,6 +367,7 @@ class ReadVirrL1(ReadL1):
 
     def get_tbb_k0(self):
         """
+        0次项
         # TBB 非线性校正系数
         :return:
         """
@@ -380,8 +382,8 @@ class ReadVirrL1(ReadL1):
                 coeffs = self.file_attr.get(coeffs_name)
                 for i in xrange(3):
                     channel_name = 'CH_{:02d}'.format(i + 3)
-                    k0 = coeffs[i * 2 + 1]
-                    # k1 = coeffs[i * 2]
+                    # k1 = coeffs[i * 2 + 1]
+                    k0 = coeffs[i * 2]
                     data[channel_name] = k0
             else:
                 raise ValueError(
@@ -393,6 +395,7 @@ class ReadVirrL1(ReadL1):
 
     def get_tbb_k1(self):
         """
+        1次项
         # TBB 非线性校正系数
         :return:
         """
@@ -407,8 +410,8 @@ class ReadVirrL1(ReadL1):
                 coeffs = self.file_attr.get(coeffs_name)
                 for i in xrange(3):
                     channel_name = 'CH_{:02d}'.format(i + 3)
-                    # k0 = coeffs[i * 2 + 1]
-                    k1 = coeffs[i * 2]
+                    k1 = coeffs[i * 2 + 1]
+                    # k0 = coeffs[i * 2]
                     data[channel_name] = k1
             else:
                 raise ValueError(
@@ -969,20 +972,12 @@ if __name__ == '__main__':
     t_data = t_read_l1.get_ref()
     print_channel_data(t_data)
 
-    print 'rad_pre:'
-    t_data = t_read_l1.get_rad_pre()
-    print_channel_data(t_data)
-
     print 'rad'
     t_data = t_read_l1.get_rad()
     print_channel_data(t_data)
 
     print 'tbb:'
     t_data = t_read_l1.get_tbb()
-    print_channel_data(t_data)
-
-    print 'tbb_coeff:'
-    t_data = t_read_l1.get_tbb_coeff()
     print_channel_data(t_data)
 
     print 'sv:'
