@@ -18,7 +18,7 @@ __author__ = 'wangpeng'
 __date__ = '2018-08-28'
 __version__ = '1.0.0_beat'
 
-MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+g_main_path, g_main_file = os.path.split(os.path.realpath(__file__))
 
 
 class ReadIasiL1(ReadL1):
@@ -36,7 +36,7 @@ class ReadIasiL1(ReadL1):
 
     def set_resolution(self):
         """
-        set satellite self.resolution
+        use filename set self.resolution
         """
         file_name = os.path.basename(self.in_file)
         if 'IASI' in file_name:

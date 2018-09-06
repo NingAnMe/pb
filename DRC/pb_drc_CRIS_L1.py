@@ -9,6 +9,7 @@ Created on 2017年9月7日
 from datetime import datetime
 import os
 import sys
+import time
 
 import h5py
 
@@ -100,8 +101,11 @@ class CLASS_CRIS_L1():
         Times2 = np.full_like(self.Lons, -999.)
         for i in xrange(Times2.shape[-1]):
             Times2[:, :, i] = Times
+        print '111', Times2[0, 0, 0], Times[0, 0]
         v_ymd2seconds = np.vectorize(npp_ymd2seconds)
         T1 = v_ymd2seconds(Times2)
+        print '11', T1[0, 0, 0]
+        print '11', T1[-1, -1, -1]
 
         self.Lons = self.Lons.reshape(self.Lons.size, 1)
         self.Lats = self.Lats.reshape(self.Lats.size, 1)
@@ -111,6 +115,8 @@ class CLASS_CRIS_L1():
         self.sunAzimuth = self.sunAzimuth.reshape(self.sunAzimuth.size, 1)
         self.sunZenith = self.sunZenith.reshape(self.sunZenith.size, 1)
         self.Time = T1.reshape(T1.size, 1)
+
+        print
 
 #         print u'切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值'
         # 开头和结尾不参与计算
@@ -329,18 +335,21 @@ if __name__ == '__main__':
     print cris.radiance.shape
     print cris.radiance_old.shape
     print np.nanmin(cris.radiance), np.nanmax(cris.radiance)
-    p = dv_plt.dv_scatter(figsize=(7, 5))
-    p.xlim_min = 1000
-    p.xlim_max = 1200
 
-    p.easyplot(cris.wavenumber, cris.radiance[
-               0], 'b', 'after', marker='o', markersize=5)
-    p.easyplot(cris.wavenumber_old, cris.radiance_old[
-               0], 'r', 'before', marker='o', markersize=5)
-
-    p.title = u'20180415 17:46:39 NPP FULL CRIS'
-    p.xlabel = u'波长'
-    p.ylabel = u'radince'
-    ofile = 'D:/data/NPP_CRIS/gapFilling_after.png'
-    p.savefig(ofile, dpi=300)
-    pass
+    print time.gmtime(cris.Time[0, 0])
+    print time.gmtime(cris.Time[-1, -1])
+#     p = dv_plt.dv_scatter(figsize=(7, 5))
+#     p.xlim_min = 1000
+#     p.xlim_max = 1200
+#
+#     p.easyplot(cris.wavenumber, cris.radiance[
+#                0], 'b', 'after', marker='o', markersize=5)
+#     p.easyplot(cris.wavenumber_old, cris.radiance_old[
+#                0], 'r', 'before', marker='o', markersize=5)
+#
+#     p.title = u'20180415 17:46:39 NPP FULL CRIS'
+#     p.xlabel = u'波长'
+#     p.ylabel = u'radince'
+#     ofile = 'D:/data/NPP_CRIS/gapFilling_after.png'
+#     p.savefig(ofile, dpi=300)
+#     pass

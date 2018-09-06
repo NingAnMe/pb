@@ -222,6 +222,21 @@ def plank_iras_tb2rad(T, W, a=None, b=None):
     Rad = a1 / a2
     return Rad
 
+
+def planck_t2r(T, W):
+    '''
+    plank for IRAS tb2rad
+    T : TBB
+    W : center wavenums
+
+    '''
+    c1 = 0.000011910659
+    c2 = 1.438833
+    a1 = c1 * W ** 3
+    a2 = (np.exp(c2 * W / T) - 1.0)
+    Rad = a1 / a2
+    return Rad
+
 if __name__ == '__main__':
     #     print solar_zen(2018, 3, 26, 00, 105.37498, 81.54135)
     #     print getasol6s('20180326', '004500', 105.37498, 81.54135)

@@ -19,7 +19,7 @@ __date__ = '2018-08-28'
 __version__ = '1.0.0_beat'
 
 
-MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+g_main_path, g_main_file = os.path.split(os.path.realpath(__file__))
 
 
 class ReadViirsL1(ReadL1):
@@ -38,7 +38,7 @@ class ReadViirsL1(ReadL1):
 
     def set_resolution(self):
         """
-        根据L1文件名 set self.resolution 分辨率
+        use filename set self.resolution
         :return:
         """
         file_name = os.path.basename(self.in_file)
@@ -50,7 +50,7 @@ class ReadViirsL1(ReadL1):
 
     def set_satellite(self):
         """
-        set satellite name self.satellite
+        use filename set self.satellite
         :return:
         """
         self.satellite = 'NPP'

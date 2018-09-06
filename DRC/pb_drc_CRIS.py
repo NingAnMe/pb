@@ -12,13 +12,12 @@ from pb_drc_base import ReadL1
 import numpy as np
 
 
-# from PB.pb_io import attrs2dict
 __description__ = u'CRIS传感器读取'
 __author__ = 'wangpeng'
 __date__ = '2018-09-03'
 __version__ = '1.0.0_beat'
 
-MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+g_main_path, g_main_file = os.path.split(os.path.realpath(__file__))
 
 
 class ReadCrisL1(ReadL1):
@@ -36,7 +35,7 @@ class ReadCrisL1(ReadL1):
 
     def set_resolution(self):
         """
-        set satellite self.resolution
+        use filename set self.resolution
         """
         file_name = os.path.basename(self.in_file)
         if 'CRIS' in file_name:
@@ -151,14 +150,10 @@ class ReadCrisL1(ReadL1):
                 real_sw = real_sw[:, :, :, 2:-2]
 
                 # 波数范围和步长
-                wave_lw = np.arange(650., 1095.0 + 0.625, 0.625)
-                wave_mw = np.arange(1210.0, 1750 + 0.625, 0.625)
-                wave_sw = np.arange(2155.0, 2550.0 + 0.625, 0.625)
-
                 wave_number = np.arange(650., 2755.0 + 0.625, 0.625)
 
-                wave_number_old = np.concatenate(
-                    (wave_lw, wave_mw, wave_sw))
+#                 wave_number_old = np.concatenate(
+#                     (wave_lw, wave_mw, wave_sw))
                 response_old = np.concatenate(
                     (real_lw, real_mw, real_sw), axis=3)
                 last_s = response_old.shape[-1]
@@ -166,7 +161,7 @@ class ReadCrisL1(ReadL1):
                 response_old = response_old.reshape(s[0], last_s)
 
                 data_file = os.path.join(
-                    MainPath, 'COEFF', 'cris_fs.GapCoeff.h5')
+                    g_main_path, 'COEFF', 'cris_fs.GapCoeff.h5')
 
                 if not os.path.isfile(data_file):
                     raise ValueError(
@@ -191,7 +186,6 @@ class ReadCrisL1(ReadL1):
                 real_sw = real_sw.reshape(s[0], real_sw.shape[-1])
                 response = np.concatenate(
                     (real_lw, real_lw_e, real_mw, real_mw_e, real_sw, real_sw_e), axis=1)
-                print wave_number_old.shape, response_old.shape
 
             else:
                 raise ValueError(
@@ -246,7 +240,7 @@ class ReadCrisL1(ReadL1):
 
                 wave_number = np.concatenate((wave_lw, wave_mw, wave_sw))
                 response = np.concatenate((real_lw, real_mw, real_sw), axis=3)
-                last_shape = self.radiance.shape[-1]
+                last_shape = response.shape[-1]
                 response = response.reshape(s[0], last_shape)
 
             else:
@@ -256,6 +250,67 @@ class ReadCrisL1(ReadL1):
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return wave_number, response
+
+    def get_rad(self, wave_nums, wave_spec, band_list):
+        """
+        wave_nums: 波数cm-1（字典形式，key是通道信息，针对FY数据）
+        wave_spec: 响应0-1（字典形式，key是通道信息，针对FY数据）
+        band_list： CH_20-CH_25
+        return channel rad
+        """
+        data = dict()
+        if self.resolution == 16000:
+            satellite_type1 = ['NPP']
+
+            if self.satellite in satellite_type1:
+                # 获取iasi的光谱响应
+                wave_nums2, response = self.get_spectral_response()
+                for band in sorted(band_list):
+                    wave_nums1 = wave_nums[band]
+                    wave_spec1 = wave_spec[band]
+                    # 插值 把FY插值到IASI上
+                    wave_spec2 = spec_interp(
+                        wave_nums1, wave_spec1, wave_nums2)
+                    # 对应FY的响应值，大小一致就可以和FY比较了，响应是IASI的
+                    rads = spec_convolution(wave_nums2, wave_spec2, response)
+                    data[band] = rads
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb(self, wave_nums, wave_spec, center_wave_nums, a=None, b=None):
+        """
+        use 卫星1的光谱和响应wave_nums,wave_spec（字典形式，key是通道信息，针对FY数据）
+        a,b 分别是红外tbb修正系数，字典 ，key是通道信息
+        return channel rad
+        """
+        data = dict()
+        if self.resolution == 16000:
+            satellite_type1 = ['NPP']
+
+            if self.satellite in satellite_type1:
+                # 目标数据通道信息
+                band_list = sorted(center_wave_nums.keys())
+                # 获取通道的rads
+                rads = self.get_rad(wave_nums, wave_spec, band_list)
+                for band in band_list:
+                    k0 = a[band]
+                    k1 = b[band]
+                    central_wave_number = center_wave_nums[band]
+                    rad = rads[band]
+                    tbb = planck_r2t(rad, central_wave_number)
+                    data[band] = tbb * k0 + k1
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
 
     def get_longitude(self):
         """
@@ -276,7 +331,7 @@ class ReadCrisL1(ReadL1):
             invalid_index = np.logical_or(data_pre < -180, data_pre > 180)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
-            data = data_pre
+            data = data_pre.reshape(self.data_shape)
 
         return data
 
@@ -299,7 +354,7 @@ class ReadCrisL1(ReadL1):
             invalid_index = np.logical_or(data_pre < -90, data_pre > 90)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
-            data = data_pre
+            data = data_pre.reshape(self.data_shape)
 
         return data
 
@@ -324,7 +379,7 @@ class ReadCrisL1(ReadL1):
             invalid_index = np.logical_or(data_pre < vmin, data_pre > vmax)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
-            data = data_pre
+            data = data_pre.reshape(self.data_shape)
 
         return data
 
@@ -350,7 +405,7 @@ class ReadCrisL1(ReadL1):
             invalid_index = np.logical_or(data_pre < vmin, data_pre > vmax)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
-            data = data_pre
+            data = data_pre.reshape(self.data_shape)
 
         return data
 
@@ -377,7 +432,7 @@ class ReadCrisL1(ReadL1):
             invalid_index = np.logical_or(data_pre < vmin, data_pre > vmax)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
-            data = data_pre
+            data = data_pre.reshape(self.data_shape)
 
         return data
 
@@ -402,8 +457,63 @@ class ReadCrisL1(ReadL1):
             invalid_index = np.logical_or(data_pre < vmin, data_pre > vmax)
             data_pre = data_pre.astype(np.float32)
             data_pre[invalid_index] = np.nan
-            data = data_pre
+            data = data_pre.reshape(self.data_shape)
 
+        return data
+
+    def get_height(self):
+        """
+        return hight
+        """
+        if self.resolution == 16000:
+            satellite_type1 = ['NPP']
+            if self.satellite in satellite_type1:
+                vmin = 0
+                vmax = 3000000  # uni m  一般极轨卫星高度840km 左右，这里最大值设置3000km
+                # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
+                with h5py.File(self.in_file, 'r') as h5r:
+                    data_pre = h5r.get(
+                        '/All_Data/CrIS-SDR-GEO_All/SatelliteRange').value
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+            invalid_index = np.logical_or(data_pre < vmin, data_pre > vmax)
+            data_pre = data_pre.astype(np.float32)
+            data_pre[invalid_index] = np.nan
+            data = data_pre.reshape(self.data_shape)
+
+        return data
+
+    def get_timestamp(self):
+        """
+        return from 1970-01-01 00:00:00 seconds
+        """
+        if self.resolution == 16000:
+            satellite_type1 = ['NPP']
+            s = self.data_shape
+            if self.satellite in satellite_type1:
+                with h5py.File(self.in_file, 'r') as h5r:
+                    sds_name = '/All_Data/CrIS-SDR-GEO_All/FORTime'
+                    ary_time = h5r.get(sds_name).value
+                    ary_time = ary_time / 1000000.
+                    # npp VIIRS和 CRIS 数据的时间单位是距离 1958年1月1日 UTC时间的microseconds 微秒
+                    # ymdhms/1000000 = 秒  （距离1958年1月1日 UTC时间）
+                    secs = (datetime(1970, 1, 1, 0, 0, 0) -
+                            datetime(1958, 1, 1, 0, 0, 0)).total_seconds()
+                    # 返回距离1970-01-01的秒
+                    ary_time = ary_time - secs
+                    data = np.repeat(ary_time, 9, axis=1)
+                    data = data.reshape(s)
+                    data = data.astype(np.int32)
+
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
 
@@ -411,6 +521,7 @@ if __name__ == '__main__':
     T1 = datetime.now()
 
     L1File = 'D:/data/NPP_CRIS/GCRSO-SCRIF-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5'
+#     L1File = 'D:/data/NPP_CRIS/GCRSO-SCRIS_npp_d20180415_t1746399_e1754377_b33502_c20180416014630729252_nobc_ops.h5'
     viirs = ReadCrisL1(L1File)
     print viirs.satellite  # 卫星名
     print viirs.sensor  # 传感器名
@@ -440,6 +551,7 @@ if __name__ == '__main__':
             print_data_status(channel_data, name=t_channel_name)
 
     print 'get_spectral_response:'
+#     wavenums, response = viirs.get_spectral_response()
     wavenums, response = viirs.get_spectral_response()
     print_data_status(wavenums)
     print_data_status(response)
@@ -463,4 +575,12 @@ if __name__ == '__main__':
     print_data_status(t_data)
     print 'solar_zenith:'
     t_data = viirs.get_solar_zenith()
+    print_data_status(t_data)
+
+    print 'hight:'
+    t_data = viirs.get_height()
+    print_data_status(t_data)
+
+    print 'time'
+    t_data = viirs.get_timestamp()
     print_data_status(t_data)
