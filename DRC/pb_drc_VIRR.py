@@ -94,7 +94,7 @@ class ReadVirrL1(ReadL1):
             raise ValueError(
                 "Cant handle this resolution: ".format(self.resolution))
 
-    def set_dataset_shape(self):
+    def set_data_shape(self):
         """
         根据 self.satellite set self.dataset_shape
         :return:
