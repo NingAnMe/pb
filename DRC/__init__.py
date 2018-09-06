@@ -8,3 +8,4 @@ from pb_drc_MERSI import ReadMersiL1
 from pb_drc_MODIS import ReadModisL1
 from pb_drc_VIIRS import ReadViirsL1
 from pb_drc_VIRR import ReadVirrL1
+from pb_drc_MVISR import ReadMvisrL1
