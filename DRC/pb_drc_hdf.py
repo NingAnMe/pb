@@ -55,7 +55,7 @@ class ReadHDF5(object):
 
     @staticmethod
     def write_file_attr(out_file, file_attr):
-        with open(out_file, 'r') as hdf5_file:
+        with h5py.File(out_file, 'r') as hdf5_file:
             for k, v in file_attr.items():
                 hdf5_file.attr[k] = v
 
