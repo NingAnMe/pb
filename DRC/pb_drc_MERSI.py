@@ -18,7 +18,7 @@ __date__ = '2018-08-28'
 __version__ = '1.0.0_beat'
 
 
-MainPath, MainFile = os.path.split(os.path.realpath(__file__))
+g_main_path, g_main_file = os.path.split(os.path.realpath(__file__))
 
 
 class ReadMersiL1(ReadL1):
@@ -31,6 +31,7 @@ class ReadMersiL1(ReadL1):
     可见光通道：1,2,3,4,6~20
     红外通道：5
 
+    分辨率：1000m
     卫星： [FY3D]
     通道数量：25
     可见光通道：1~20
@@ -49,7 +50,7 @@ class ReadMersiL1(ReadL1):
 
     def set_resolution(self):
         """
-        根据L1文件名 set self.resolution 分辨率
+        use filename set self.resolution
         :return:
         """
         file_name = os.path.basename(self.in_file)
@@ -61,7 +62,7 @@ class ReadMersiL1(ReadL1):
 
     def set_satellite(self):
         """
-        根据L1文件名 set self.satellite 卫星名
+        use filename set self.satellite
         :return:
         """
         file_name = os.path.basename(self.in_file)
@@ -87,9 +88,7 @@ class ReadMersiL1(ReadL1):
 
     def set_file_attr(self):
         """
-        根据 self.file_level_1 获取 L1 文件的属性
-        set self.level_1_attr
-        储存格式是字典
+        get hdf5 file attrs self.file_attr
         :return:
         """
         if self.resolution == 1000:
@@ -106,7 +105,7 @@ class ReadMersiL1(ReadL1):
 
     def set_data_shape(self):
         """
-        根据 self.satellite set self.data_shape
+        use dataset set self.data_shape
         :return:
         """
         # 如果分辨率是 1000 米
@@ -137,28 +136,6 @@ class ReadMersiL1(ReadL1):
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
-
-    def get_central_wave_number(self):
-        '''
-        return 中心波数
-        central_wave_number
-        wn(cm-1) = 10 ^ 7 / wave_length(nm)
-        '''
-        if self.resolution == 1000:
-            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
-            satellite_type2 = ['FY3D']
-            if self.satellite in satellite_type1:
-                data = {'CH_05': 869.565}
-            elif self.satellite in satellite_type2:
-                data = {'CH_20': 2634.359, 'CH_21': 2471.654, 'CH_22':
-                        1382.621, 'CH_23': 1168.182, 'CH_24': 933.364, 'CH_25': 836.941}
-            else:
-                raise ValueError(
-                    'Cant read this satellite`s data.: {}'.format(self.satellite))
-        else:
-            raise ValueError(
-                'Cant read this data, please check its resolution: {}'.format(self.in_file))
-        return data
 
     def __get_geo_file(self):
         """
@@ -1112,6 +1089,28 @@ class ReadMersiL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
+    def get_central_wave_number(self):
+        '''
+        return 中心波数
+        central_wave_number
+        wn(cm-1) = 10 ^ 7 / wave_length(nm)
+        '''
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+            satellite_type2 = ['FY3D']
+            if self.satellite in satellite_type1:
+                data = {'CH_05': 869.565}
+            elif self.satellite in satellite_type2:
+                data = {'CH_20': 2634.359, 'CH_21': 2471.654, 'CH_22':
+                        1382.621, 'CH_23': 1168.182, 'CH_24': 933.364, 'CH_25': 836.941}
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
     def get_spectral_response(self):
         """
         return 光谱波数和响应值，两个字典
@@ -1128,7 +1127,7 @@ class ReadMersiL1(ReadL1):
                     band = "CH_{:02d}".format(k)
                     file_name = '{}_{}_SRF_CH{:02d}_Pub.txt'.format(
                         self.satellite, self.sensor, k)
-                    data_file = os.path.join(MainPath, 'SRF', file_name)
+                    data_file = os.path.join(g_main_path, 'SRF', file_name)
                     if not os.path.isfile(data_file):
                         continue
                     datas = np.loadtxt(data_file, dtype=dtype)

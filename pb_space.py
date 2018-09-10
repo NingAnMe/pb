@@ -344,4 +344,5 @@ if __name__ == '__main__':
 #     print sun_glint_cal(-44, 33, 44, 55)
 #     print sun_glint_cal(316, 33, 44, 55)
 #     aa = sun_earth_dis_correction('20180501')
+    print deg2meter(0.05)
     pass
