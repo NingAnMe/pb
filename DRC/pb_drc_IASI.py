@@ -186,7 +186,10 @@ class ReadIasiL1(ReadL1):
                         wave_nums1, wave_spec1, wave_nums2)
                     # 对应FY的响应值，大小一致就可以和FY比较了，响应是IASI的
                     rads = spec_convolution(wave_nums2, wave_spec2, response)
-                    data[band] = rads
+                    # 过滤<=0的结果
+                    idx = np.where(rads <= 0.)
+                    rads[idx] = np.nan
+                    data[band] = rads.reshape(rads.size, 1)
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -211,12 +214,16 @@ class ReadIasiL1(ReadL1):
                 # 获取通道的rads
                 rads = self.get_rad(wave_nums, wave_spec, band_list)
                 for band in band_list:
-                    k0 = a[band]
-                    k1 = b[band]
+
                     central_wave_number = center_wave_nums[band]
                     rad = rads[band]
                     tbb = planck_r2t(rad, central_wave_number)
-                    data[band] = tbb * k0 + k1
+                    if a is not None:
+                        k0 = a[band]
+                        k1 = b[band]
+                        data[band] = tbb * k0 + k1
+                    else:
+                        data[band] = tbb
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))

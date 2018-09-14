@@ -263,7 +263,7 @@ class ReadAgriL1(ReadL1):
 
                 with h5py.File(data_file, 'r') as h5r:
                     for i in xrange(self.channels):
-                        if i >= 6:
+                        if i >= 7:
                             band = 'CH_{:02d}'.format(i + 1)
                             ary_lut = h5r.get(
                                 '/CALChannel%02d' % (i + 1)).value
@@ -517,7 +517,7 @@ class ReadAgriL1(ReadL1):
         if self.resolution == 4000:  # 分辨率为 1000
             satellite_type1 = ['FY4A']
             if self.satellite in satellite_type1:
-                data['CH_07'] = 2666.666
+                #                 data['CH_07'] = 2666.666
                 data['CH_08'] = 2666.666
                 data['CH_09'] = 1600.000
                 data['CH_10'] = 1408.450
@@ -574,13 +574,13 @@ if __name__ == '__main__':
 #     t_data = agri.get_rad()
 #     print_channel_data(t_data)
 #
-#     print 'tbb:'
-#     t_data = agri.get_tbb()
-#     print_channel_data(t_data)
+    print 'tbb:'
+    t_data = agri.get_tbb()
+    print_channel_data(t_data)
 #
-    print 'longitude:'
-    t_data = agri.get_longitude()
-    print_data_status(t_data)
+#     print 'longitude:'
+#     t_data = agri.get_longitude()
+#     print_data_status(t_data)
 #     print 'latitude:'
 #     t_data = agri.get_latitude()
 #     print_data_status(t_data)

@@ -93,8 +93,8 @@ class ReadL1(object):
     def __init__(self, in_file, sensor):
         if not os.path.isfile(in_file):
             raise ValueError('{} is not exist.'.format(in_file))
-        else:
-            print 'Read {} L1 : <<< {}'.format(sensor, in_file)
+#         else:
+#             print 'Read {} L1 : <<< {}'.format(sensor, in_file)
 
         self.in_file = in_file
 

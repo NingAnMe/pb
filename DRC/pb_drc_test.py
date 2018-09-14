@@ -62,12 +62,23 @@ if __name__ == '__main__':
     #     tt = (tt - 4.818401E-01) / 9.993363E-01
     #     print c1, c2, ws, tt
 
-    a = np.array([1, 2, 3, np.nan])
-    b = np.array([1, 2, 3, np.nan])
-    c = dict()
-    cc = fun1()
-    print cc
-    if c:
-        print '2'
+    a = np.array([1, 1.0E-5 * 0.005, np.nan, 1, 1, 1, 1, 1])
+    idx = np.logical_and(True, a > 0)
+    ddd = np.where(idx)
+    print ddd.size()
+    #     b = np.array([1, 2.25857044237, np.nan])
+    #     print np.log(b / a + 1)
+    #     print 3836.71637415 / np.log(b / a + 1)
+    #
+    #     print 222 / -(np.inf)
+    #     try:
+    #         cc = 2.25857044237 / (1.0E-5 * 0.)
+    #         print cc
+    #     except Exception as e:
+    #         print e
 
-#     print a.capitalize()
+
+#     print np.log(2.25857044237 / (1.0E-5 * 0.))
+#     print '12', 3836.71637415 / np.log(2.25857044237 / (1.0E-5 * 0.) +1)
+#     print np.logical_and(c > 0, True)
+#     print np.logical_and(, c > 0)
