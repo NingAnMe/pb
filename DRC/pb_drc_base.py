@@ -147,6 +147,9 @@ class ReadL1(object):
     def get_tbb(self):
         return
 
+    def get_lut_bt(self):
+        return
+
     def get_tbb_k0(self):
         return
 

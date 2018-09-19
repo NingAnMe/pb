@@ -164,7 +164,7 @@ class ReadIasiL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return wave_number, response
 
-    def get_rad(self, wave_nums, wave_spec, band_list):
+    def get_rad(self, wave_nums, wave_spec, band_list, lut):
         """
         wave_nums: 波数cm-1（字典形式，key是通道信息，针对FY数据）
         wave_spec: 响应0-1（字典形式，key是通道信息，针对FY数据）
@@ -198,7 +198,7 @@ class ReadIasiL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_tbb(self, wave_nums, wave_spec, center_wave_nums, a=None, b=None):
+    def get_tbb(self, wave_nums, wave_spec, band_list, lut):
         """
         use 卫星1的光谱和响应wave_nums,wave_spec（字典形式，key是通道信息，针对FY数据）
         a,b 分别是红外tbb修正系数，字典 ，key是通道信息
@@ -210,20 +210,22 @@ class ReadIasiL1(ReadL1):
 
             if self.satellite in satellite_type1:
                 # 目标数据通道信息
-                band_list = sorted(center_wave_nums.keys())
                 # 获取通道的rads
-                rads = self.get_rad(wave_nums, wave_spec, band_list)
+                rads = self.get_rad(wave_nums, wave_spec, band_list, lut)
                 for band in band_list:
-
-                    central_wave_number = center_wave_nums[band]
                     rad = rads[band]
-                    tbb = planck_r2t(rad, central_wave_number)
-                    if a is not None:
-                        k0 = a[band]
-                        k1 = b[band]
-                        data[band] = tbb * k0 + k1
-                    else:
-                        data[band] = tbb
+                    tbb = np.interp(rad, lut['rad'][band], lut['tbb'])
+                    data[band] = tbb
+
+#                     central_wave_number = center_wave_nums[band]
+#                     rad = rads[band]
+#                     tbb = planck_r2t(rad, central_wave_number)
+#                     if a is not None:
+#                         k0 = a[band]
+#                         k1 = b[band]
+#                         data[band] = tbb * k0 + k1
+#                     else:
+#                         data[band] = tbb
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -556,10 +558,15 @@ if __name__ == '__main__':
 #     t_data = iasi1.get_solar_zenith()
 #     print_data_status(t_data)
 
-    print 'timestamp:'
-    t_data = iasi1.get_timestamp()
-    print type(t_data)
-    print type(t_data[0, 0])
-    print time.gmtime(t_data[0, 0])
-    print time.gmtime(t_data[-1, -1])
-    print_data_status(t_data)
+    print 'sv:'
+    t_data = iasi1.get_dn()
+    print t_data
+#     print_data_status(t_data)
+
+#     print 'timestamp:'
+#     t_data = iasi1.get_timestamp()
+#     print type(t_data)
+#     print type(t_data[0, 0])
+#     print time.gmtime(t_data[0, 0])
+#     print time.gmtime(t_data[-1, -1])
+#     print_data_status(t_data)

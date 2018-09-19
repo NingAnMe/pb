@@ -18,7 +18,14 @@ __version__ = '1.0.0_beat'
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
 
 
-def fun1():
+def fun2222222():
+    print(sys._getframe().f_code.co_name)
+
+
+def fun1(sensor):
+    print(sys._getframe().f_code.co_name)
+    idx = np.where(sensor > 0)
+    sensor[idx] = -1
     pass
 if __name__ == '__main__':
     #     L1File1 = 'D:/data/FY3D+MERSI_HIRAS/FY3D_MERSI_GBAL_L1_20180326_0045_1000M_MS.HDF'
@@ -61,11 +68,11 @@ if __name__ == '__main__':
     #     tt = c2 / (ws * np.log(c1 / (1.0e+6 * rad * ws ** 5) + 1.0))
     #     tt = (tt - 4.818401E-01) / 9.993363E-01
     #     print c1, c2, ws, tt
-
-    a = np.array([1, 1.0E-5 * 0.005, np.nan, 1, 1, 1, 1, 1])
-    idx = np.logical_and(True, a > 0)
-    ddd = np.where(idx)
-    print ddd.size()
+    #
+    #     a = np.array([1, 1.0E-5 * 0.005, np.nan, 1, 1, 1, 1, 1])
+    #     idx = np.logical_and(True, a > 0)
+    #     ddd = np.where(idx)
+    #     print ddd.size()
     #     b = np.array([1, 2.25857044237, np.nan])
     #     print np.log(b / a + 1)
     #     print 3836.71637415 / np.log(b / a + 1)
@@ -77,8 +84,17 @@ if __name__ == '__main__':
     #     except Exception as e:
     #         print e
 
-
-#     print np.log(2.25857044237 / (1.0E-5 * 0.))
-#     print '12', 3836.71637415 / np.log(2.25857044237 / (1.0E-5 * 0.) +1)
-#     print np.logical_and(c > 0, True)
-#     print np.logical_and(, c > 0)
+    #     print np.log(2.25857044237 / (1.0E-5 * 0.))
+    #     print '12', 3836.71637415 / np.log(2.25857044237 / (1.0E-5 * 0.) +1)
+    #     print np.logical_and(c > 0, True)
+    #     print np.logical_and(, c > 0)
+    #
+    #     dict1 = {'a': 1, 'b': 2}
+    #
+    #     dict1["c"] = dict1.pop("a")
+    #     print dict1
+    fun2222222()
+#     sensor = np.full((3, 4), 9)
+#     print sensor
+#     fun1(sensor)
+#     print sensor
