@@ -238,19 +238,18 @@ class CLASS_VIIRS_L1():
 #         print G_pos.shape
 
 if __name__ == '__main__':
-    T1 = datetime.now()
 
     L1File = 'D:/data/npp_viirs_cris/GMODO-SVM01-SVM02-SVM03-SVM04-SVM05-SVM06-SVM07-SVM08-SVM09-SVM10-SVM11-SVM12-SVM13-SVM14-SVM15-SVM16_npp_d20170201_t0746499_e0752303_b27282_c20180524090019614137_noaa_ops.h5'
     virr = CLASS_VIIRS_L1()
-#     virr.LutFile = 'C:\E\py_src\pysrc\OM\FY-3\exe\linux\FY3C-VIRR-LUT-TB-RB.txt'
     virr.Load(L1File)
-#     virr.Load(L1File)
-    print virr.Rad['CH_15'].shape
-    print np.nanmin(virr.Tbb['CH_13'])
-    print np.nanmax(virr.Tbb['CH_13'])
-    T2 = datetime.now()
-    print 'times:', (T2 - T1).total_seconds()
-    print time.gmtime(virr.Time[0, 0])
-    print time.gmtime(virr.Time[-1, -1])
+    print np.nanmin(virr.satAzimuth)
+    print np.nanmax(virr.satAzimuth)
+    print np.nanmin(virr.satZenith)
+    print np.nanmax(virr.satZenith)
+    print np.nanmin(virr.sunAzimuth)
+    print np.nanmax(virr.sunAzimuth)
+    print np.nanmin(virr.sunZenith)
+    print np.nanmax(virr.sunZenith)
+#     print np.where(np.isclose(virr.sunAzimuth, -180.))
 #
     pass

@@ -116,8 +116,6 @@ class CLASS_CRIS_L1():
         self.sunZenith = self.sunZenith.reshape(self.sunZenith.size, 1)
         self.Time = T1.reshape(T1.size, 1)
 
-        print
-
 #         print u'切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值'
         # 开头和结尾不参与计算
         real_lw[:, :, :, 1:-1] = w0 * real_lw[:, :, :, :-2] + \
@@ -306,9 +304,8 @@ class CLASS_CRIS_L1():
             WaveRad1 = D1.waveRad[Band]
             WaveRad2 = pb_sat.spec_interp(WaveNum1, WaveRad1, WaveNum2)
             newRad = pb_sat.spec_convolution(WaveNum2, WaveRad2, self.radiance)
-            tbb = pb_sat.planck_r2t(
-                newRad, D1.WN[Band], D1.TeA[Band], D1.TeB[Band])
-
+            tbb = pb_sat.planck_r2t(newRad, D1.WN[Band])
+            tbb = tbb * D1.TeA[Band] + D1.TeB[Band]
             self.Tbb[Band] = tbb.reshape(tbb.size, 1)
             self.Rad[Band] = newRad.reshape(newRad.size, 1)
 
@@ -317,7 +314,7 @@ if __name__ == '__main__':
 
     BandLst = ['CH_20', 'CH_21', 'CH_22', 'CH_23', 'CH_24', 'CH_25']
 
-    L1File = 'D:/data/NPP_CRIS/GCRSO-SCRIF-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5'
+    L1File = 'D:/data/CRIS/GCRSO-SCRIF-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5'
 #     L1File = 'D:/data/npp_virrs_cris/GCRSO-SCRIS_npp_d20170201_t0741439_e0749417_b27282_c20180524085728187103_noaa_ops.h5'
     cris = CLASS_CRIS_L1(BandLst)
     cris.LoadFull(L1File)
@@ -338,18 +335,18 @@ if __name__ == '__main__':
 
     print time.gmtime(cris.Time[0, 0])
     print time.gmtime(cris.Time[-1, -1])
-#     p = dv_plt.dv_scatter(figsize=(7, 5))
-#     p.xlim_min = 1000
-#     p.xlim_max = 1200
-#
-#     p.easyplot(cris.wavenumber, cris.radiance[
-#                0], 'b', 'after', marker='o', markersize=5)
-#     p.easyplot(cris.wavenumber_old, cris.radiance_old[
-#                0], 'r', 'before', marker='o', markersize=5)
-#
-#     p.title = u'20180415 17:46:39 NPP FULL CRIS'
-#     p.xlabel = u'波长'
-#     p.ylabel = u'radince'
-#     ofile = 'D:/data/NPP_CRIS/gapFilling_after.png'
-#     p.savefig(ofile, dpi=300)
-#     pass
+    p = dv_plt.dv_scatter(figsize=(7, 5))
+    p.xlim_min = 650
+    p.xlim_max = 2755
+
+    p.easyplot(cris.wavenumber, cris.radiance[
+               0], 'b', 'after', marker='o', markersize=5)
+    p.easyplot(cris.wavenumber_old, cris.radiance_old[
+               0], 'r', 'before', marker='o', markersize=5)
+
+    p.title = u'20180415 17:46:39 NPP FULL CRIS'
+    p.xlabel = u'波长'
+    p.ylabel = u'radince'
+    ofile = 'D:/data/CRIS/gapFilling_after1.png'
+    p.savefig(ofile, dpi=300)
+    pass

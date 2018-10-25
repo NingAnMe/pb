@@ -135,7 +135,7 @@ class CLASS_IRAS_L1():
             self.Tbb[BandName] = Tbb
             # Rad值存放无效值用nan填充
             Rad = np.full(dshape, np.nan)
-            Rad = pb_sat.plank_iras_tb2rad(Tbb, self.WN[BandName])
+            Rad = pb_sat.planck_t2r(Tbb, self.WN[BandName])
             self.Rad[BandName] = Rad
 
         # 全局信息赋值 ############################
@@ -249,8 +249,7 @@ class CLASS_IRAS_L1():
 if __name__ == '__main__':
     T1 = datetime.now()
 
-#     L1File = 'E:\TEST\data\FY3A_IRASX_GBAL_L1_20160813_1606_017KM_MS.HDF'
-    L1File = 'E:\TEST\data\FY3C_IRASX_GBAL_L1_20180101_0124_017KM_MS.HDF'
+    L1File = 'd:/data/IRAS/FY3C_IRASX_GBAL_L1_20180310_1514_017KM_MS.HDF'
     iras = CLASS_IRAS_L1()
     iras.Load(L1File)
 #     iras2 = CLASS_IRAS_L1()
@@ -264,7 +263,7 @@ if __name__ == '__main__':
 #     print time.gmtime(iras.Time[-1, -1])
 # #     print iras.waveRad['CH_01']
     print iras.Tbb.keys()
-# #     print iras.Rad['CH_01']
+    print np.nanmin(iras.Rad['CH_01']), np.nanmax(iras.Rad['CH_01'])
 #     for band in sorted(iras.Tbb.keys()):
 #         print band, np.nanmin(iras.Tbb[band]), np.nanmax(iras.Tbb[band])
 # #         print  band, np.nanmin(iras.Rad[band]), np.nanmax(iras.Rad[band])

@@ -3,6 +3,8 @@
 from datetime import datetime
 import os
 import re
+import time
+
 import h5py
 
 from PB.pb_io import attrs2dict
@@ -166,16 +168,21 @@ class ReadAgriL1(ReadL1):
             if self.satellite in satellite_type1:
                 lut_file = os.path.join(
                     g_main_path, 'LUT', 'FY4A_RADA_TBB.txt')
-                lut_ary = np.loadtxt(lut_file)
-                if 'tbb' not in lut.keys():
-                    lut['tbb'] = lut_ary[:, 0]
-                if 'rad' not in lut.keys():
-                    lut['rad'] = {}
 
-                for i in xrange(8, 15):
-                    band = 'CH_{:02d}'.format(i)
-                    if band not in lut['rad'].keys():
-                        lut['rad'][band] = lut_ary[:, i - 7]
+                if os.path.isfile(lut_file):
+
+                    lut_ary = np.loadtxt(lut_file)
+                    if 'tbb' not in lut.keys():
+                        lut['tbb'] = lut_ary[:, 0]
+                    if 'rad' not in lut.keys():
+                        lut['rad'] = {}
+
+                    for i in xrange(8, 15):
+                        band = 'CH_{:02d}'.format(i)
+                        if band not in lut['rad'].keys():
+                            lut['rad'][band] = lut_ary[:, i - 7]
+                else:
+                    lut = None
 
             else:
                 raise ValueError(
@@ -249,7 +256,7 @@ class ReadAgriL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_rad(self):
+    def get_rad_test(self):
         """
         return rad
         """
@@ -264,9 +271,128 @@ class ReadAgriL1(ReadL1):
                 for i in xrange(self.channels):
                     band = 'CH_{:02d}'.format(i + 1)
                     if i >= 7:
-                        tbb = tbbs[band]
+                        tbb = 250
                         rad = np.interp(tbb, lut['tbb'], lut['rad'][band])
                         data[band] = rad
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_rad_test2(self):
+        """
+        return rad
+        """
+        data = dict()
+        if self.resolution == 4000:  # 分辨率为 1000
+            satellite_type1 = ['FY4A']
+            tbbs = self.get_tbb()
+            central_wave_numbers = self.get_central_wave_number()
+
+            if self.satellite in satellite_type1:
+
+                for i in xrange(self.channels):
+                    band = 'CH_{:02d}'.format(i + 1)
+                    if i >= 7:
+                        tbb = 250
+                        central_wave_number = central_wave_numbers[band]
+                        rad = planck_t2r(tbb, central_wave_number)
+                        data[band] = rad
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_rad(self):
+        """
+        return rad
+        """
+        data = dict()
+        if self.resolution == 4000:  # 分辨率为 1000
+            satellite_type1 = ['FY4A']
+            tbbs = self.get_tbb()
+            central_wave_numbers = self.get_central_wave_number()
+            lut = self.get_lut_bt()
+#             lut = None
+            if self.satellite in satellite_type1:
+
+                for i in xrange(self.channels):
+                    band = 'CH_{:02d}'.format(i + 1)
+                    if i >= 7:
+                        tbb = tbbs[band]
+                        central_wave_number = central_wave_numbers[band]
+                        if lut:
+                            print 'f4 lut'
+                            rad = np.interp(tbb, lut['tbb'], lut['rad'][band])
+                        else:
+                            print 'f4 plank'
+                            rad = planck_t2r(tbb, central_wave_number)
+                        data[band] = rad
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb_test(self):
+        """
+        return rad
+        """
+        data = dict()
+        if self.resolution == 4000:  # 分辨率为 1000
+            satellite_type1 = ['FY4A']
+            tbbs = self.get_tbb()
+            lut = self.get_lut_bt()
+
+            if self.satellite in satellite_type1:
+
+                for i in xrange(self.channels):
+                    band = 'CH_{:02d}'.format(i + 1)
+                    if i >= 7:
+                        rad = 36
+                        tbb = np.interp(rad, lut['rad'][band], lut['tbb'])
+                        data[band] = tbb
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb_test2(self):
+        """
+        return tbb
+        """
+        data = dict()
+        if self.resolution == 4000:  # 分辨率为 1000
+            satellite_type1 = ['FY4A']
+#             dn = self.get_dn()
+
+            if self.satellite in satellite_type1:
+                # rad转tbb的修正系数，所有时次都是固定值
+                tbb_k0 = self.get_tbb_k0()
+                tbb_k1 = self.get_tbb_k1()
+                rads = self.get_rad()
+                central_wave_numbers = self.get_central_wave_number()
+                # 逐个通道处理
+                for i in xrange(self.channels):
+                    band = 'CH_{:02d}'.format(i + 1)
+                    if band in rads.keys():
+                        k0 = tbb_k0[band]
+                        k1 = tbb_k1[band]
+                        central_wave_number = central_wave_numbers[band]
+                        rad = 36
+                        tbb = planck_r2t(rad, central_wave_number)
+                        data[band] = tbb * k1 + k0
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -285,13 +411,16 @@ class ReadAgriL1(ReadL1):
             dn = self.get_dn()
 
             if self.satellite in satellite_type1:
-
+                tbb_k0 = self.get_tbb_k0()
+                tbb_k1 = self.get_tbb_k1()
                 data_file = self.in_file
 
                 with h5py.File(data_file, 'r') as h5r:
                     for i in xrange(self.channels):
                         if i >= 7:
                             band = 'CH_{:02d}'.format(i + 1)
+                            k0 = tbb_k0[band]
+                            k1 = tbb_k1[band]
                             ary_lut = h5r.get(
                                 '/CALChannel%02d' % (i + 1)).value
                             data_pre = np.full(self.data_shape, np.nan)
@@ -299,7 +428,45 @@ class ReadAgriL1(ReadL1):
                                 True, np.isfinite(dn[band]))
                             lut_idx = dn[band][valid_index].astype(np.int16)
                             data_pre[valid_index] = ary_lut[lut_idx]
-                            data[band] = data_pre
+                            data[band] = data_pre * k1 + k0
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb_k1(self):
+        """
+        return K1
+        """
+        data = dict()
+        if self.resolution == 4000:  # 分辨率为 1000
+            satellite_type1 = ['FY4A']
+            if self.satellite in satellite_type1:
+                data = {'CH_08': 1., 'CH_09': 1., 'CH_10': 1.,
+                        'CH_11': 1., 'CH_12': 1., 'CH_13': 1., 'CH_14': 1.}
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb_k0(self):
+        """
+        return K0
+        """
+
+        data = dict()
+        if self.resolution == 4000:  # 分辨率为 1000
+            satellite_type1 = ['FY4A']
+            if self.satellite in satellite_type1:
+                data = {'CH_08': 0., 'CH_09': 0., 'CH_10': 0.,
+                        'CH_11': 0., 'CH_12': 0., 'CH_13': 0., 'CH_14': 0.}
+
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -561,7 +728,7 @@ class ReadAgriL1(ReadL1):
         return data
 
 if __name__ == '__main__':
-    L1File = 'D:/data/FY4A/FY4A-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20180101000000_20180101001459_4000M_V0001.HDF'
+    L1File = 'D:/data/AGRI/FY4A-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20180101000000_20180101001459_4000M_V0001.HDF'
     agri = ReadAgriL1(L1File)
     print agri.satellite  # 卫星名
     print agri.sensor  # 传感器名
@@ -597,13 +764,33 @@ if __name__ == '__main__':
 #     t_data = agri.get_ref()
 #     print_channel_data(t_data)
 #
+#     print 'tbb:'
+#     t_data = agri.get_tbb()
+#     print_channel_data(t_data)
+
     print 'rad:'
     t_data = agri.get_rad()
     print_channel_data(t_data)
 #
-    print 'tbb:'
-    t_data = agri.get_tbb()
-    print_channel_data(t_data)
+#     print 'tbb->rad_test (tbb=250) lut:'
+#     t_data = agri.get_rad_test()
+#     for key in sorted(t_data.keys()):
+#         print key, t_data[key]
+#
+#     print 'tbb->rad_test2 (tbb=250) planck:'
+#     t_data = agri.get_rad_test2()
+#     for key in sorted(t_data.keys()):
+#         print key, t_data[key]
+#
+#     print 'rad->tbb_test (rad=36) lut:'
+#     t_data = agri.get_tbb_test()
+#     for key in sorted(t_data.keys()):
+#         print key, t_data[key]
+#
+#     print 'rad->tbb_test2 (rad=36) planck:'
+#     t_data = agri.get_tbb_test2()
+#     for key in sorted(t_data.keys()):
+#         print key, t_data[key]
 #
 #     print 'longitude:'
 #     t_data = agri.get_longitude()
