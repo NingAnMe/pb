@@ -92,7 +92,7 @@ class ReadVissrL1(ReadL1):
                 with h5py.File(self.in_file, 'r') as h5r:
                     NOMCenterLon = h5r.get('NomFileInfo')['NOMCenterLon'][0]
                     a = {}
-                    a['NOMCenterLon'] = NOMCenterLon
+                    a['NOMCenterLon'] = float(NOMCenterLon)
                     self.file_attr = attrs2dict(a)
             else:
                 raise ValueError(
@@ -525,7 +525,23 @@ class ReadVissrL1(ReadL1):
         if self.resolution == 5000:
             satellite_type1 = ['FY2C', 'FY2D', 'FY2E', 'FY2F', 'FY2G', 'FY2H']
             if self.satellite in satellite_type1:
-                seconds_of_file = 15 * 60  # 一个时次持续 300 秒
+                #                 data_file = self.in_file
+                seconds_of_file = 30 * 60  # 一个时次持续 30分钟
+#                 with h5py.File(data_file, 'r') as h5r:
+#                     obs_time = h5r.get('/NOMOBSTIME').value
+#                     grid_space = h5r.get('/NOMOBSTimeGridSpace').value
+#                     t1 = obs_time[:, 1] * 24. * 3600.
+#                     t2 = obs_time[:, 2] * 24. * 3600.
+#                     t3 = obs_time[:, 3] * 24. * 3600.
+#                     secs = (datetime(1970, 1, 1, 0, 0, 0) -
+#                             datetime(1858, 11, 17, 0, 0, 0)).total_seconds()
+#                     grid = grid_space[:, 0]
+#                     print grid * 2
+#                     tiemcha = np.abs(t3 - t1) / (grid * 2)
+#                     print tiemcha[1000] * 1143
+#                     print tiemcha[69] * 1143
+#                     print datetime.utcfromtimestamp(t2[69] - secs)
+#                     print datetime.utcfromtimestamp(t2[2218] - secs)
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -606,8 +622,8 @@ class ReadVissrL1(ReadL1):
         return data
 
 if __name__ == '__main__':
-    L1File = 'D:/data/VISSR/FY2E_FDI_ALL_NOM_20170101_0900.hdf'
-    L1File = 'D:/data/VISSR/FY2G_FDI_ALL_NOM_20170101_0900.hdf'
+    L1File = 'D:/data/VISSR/FY2E_FDI_ALL_NOM_20170702_1515.hdf'
+#     L1File = 'D:/data/VISSR/FY2G_FDI_ALL_NOM_20170101_0900.hdf'
     agri = ReadVissrL1(L1File)
     print agri.satellite  # 卫星名
     print agri.sensor  # 传感器名
@@ -616,7 +632,11 @@ if __name__ == '__main__':
     print agri.resolution  # 分辨率
     print agri.channels  # 通道数量
     print agri.data_shape
-    print agri.file_attr
+    print type(agri.file_attr['NOMCenterLon'])
+    a = float(agri.file_attr['NOMCenterLon'])
+    print a, type(a)
+
+    sys.exit()
 
 #     sys.exit(-1)
 
@@ -679,25 +699,25 @@ if __name__ == '__main__':
 #     print 'latitude:'
 #     t_data = agri.get_latitude()
 #     print_data_status(t_data)
-    print 'sensor_azimuth:'
-    t_data = agri.get_sensor_azimuth()
-    print_data_status(t_data)
-    print 'sensor_zenith:'
-    t_data = agri.get_sensor_zenith()
-    print_data_status(t_data)
-    print 'solar_azimuth:'
-    t_data = agri.get_solar_azimuth()
-    print_data_status(t_data)
-    print 'solar_zenith:'
-    t_data = agri.get_solar_zenith()
-    print_data_status(t_data)
+#     print 'sensor_azimuth:'
+#     t_data = agri.get_sensor_azimuth()
+#     print_data_status(t_data)
+#     print 'sensor_zenith:'
+#     t_data = agri.get_sensor_zenith()
+#     print_data_status(t_data)
+#     print 'solar_azimuth:'
+#     t_data = agri.get_solar_azimuth()
+#     print_data_status(t_data)
+#     print 'solar_zenith:'
+#     t_data = agri.get_solar_zenith()
+#     print_data_status(t_data)
     print 'timestamp:'
     t_data = agri.get_timestamp()
-    print_data_status(t_data)
-    print time.gmtime(t_data[0, 0])
-    print time.gmtime(t_data[-1, -1])
-
-    print 'get_spectral_response:'
-    wavenums, wave_spec = agri.get_spectral_response()
-    print_channel_data(wavenums)
-    print_channel_data(wave_spec)
+#     print_data_status(t_data)
+#     print time.gmtime(t_data[0, 0])
+#     print time.gmtime(t_data[-1, -1])
+#
+#     print 'get_spectral_response:'
+#     wavenums, wave_spec = agri.get_spectral_response()
+#     print_channel_data(wavenums)
+#     print_channel_data(wave_spec)

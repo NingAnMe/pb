@@ -540,12 +540,13 @@ class ReadMersiL1(ReadL1):
                 k1 = self.get_k1()
                 k2 = self.get_k2()
                 if 'FY3B' in self.satellite:
-                    if int(self.ymd) <= 20130306 and int(self.hms) <= 0015:
+                    if int(self.ymd + self.hms) <= 20130306001500:
                         scales = 100.
                     else:
                         scales = 10000.
                 else:
                     scales = 100.
+
                 # 逐个通道处理
                 for i in xrange(self.channels):
                     band = 'CH_{:02d}'.format(i + 1)
@@ -554,7 +555,13 @@ class ReadMersiL1(ReadL1):
 
                     channel_data = dn[band]**2 * k2[band] + dn[band] * \
                         k1[band] + k0[band]
-                    data[band] = channel_data / scales
+                    pre_data = channel_data / scales
+
+                    idx = np.where(pre_data < 0.)
+                    if len(idx[0] > 0):
+                        pre_data[idx] = np.nan
+                    data[band] = pre_data
+
             # FY3D
             elif self.satellite in satellite_type2:
                 dn = self.get_dn()
@@ -1156,9 +1163,8 @@ class ReadMersiL1(ReadL1):
         return data1, data2
 
 if __name__ == '__main__':
-    #     L1File = 'D:/data/MERSI/FY3C_MERSI_GBAL_L1_20150223_2340_1000M_MS.HDF'
-    #     L1File = 'D:/data/FY3D+MERSI_HIRAS/FY3D_MERSI_GBAL_L1_20180326_0045_1000M_MS.HDF'
     L1File = 'D:/data/MERSI/FY3A_MERSI_GBAL_L1_20141230_1145_1000M_MS.HDF'
+    L1File = 'D:/data/MERSI/FY3B_MERSI_GBAL_L1_20130101_0005_1000M_MS.HDF'
     mersi = ReadMersiL1(L1File)
     print mersi.satellite  # 卫星名
     print mersi.sensor  # 传感器名
@@ -1168,8 +1174,6 @@ if __name__ == '__main__':
     print mersi.channels  # 通道数量
     print mersi.data_shape
     print type(mersi.file_attr)
-
-    sys.exit()
 
     def print_data_status(datas, name=None):
         data_shape = datas.shape
@@ -1201,9 +1205,9 @@ if __name__ == '__main__':
 #     print 'k2:'
 #     t_data = mersi.get_k2()
 #     print_channel_data(t_data)
-#     print 'ref:'
-#     t_data = mersi.get_ref()
-#     print_channel_data(t_data)
+    print 'ref:'
+    t_data = mersi.get_ref()
+    print_channel_data(t_data)
 
 #     print 'rad:'
 #     t_data = mersi.get_rad()
@@ -1214,9 +1218,9 @@ if __name__ == '__main__':
 #     print_channel_data(t_data)
 #     print t_data['CH_20']
 
-    print 'sv:'
-    t_data = mersi.get_sv()
-    print_channel_data(t_data)
+#     print 'sv:'
+#     t_data = mersi.get_sv()
+#     print_channel_data(t_data)
 #
 #     print 'bb:'
 #     t_data = mersi.get_bb()
