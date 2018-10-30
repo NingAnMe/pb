@@ -574,9 +574,13 @@ class ReadMersiL1(ReadL1):
                     band = 'CH_{:02d}'.format(i + 1)
                     if i < 19:
 
-                        channel_data = dn[band]**2 * k2[band] + dn[band] * \
+                        pre_data = dn[band]**2 * k2[band] + dn[band] * \
                             k1[band] + k0[band]
-                        data[band] = channel_data / 100.
+
+                        idx = np.where(pre_data < 0.)
+                        if len(idx[0] > 0):
+                            pre_data[idx] = np.nan
+                        data[band] = pre_data / 100.
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -600,6 +604,7 @@ class ReadMersiL1(ReadL1):
                     band = 'CH_{:02d}'.format(i + 1)
                     if 'CH_05' in band:
                         data[band] = dn[band] / 100.
+
             elif self.satellite in satellite_type2:
                 dn = self.get_dn()
                 with h5py.File(self.in_file, 'r') as h5r:
@@ -707,7 +712,7 @@ class ReadMersiL1(ReadL1):
                         central_wave_number = central_wave_numbers[band]
                         rad = rads[band]
                         tbb = planck_r2t(rad, central_wave_number)
-                        data[band] = tbb * k0 + k1
+                        data[band] = tbb * k1 + k0
 
             else:
                 raise ValueError(
@@ -1165,6 +1170,7 @@ class ReadMersiL1(ReadL1):
 if __name__ == '__main__':
     L1File = 'D:/data/MERSI/FY3A_MERSI_GBAL_L1_20141230_1145_1000M_MS.HDF'
     L1File = 'D:/data/MERSI/FY3B_MERSI_GBAL_L1_20130101_0005_1000M_MS.HDF'
+    L1File = 'D:/data/MERSI/FY3D_MERSI_GBAL_L1_20181001_0020_1000M_MS.HDF'
     mersi = ReadMersiL1(L1File)
     print mersi.satellite  # 卫星名
     print mersi.sensor  # 传感器名
@@ -1205,18 +1211,18 @@ if __name__ == '__main__':
 #     print 'k2:'
 #     t_data = mersi.get_k2()
 #     print_channel_data(t_data)
-    print 'ref:'
-    t_data = mersi.get_ref()
-    print_channel_data(t_data)
-
+#     print 'ref:'
+#     t_data = mersi.get_ref()
+#     print_channel_data(t_data)
+#
 #     print 'rad:'
 #     t_data = mersi.get_rad()
 #     print_channel_data(t_data)
-
+#
 #     print 'tbb:'
 #     t_data = mersi.get_tbb()
 #     print_channel_data(t_data)
-#     print t_data['CH_20']
+#     print t_data['CH_24'][1000, 1000]
 
 #     print 'sv:'
 #     t_data = mersi.get_sv()
@@ -1225,7 +1231,7 @@ if __name__ == '__main__':
 #     print 'bb:'
 #     t_data = mersi.get_bb()
 #     print_channel_data(t_data)
-
+#
 #     print 'longitude:'
 #     t_data = mersi.get_longitude()
 #     print_data_status(t_data)
@@ -1257,7 +1263,6 @@ if __name__ == '__main__':
 #     print 'timestamp:'
 #     t_data = mersi.get_timestamp()
 #     print_data_status(t_data)
-
 
 #     print 'get_spectral_response:'
 #     wavenums, wave_spec = mersi.get_spectral_response()

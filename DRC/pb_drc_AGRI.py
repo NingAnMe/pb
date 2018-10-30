@@ -811,10 +811,10 @@ if __name__ == '__main__':
 #     t_data = agri.get_solar_zenith()
 #     print_data_status(t_data)
 #     print 'timestamp:'
-#     t_data = agri.get_timestamp()
-#     print_data_status(t_data)
-#     print time.gmtime(t_data[0, 0])
-#     print time.gmtime(t_data[-1, -1])
+    t_data = agri.get_timestamp()
+    print_data_status(t_data)
+    print time.gmtime(t_data[0, 0])
+    print time.gmtime(t_data[-1, -1])
 
 #     print 'get_spectral_response:'
 #     wavenums, wave_spec = agri.get_spectral_response()

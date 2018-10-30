@@ -7,9 +7,9 @@ Created on 2017年9月7日
 '''
 
 import os
+import time
 
 import h5py
-import time
 
 from PB import pb_sat
 from PB import pb_space
@@ -367,12 +367,13 @@ class CLASS_MERSI2_L1():
         self.G_pos = G_pos
 
 if __name__ == '__main__':
-    L1File = 'D:/data/FY3D+MERSI_HIRAS/FY3D_MERSI_GBAL_L1_20180326_0045_1000M_MS.HDF'
+    L1File = 'D:/data/MERSI/FY3D_MERSI_GBAL_L1_20181001_0020_1000M_MS.HDF'
     mersi = CLASS_MERSI2_L1()
     mersi.Load(L1File)
-    print np.nanmin(mersi.BB['CH_20'])
-    print np.nanmax(mersi.BB['CH_20'])
-    print type(mersi.orbit_num)
-    print time.gmtime(mersi.Time[0, 0])
-    print time.gmtime(mersi.Time[-1, -1])
+    print mersi.Tbb['CH_24'][1000, 1000]
+#     print np.nanmin(mersi.BB['CH_20'])
+#     print np.nanmax(mersi.BB['CH_20'])
+#     print type(mersi.orbit_num)
+#     print time.gmtime(mersi.Time[0, 0])
+#     print time.gmtime(mersi.Time[-1, -1])
     pass
