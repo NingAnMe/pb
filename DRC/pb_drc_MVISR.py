@@ -286,7 +286,7 @@ class ReadMvisrL1(ReadL1):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 v = valid_range
                 data_pre = sv[i].astype(np.float32)
-                data_pre = congrid(data_pre, self.data_shape, method='spline')
+                data_pre = extend_matrix_2d(data_pre, len(data_pre[0]), self.data_shape[1])
                 invalid_index = np.logical_or(data_pre <= v[0], data_pre > v[1])
                 data_pre[invalid_index] = np.nan
 
@@ -320,7 +320,7 @@ class ReadMvisrL1(ReadL1):
                 channel_name = 'CH_{:02d}'.format(i + 1)
                 v = valid_range
                 data_pre = bb[i].astype(np.float32)
-                data_pre = congrid(data_pre, self.data_shape, method='spline')
+                data_pre = extend_matrix_2d(data_pre, len(data_pre[0]), self.data_shape[1])
                 invalid_index = np.logical_or(data_pre <= v[0], data_pre > v[1])
                 data_pre[invalid_index] = np.nan
 
@@ -374,7 +374,7 @@ class ReadMvisrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 hdf4 = SD(data_file, SDC.READ)
-                data_pre = hdf4.select('Latitude')[:]
+                data_pre = hdf4.select('Longitude')[:]
                 valid_range = (-180, 180)
             else:
                 raise ValueError(
@@ -539,6 +539,66 @@ class ReadMvisrL1(ReadL1):
         else:
             return m.groups()[0]
 
+    def get_latitude_originality(self):
+        """
+        :return:
+        """
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY1C', 'FY1D']
+            if self.satellite in satellite_type1:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError(
+                        'Data file is not exist. {}'.format(data_file))
+                hdf4 = SD(data_file, SDC.READ)
+                data_pre = hdf4.select('Latitude')[:]
+                valid_range = (-180, 180)
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            v = valid_range
+            data_pre = data_pre.astype(np.float32)
+            invalid_index = np.logical_or.reduce((data_pre <= v[0], data_pre > v[1],
+                                                  data_pre == 0.))
+            data_pre[invalid_index] = np.nan
+
+            data = data_pre
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_longitude_originality(self):
+        """
+        :return:
+        """
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type1 = ['FY1C', 'FY1D']
+            if self.satellite in satellite_type1:
+                data_file = self.in_file
+                if not os.path.isfile(data_file):
+                    raise ValueError(
+                        'Data file is not exist. {}'.format(data_file))
+                hdf4 = SD(data_file, SDC.READ)
+                data_pre = hdf4.select('Longitude')[:]
+                valid_range = (-180, 180)
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            v = valid_range
+            data_pre = data_pre.astype(np.float32)
+            invalid_index = np.logical_or.reduce((data_pre <= v[0], data_pre > v[1],
+                                                  data_pre == 0.))
+            data_pre[invalid_index] = np.nan
+
+            data = data_pre
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
 
 def congrid(a, newdims, method='linear', centre=False, minusone=False):
     """Arbitrary resampling of source array to new dimension sizes.
@@ -641,6 +701,29 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
         return None
 
 
+def extend_matrix_2d(data, cols_data, cols_count):
+    """
+    传入的数据必须是 2 维
+    原数据每一列按一定比例扩展到多少列
+    :param data:
+    :param cols_data:
+    :param cols_count:
+    :return:
+    """
+    data_extend = None
+    times = int(np.ceil(float(cols_count) / cols_data))
+    for i in xrange(cols_data):
+        data_one = data[:, i].reshape(len(data), -1)
+        data_times = np.tile(data_one, times)
+        if data_extend is None:
+            data_extend = data_times
+        else:
+            data_extend = np.concatenate((data_extend, data_times), axis=1)
+    if data_extend is not None:
+        data_extend = data_extend[:, :cols_count]
+    return np.array(data_extend)
+
+
 if __name__ == '__main__':
     t_in_file = r'D:\nsmc\fix_data\FY1CD\MVISR\FY1C_L1_GDPT_20030601_0016.HDF'
     t_read_l1 = ReadMvisrL1(t_in_file)
@@ -677,25 +760,25 @@ if __name__ == '__main__':
             print_data_status(channel_data, name=t_channel_name)
 
 
-    print 'dn:'
-    t_data = t_read_l1.get_dn()
-    print_channel_data(t_data)
-
-    print 'k0:'
-    t_data = t_read_l1.get_k0()
-    print_channel_data(t_data)
-
-    print 'k1:'
-    t_data = t_read_l1.get_k1()
-    print_channel_data(t_data)
+    # print 'dn:'
+    # t_data = t_read_l1.get_dn()
+    # print_channel_data(t_data)
+    #
+    # print 'k0:'
+    # t_data = t_read_l1.get_k0()
+    # print_channel_data(t_data)
+    #
+    # print 'k1:'
+    # t_data = t_read_l1.get_k1()
+    # print_channel_data(t_data)
     #
     # print 'k2:'
     # t_data = t_read_l1.get_k2()
     # print_channel_data(t_data)
 
-    print 'ref:'
-    t_data = t_read_l1.get_ref()
-    print_channel_data(t_data)
+    # print 'ref:'
+    # t_data = t_read_l1.get_ref()
+    # print_channel_data(t_data)
 
     # print 'rad'
     # t_data = t_read_l1.get_rad()
@@ -729,13 +812,13 @@ if __name__ == '__main__':
     # print 'height'
     # print_data_status(t_data)
 
-    t_data = t_read_l1.get_latitude()
-    print 'latitude:'
-    print_data_status(t_data)
-
-    t_data = t_read_l1.get_longitude()
-    print 'longitude:'
-    print_data_status(t_data)
+    # t_data = t_read_l1.get_latitude()
+    # print 'latitude:'
+    # print_data_status(t_data)
+    #
+    # t_data = t_read_l1.get_longitude()
+    # print 'longitude:'
+    # print_data_status(t_data)
 
     # t_data = t_read_l1.get_land_cover()
     # print 'land_cover:'
@@ -749,30 +832,30 @@ if __name__ == '__main__':
     # print 'sensor_azimuth:'
     # print_data_status(t_data)
 
-    t_data = t_read_l1.get_sensor_zenith()
-    print 'sensor_zenith:'
-    print_data_status(t_data)
+    # t_data = t_read_l1.get_sensor_zenith()
+    # print 'sensor_zenith:'
+    # print_data_status(t_data)
 
     # t_data = t_read_l1.get_solar_azimuth()
     # print 'solar_azimuth:'
     # print_data_status(t_data)
 
-    t_data = t_read_l1.get_solar_zenith()
-    print 'solar_zenith:'
-    print_data_status(t_data)
+    # t_data = t_read_l1.get_solar_zenith()
+    # print 'solar_zenith:'
+    # print_data_status(t_data)
 
-    t_data = t_read_l1.get_relative_azimuth()
-    print 'relative_azimuth:'
-    print_data_status(t_data)
+    # t_data = t_read_l1.get_relative_azimuth()
+    # print 'relative_azimuth:'
+    # print_data_status(t_data)
 
-    t_data = t_read_l1.get_timestamp()
-    print 'timestamp:'
-    print_data_status(t_data)
-    datetime_timestamp = datetime.utcfromtimestamp(t_data[0][0])
-    datetime_file = datetime.strptime(
-        t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')
-    if datetime_timestamp != datetime_file:
-        print 'Error', '-' * 100
-        print t_data[0][0], datetime_timestamp
-        print t_read_l1.ymd + t_read_l1.hms, datetime_file
-        raise ValueError('Please check the get_timestamp')
+    # t_data = t_read_l1.get_timestamp()
+    # print 'timestamp:'
+    # print_data_status(t_data)
+    # datetime_timestamp = datetime.utcfromtimestamp(t_data[0][0])
+    # datetime_file = datetime.strptime(
+    #     t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')
+    # if datetime_timestamp != datetime_file:
+    #     print 'Error', '-' * 100
+    #     print t_data[0][0], datetime_timestamp
+    #     print t_read_l1.ymd + t_read_l1.hms, datetime_file
+    #     raise ValueError('Please check the get_timestamp')
