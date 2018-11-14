@@ -270,9 +270,8 @@ class CLASS_HIRAS_L1():
             WaveRad1 = D1.waveRad[Band]
             WaveRad2 = pb_sat.spec_interp(WaveNum1, WaveRad1, WaveNum2)
             newRad = pb_sat.spec_convolution(WaveNum2, WaveRad2, self.radiance)
-            tbb = pb_sat.planck_r2t(
-                newRad, D1.WN[Band], D1.TeA[Band], D1.TeB[Band])
-
+            tbb = pb_sat.planck_r2t(newRad, D1.WN[Band])
+            tbb = tbb * D1.TeA[Band] + D1.TeB[Band]
             self.Tbb[Band] = tbb.reshape(tbb.size, 1)
             self.Rad[Band] = newRad.reshape(newRad.size, 1)
 

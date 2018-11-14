@@ -3,6 +3,7 @@
 from datetime import datetime
 import os
 import re
+import sys
 
 import h5py
 
@@ -186,11 +187,11 @@ class ReadMersiL1(ReadL1):
                             k = i - 5
                             data_pre = ary_ch6[k]
 
-                    data_pre = data_pre.astype(np.float32)
-                    invalid_index = np.logical_or(
-                        data_pre <= vmin, data_pre > vmax)
-                    data_pre[invalid_index] = np.nan
-                    data[band] = data_pre
+                        data_pre = data_pre.astype(np.float32)
+                        invalid_index = np.logical_or(
+                            data_pre <= vmin, data_pre > vmax)
+                        data_pre[invalid_index] = np.nan
+                        data[band] = data_pre
 
             elif self.satellite in satellite_type2:
                 data_file = self.in_file
@@ -215,11 +216,11 @@ class ReadMersiL1(ReadL1):
                             k = i - 5
                             data_pre = ary_ch6[k]
 
-                    data_pre = data_pre.astype(np.float32)
-                    invalid_index = np.logical_or(
-                        data_pre <= vmin, data_pre > vmax)
-                    data_pre[invalid_index] = np.nan
-                    data[band] = data_pre
+                        data_pre = data_pre.astype(np.float32)
+                        invalid_index = np.logical_or(
+                            data_pre <= vmin, data_pre > vmax)
+                        data_pre[invalid_index] = np.nan
+                        data[band] = data_pre
 
             elif self.satellite in satellite_type3:
                 data_file = self.in_file
@@ -538,6 +539,13 @@ class ReadMersiL1(ReadL1):
                 k0 = self.get_k0()
                 k1 = self.get_k1()
                 k2 = self.get_k2()
+                if 'FY3B' in self.satellite:
+                    if int(self.ymd + self.hms) <= 20130306001500:
+                        scales = 100.
+                    else:
+                        scales = 10000.
+                else:
+                    scales = 100.
 
                 # 逐个通道处理
                 for i in xrange(self.channels):
@@ -547,7 +555,13 @@ class ReadMersiL1(ReadL1):
 
                     channel_data = dn[band]**2 * k2[band] + dn[band] * \
                         k1[band] + k0[band]
-                    data[band] = channel_data / 100.
+                    pre_data = channel_data / scales
+
+                    idx = np.where(pre_data < 0.)
+                    if len(idx[0] > 0):
+                        pre_data[idx] = np.nan
+                    data[band] = pre_data
+
             # FY3D
             elif self.satellite in satellite_type2:
                 dn = self.get_dn()
@@ -560,9 +574,13 @@ class ReadMersiL1(ReadL1):
                     band = 'CH_{:02d}'.format(i + 1)
                     if i < 19:
 
-                        channel_data = dn[band]**2 * k2[band] + dn[band] * \
+                        pre_data = dn[band]**2 * k2[band] + dn[band] * \
                             k1[band] + k0[band]
-                        data[band] = channel_data / 100.
+
+                        idx = np.where(pre_data < 0.)
+                        if len(idx[0] > 0):
+                            pre_data[idx] = np.nan
+                        data[band] = pre_data / 100.
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -586,6 +604,7 @@ class ReadMersiL1(ReadL1):
                     band = 'CH_{:02d}'.format(i + 1)
                     if 'CH_05' in band:
                         data[band] = dn[band] / 100.
+
             elif self.satellite in satellite_type2:
                 dn = self.get_dn()
                 with h5py.File(self.in_file, 'r') as h5r:
@@ -616,9 +635,9 @@ class ReadMersiL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_tbb_k0(self):
+    def get_tbb_k1(self):
         """
-        return tbb_k0  dict one value
+        return tbb_k1  dict one value
         """
 
         data = dict()
@@ -644,9 +663,9 @@ class ReadMersiL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_tbb_k1(self):
+    def get_tbb_k0(self):
         """
-        return tbb_k1  dict one value
+        return tbb_k0  dict one value
         """
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
@@ -693,7 +712,7 @@ class ReadMersiL1(ReadL1):
                         central_wave_number = central_wave_numbers[band]
                         rad = rads[band]
                         tbb = planck_r2t(rad, central_wave_number)
-                        data[band] = tbb * k0 + k1
+                        data[band] = tbb * k1 + k0
 
             else:
                 raise ValueError(
@@ -1128,6 +1147,7 @@ class ReadMersiL1(ReadL1):
                     file_name = '{}_{}_SRF_CH{:02d}_Pub.txt'.format(
                         self.satellite, self.sensor, k)
                     data_file = os.path.join(g_main_path, 'SRF', file_name)
+
                     if not os.path.isfile(data_file):
                         continue
                     datas = np.loadtxt(data_file, dtype=dtype)
@@ -1148,8 +1168,9 @@ class ReadMersiL1(ReadL1):
         return data1, data2
 
 if __name__ == '__main__':
-    #     L1File = 'D:/data/FY3C_MERSI/FY3C_MERSI_GBAL_L1_20150223_2340_1000M_MS.HDF'
-    L1File = 'D:/data/FY3D+MERSI_HIRAS/FY3D_MERSI_GBAL_L1_20180326_0045_1000M_MS.HDF'
+    L1File = 'D:/data/MERSI/FY3A_MERSI_GBAL_L1_20141230_1145_1000M_MS.HDF'
+    L1File = 'D:/data/MERSI/FY3B_MERSI_GBAL_L1_20130101_0005_1000M_MS.HDF'
+    L1File = 'D:/data/MERSI/FY3D_MERSI_GBAL_L1_20181001_0020_1000M_MS.HDF'
     mersi = ReadMersiL1(L1File)
     print mersi.satellite  # 卫星名
     print mersi.sensor  # 传感器名
@@ -1158,7 +1179,7 @@ if __name__ == '__main__':
     print mersi.resolution  # 分辨率
     print mersi.channels  # 通道数量
     print mersi.data_shape
-#     print mersi.file_attr
+    print type(mersi.file_attr)
 
     def print_data_status(datas, name=None):
         data_shape = datas.shape
@@ -1193,15 +1214,15 @@ if __name__ == '__main__':
 #     print 'ref:'
 #     t_data = mersi.get_ref()
 #     print_channel_data(t_data)
-
+#
 #     print 'rad:'
 #     t_data = mersi.get_rad()
 #     print_channel_data(t_data)
-
-    print 'tbb:'
-    t_data = mersi.get_tbb()
-    print_channel_data(t_data)
-#     print t_data['CH_20']
+#
+#     print 'tbb:'
+#     t_data = mersi.get_tbb()
+#     print_channel_data(t_data)
+#     print t_data['CH_24'][1000, 1000]
 
 #     print 'sv:'
 #     t_data = mersi.get_sv()
@@ -1210,7 +1231,7 @@ if __name__ == '__main__':
 #     print 'bb:'
 #     t_data = mersi.get_bb()
 #     print_channel_data(t_data)
-
+#
 #     print 'longitude:'
 #     t_data = mersi.get_longitude()
 #     print_data_status(t_data)
@@ -1242,7 +1263,6 @@ if __name__ == '__main__':
 #     print 'timestamp:'
 #     t_data = mersi.get_timestamp()
 #     print_data_status(t_data)
-
 
 #     print 'get_spectral_response:'
 #     wavenums, wave_spec = mersi.get_spectral_response()

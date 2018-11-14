@@ -17,8 +17,9 @@ import h5py
 
 from PB import pb_sat
 from PB.pb_time import get_ymd, get_hm
-import numpy as np
 from pb_drc_hdf import ReadHDF5
+import numpy as np
+
 
 MainPath, MainFile = os.path.split(os.path.realpath(__file__))
 
@@ -102,14 +103,17 @@ class CLASS_VIRR_L1(ReadHDF5):
                     ary_ch7 = h5File_R.get('/Data/EV_RefSB')[:]
                     ary_offsets = h5File_R.get(
                         '/Data/Emissive_Radiance_Offsets')[:]
-                    ary_scales = h5File_R.get('/Data/Emissive_Radiance_Scales')[:]
+                    ary_scales = h5File_R.get(
+                        '/Data/Emissive_Radiance_Scales')[:]
                     ary_ref_cal = h5File_R.attrs['RefSB_Cal_Coefficients']
                     ary_Nonlinear = h5File_R.attrs[
                         'Prelaunch_Nonlinear_Coefficients']
                     try:
-                        ary_tb_coeff = h5File_R.attrs['Emmisive_BT_Coefficients']
+                        ary_tb_coeff = h5File_R.attrs[
+                            'Emmisive_BT_Coefficients']
                     except Exception:
-                        ary_tb_coeff = h5File_R.attrs['Emissive_BT_Coefficients']
+                        ary_tb_coeff = h5File_R.attrs[
+                            'Emissive_BT_Coefficients']
             except Exception as e:
                 self.error = True
                 print str(e)
@@ -125,7 +129,8 @@ class CLASS_VIRR_L1(ReadHDF5):
                     ary_lat = h5File_R.get('/Geolocation/Latitude')[:]
                     ary_height = h5File_R.get('/Geolocation/DEM')[:]
                     ary_LandCover = h5File_R.get('/Geolocation/LandCover')[:]
-                    ary_LandSeaMask = h5File_R.get('/Geolocation/LandSeaMask')[:]
+                    ary_LandSeaMask = h5File_R.get(
+                        '/Geolocation/LandSeaMask')[:]
             except Exception as e:
                 self.error = True
                 print str(e)
@@ -151,14 +156,19 @@ class CLASS_VIRR_L1(ReadHDF5):
                 with h5py.File(L1File, 'r') as h5File_R:
                     ary_ch3 = h5File_R.get('/EV_Emissive')[:, 0:1800, 0:2048]
                     ary_ch7 = h5File_R.get('/EV_RefSB')[:, 0:1800, 0:2048]
-                    ary_offsets = h5File_R.get('/Emissive_Radiance_Offsets')[0:1800, :]
-                    ary_scales = h5File_R.get('/Emissive_Radiance_Scales')[0:1800, :]
+                    ary_offsets = h5File_R.get(
+                        '/Emissive_Radiance_Offsets')[0:1800, :]
+                    ary_scales = h5File_R.get(
+                        '/Emissive_Radiance_Scales')[0:1800, :]
                     ary_ref_cal = h5File_R.attrs['RefSB_Cal_Coefficients']
-                    ary_Nonlinear = h5File_R.attrs['Prelaunch_Nonlinear_Coefficients']
+                    ary_Nonlinear = h5File_R.attrs[
+                        'Prelaunch_Nonlinear_Coefficients']
                     try:
-                        ary_tb_coeff = h5File_R.attrs['Emmisive_BT_Coefficients']
+                        ary_tb_coeff = h5File_R.attrs[
+                            'Emmisive_BT_Coefficients']
                     except Exception:
-                        ary_tb_coeff = h5File_R.attrs['Emissive_BT_Coefficients']
+                        ary_tb_coeff = h5File_R.attrs[
+                            'Emissive_BT_Coefficients']
                     ary_satz = h5File_R.get('/SensorZenith')[0:1800, 0:2048]
                     ary_sata = h5File_R.get('/SensorAzimuth')[0:1800, 0:2048]
                     ary_sunz = h5File_R.get('/SolarZenith')[0:1800, 0:2048]
@@ -167,7 +177,8 @@ class CLASS_VIRR_L1(ReadHDF5):
                     ary_lat = h5File_R.get('/Latitude')[0:1800, 0:2048]
                     ary_height = h5File_R.get('/Height')[0:1800, 0:2048]
                     ary_LandCover = h5File_R.get('/LandCover')[0:1800, 0:2048]
-                    ary_LandSeaMask = h5File_R.get('/LandSeaMask')[0:1800, 0:2048]
+                    ary_LandSeaMask = h5File_R.get(
+                        '/LandSeaMask')[0:1800, 0:2048]
             except Exception as e:
                 self.error = True
                 print str(e)
@@ -198,8 +209,10 @@ class CLASS_VIRR_L1(ReadHDF5):
                 self.waveNum[BandName] = waveNum
                 self.waveRad[BandName] = waveRad
             else:
-                self.waveNum[BandName] = np.concatenate((self.waveNum[BandName], waveNum))
-                self.waveRad[BandName] = np.concatenate((self.waveRad[BandName], waveRad))
+                self.waveNum[BandName] = np.concatenate(
+                    (self.waveNum[BandName], waveNum))
+                self.waveRad[BandName] = np.concatenate(
+                    (self.waveRad[BandName], waveRad))
         ############### 数据大小 使用经度维度 ###############
         dshape = ary_lon.shape
 
@@ -227,7 +240,6 @@ class CLASS_VIRR_L1(ReadHDF5):
                 idx = np.logical_and(ary_ch7[k] < 32767, ary_ch7[k] > 0)
                 DN[idx] = ary_ch7[k][idx]
 
-
                 # 反射率值存放无效值用nan填充
                 k0 = proj_Cal_Coeff[k][1]
                 k1 = proj_Cal_Coeff[k][0]
@@ -241,7 +253,8 @@ class CLASS_VIRR_L1(ReadHDF5):
                     self.K1[BandName] = K1
                 else:
                     self.Dn[BandName] = np.concatenate((self.Dn[BandName], DN))
-                    self.Ref[BandName] = np.concatenate((self.Ref[BandName], Ref))
+                    self.Ref[BandName] = np.concatenate(
+                        (self.Ref[BandName], Ref))
                     self.K0[BandName] = np.concatenate((self.K0[BandName], K0))
                     self.K1[BandName] = np.concatenate((self.K1[BandName], K1))
 
@@ -273,8 +286,8 @@ class CLASS_VIRR_L1(ReadHDF5):
                 self.Rad_pre[BandName] = Rad_pre
                 Rad = Rad_pre + Rad_nonlinearity
 
-                Tbb = pb_sat.planck_r2t(
-                    Rad, self.WN[BandName], self.TeA[BandName], self.TeB[BandName])
+                Tbb = pb_sat.planck_r2t(Rad, self.WN[BandName])
+                Tbb = Tbb * self.TeA[BandName] + self.TeB[BandName]
 
                 k0_coeff = ary_tb_coeff[k * 2 + 1]
                 k1_coeff = ary_tb_coeff[k * 2]
@@ -289,11 +302,14 @@ class CLASS_VIRR_L1(ReadHDF5):
                     self.Tbb_coeff[BandName] = Tbb_coeff
                 else:
                     self.Dn[BandName] = np.concatenate((self.Dn[BandName], DN))
-                    self.Rad[BandName] = np.concatenate((self.Rad[BandName], Rad))
+                    self.Rad[BandName] = np.concatenate(
+                        (self.Rad[BandName], Rad))
                     self.K0[BandName] = np.concatenate((self.K0[BandName], K0))
                     self.K1[BandName] = np.concatenate((self.K1[BandName], K1))
-                    self.Tbb[BandName] = np.concatenate((self.Tbb[BandName], Tbb))
-                    self.Tbb_coeff[BandName] = np.concatenate((self.Tbb_coeff[BandName], Tbb_coeff))
+                    self.Tbb[BandName] = np.concatenate(
+                        (self.Tbb[BandName], Tbb))
+                    self.Tbb_coeff[BandName] = np.concatenate(
+                        (self.Tbb_coeff[BandName], Tbb_coeff))
         # SV, BB
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
@@ -313,7 +329,7 @@ class CLASS_VIRR_L1(ReadHDF5):
         Time = np.full(dshape, np.nan)
         ymd = get_ymd(L1File)
         hm = get_hm(L1File)
-        file_date = datetime.strptime(ymd+hm, '%Y%m%d%H%M')
+        file_date = datetime.strptime(ymd + hm, '%Y%m%d%H%M')
         secs = (file_date - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()
         Time[:] = secs
         if self.Time == []:
@@ -426,7 +442,8 @@ class CLASS_VIRR_L1(ReadHDF5):
             if channel_name in self.Ref:
                 self.extract_data[channel_name]['REF'] = self.Ref[channel_name]
             if channel_name in self.Rad:
-                self.extract_data[channel_name]['RAD_NON'] = self.Rad[channel_name]
+                self.extract_data[channel_name][
+                    'RAD_NON'] = self.Rad[channel_name]
             if channel_name in self.Tbb:
                 self.extract_data[channel_name]['TBB'] = self.Tbb[channel_name]
             if channel_name in self.SV:
@@ -434,9 +451,11 @@ class CLASS_VIRR_L1(ReadHDF5):
             if channel_name in self.BB:
                 self.extract_data[channel_name]['BB'] = self.BB[channel_name]
             if channel_name in self.Rad_pre:
-                self.extract_data[channel_name]['RAD_PRE'] = self.Rad_pre[channel_name]
+                self.extract_data[channel_name][
+                    'RAD_PRE'] = self.Rad_pre[channel_name]
             if channel_name in self.Tbb_coeff:
-                self.extract_data[channel_name]['TBB_COEFF'] = self.Tbb_coeff[channel_name]
+                self.extract_data[channel_name][
+                    'TBB_COEFF'] = self.Tbb_coeff[channel_name]
             if channel_name in self.K0:
                 self.extract_data[channel_name]['K0'] = self.K0[channel_name]
             if channel_name in self.K1:
@@ -459,35 +478,31 @@ class CLASS_VIRR_L1(ReadHDF5):
 if __name__ == '__main__':
     T1 = datetime.now()
 
-    L1File = r'D:\nsmc\fix_data\FY3ABC\FY3C_VIRRX_GBAL_L1_20150101_0030_1000M_MS.HDF'
+    L1File = r'D:\data\VIRR\FY3C_VIRRX_GBAL_L1_20180404_0850_1000M_MS.HDF'
     virr = CLASS_VIRR_L1()
     virr.Load(L1File)
     T2 = datetime.now()
-    print (T2-T1).total_seconds()
+    print (T2 - T1).total_seconds()
 
-    for k, v in  virr.file_attr.items():
-        print k, v
+#     for k, v in virr.file_attr.items():
+#         print k, v
 
     def print_stats(data):
-        print 'mean: ', np.nanmean(data)
-        print 'std: ', np.nanstd(data)
-        print 'max: ', np.nanmax(data)
-        print 'min: ', np.nanmin(data)
-        print ''
+        print 'min: ', np.nanmin(data), 'max: ', np.nanmax(data)
 
     for i in xrange(3):
         g_channel_name = 'CH_{:02d}'.format(i + 3)
-        print 'New:{}\n'.format(g_channel_name)
-
-        print 'Rad_pre'
-        print_stats(virr.Rad_pre[g_channel_name])
-        print 'Rad_non'
-        print_stats(virr.Rad[g_channel_name])
-        print 'Tbb'
-        print_stats(virr.Tbb[g_channel_name])
+        #         print 'New:{}\n'.format(g_channel_name)
+        #
+        #         print 'Rad_pre'
+        #         print_stats(virr.Rad_pre[g_channel_name])
+#         print 'Rad_non'
+#         print_stats(virr.Rad[g_channel_name])
+#         print 'Tbb'
+#         print_stats(virr.Tbb[g_channel_name])
         print 'Tbb_coeff'
         print_stats(virr.Tbb_coeff[g_channel_name])
-        print 'Scales'
-        print_stats(virr.K0[g_channel_name])
-        print 'Offsets'
-        print_stats(virr.K1[g_channel_name])
+#         print 'Scales'
+#         print_stats(virr.K0[g_channel_name])
+#         print 'Offsets'
+#         print_stats(virr.K1[g_channel_name])

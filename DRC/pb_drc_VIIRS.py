@@ -159,7 +159,7 @@ class ReadViirsL1(ReadL1):
                     ref_a = 2.4417415E-5
                     vmin = 0
                     vmax = 60000
-                    sunz = self.get_sensor_zenith()
+                    sunz = self.get_solar_zenith()
                     dsl = sun_earth_dis_correction(self.ymd)
                     # 逐个通道处理
                     for i in xrange(1, 12, 1):
@@ -183,6 +183,48 @@ class ReadViirsL1(ReadL1):
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
+
+#     def get_ref_test(self):
+#         """
+#         return Ref
+#         """
+#
+#         data = dict()
+#         if self.resolution == 750:  # 分辨率为 1000
+#             satellite_type1 = ['NPP']
+#             # NPP
+#             if self.satellite in satellite_type1:
+#                 data_file = self.in_file
+#                 with h5py.File(data_file, 'r') as h5r:
+#                     # 前12个通道是ref
+#                     # 由于不确定性 比较了14和15年的数据值一致，定值。偶尔出现-999.33导致计算错
+#                     ref_a = 2.4417415E-5
+#                     vmin = 0
+#                     vmax = 60000
+#                     sunz = self.get_sensor_zenith()
+#                     dsl = sun_earth_dis_correction(self.ymd)
+#                     # 逐个通道处理
+#                     for i in xrange(1, 12, 1):
+#                         band = 'CH_{:02d}'.format(i)
+#                         sds_name = '/All_Data/VIIRS-M%d-SDR_All/Reflectance' % i
+#                         ary_ref = h5r.get(sds_name).value
+#
+#                         data_pre = ary_ref
+#                         data_pre = data_pre.astype(np.float32)
+#                         invalid_index = np.logical_or(
+#                             data_pre <= vmin, data_pre > vmax)
+#                         data_pre[invalid_index] = np.nan
+#                         # 修正，徐娜提供
+#                         data[band] = data_pre * ref_a * \
+#                             np.cos(np.deg2rad(sunz))
+#
+#             else:
+#                 raise ValueError(
+#                     'Cant read this satellite`s data.: {}'.format(self.satellite))
+#         else:
+#             raise ValueError(
+#                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
+#         return data
 
     def get_rad(self):
         """
@@ -333,8 +375,8 @@ class ReadViirsL1(ReadL1):
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
                         '/All_Data/VIIRS-MOD-GEO_All/SatelliteAzimuthAngle').value
-                vmin = -18000
-                vmax = 18000
+                vmin = -180.
+                vmax = 180.
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -354,8 +396,8 @@ class ReadViirsL1(ReadL1):
         if self.resolution == 750:
             satellite_type1 = ['NPP']
             if self.satellite in satellite_type1:
-                vmin = 0
-                vmax = 18000
+                vmin = 0.
+                vmax = 180.
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
@@ -385,8 +427,8 @@ class ReadViirsL1(ReadL1):
                     data_pre = h5r.get(
                         '/All_Data/VIIRS-MOD-GEO_All/SolarAzimuthAngle').value
 
-                vmin = -18000
-                vmax = 18000
+                vmin = -180.
+                vmax = 180.
 
             else:
                 raise ValueError(
@@ -407,8 +449,8 @@ class ReadViirsL1(ReadL1):
         if self.resolution == 750:
             satellite_type1 = ['NPP']
             if self.satellite in satellite_type1:
-                vmin = 0
-                vmax = 18000
+                vmin = 0.
+                vmax = 180.
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
@@ -447,7 +489,6 @@ class ReadViirsL1(ReadL1):
                     data = np.repeat(ary_time, 16 * s[1])
                     data = data.reshape(s)
                     data = data.astype(np.int32)
-                    print data.shape
 
             else:
                 raise ValueError(
@@ -491,41 +532,29 @@ if __name__ == '__main__':
 
     print 'timestamp:'
     t_data = viirs.get_timestamp()
-#     print type(t_data)
-#     print type(t_data[0, 0])
-#     print time.gmtime(t_data[0, 0])
-#     print time.gmtime(t_data[-1, -1])
-    print_data_status(t_data)
-
-    print 'longitude:'
-    t_data = viirs.get_longitude()
-    print_data_status(t_data)
-
-    print 'latitude:'
-    t_data = viirs.get_latitude()
+    print type(t_data)
+    print type(t_data[0, 0])
+    print time.gmtime(t_data[0, 0])
+    print time.gmtime(t_data[-1, -1])
     print_data_status(t_data)
 #
+#     print 'longitude:'
+#     t_data = viirs.get_longitude()
+#     print_data_status(t_data)
+#
+#     print 'latitude:'
+#     t_data = viirs.get_latitude()
+#     print_data_status(t_data)
+
     print 'sensor_azimuth:'
-    t_data = viirs.get_sensor_azimuth()
-    print_data_status(t_data)
+    t_data1 = viirs.get_sensor_azimuth()
+    print_data_status(t_data1)
     print 'sensor_zenith:'
-    t_data = viirs.get_sensor_zenith()
-    print_data_status(t_data)
+    t_data2 = viirs.get_sensor_zenith()
+    print_data_status(t_data2)
     print 'solar_azimuth:'
-    t_data = viirs.get_solar_azimuth()
-    print_data_status(t_data)
+    t_data3 = viirs.get_solar_azimuth()
+    print_data_status(t_data3)
     print 'solar_zenith:'
-    t_data = viirs.get_solar_zenith()
-    print_data_status(t_data)
-#
-#     print 'ref:'
-#     t_data = viirs.get_ref()
-#     print_channel_data(t_data)
-#     print np.where(np.isclose(t_data['CH_09'], 9.1174051704e-06))
-#     print 'rad:'
-#     t_data = viirs.get_rad()
-#     print_channel_data(t_data)
-#
-#     print 'tbb:'
-#     t_data = viirs.get_tbb()
-#     print_channel_data(t_data)
+    t_data4 = viirs.get_solar_zenith()
+    print_data_status(t_data4)

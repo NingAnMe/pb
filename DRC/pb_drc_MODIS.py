@@ -284,9 +284,9 @@ class ReadModisL1(ReadL1):
 
         return data
 
-    def get_tbb_k0(self):
+    def get_tbb_k1(self):
         """
-        return K0
+        return K1
         """
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
@@ -304,9 +304,9 @@ class ReadModisL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
-    def get_tbb_k1(self):
+    def get_tbb_k0(self):
         """
-        return K1
+        return K0
         """
         data = dict()
 
@@ -660,9 +660,9 @@ if __name__ == '__main__':
 #     t_data = modis.get_dn()
 #     print_channel_data(t_data)
 
-#     print 'ref:'
-#     t_data = modis.get_ref()
-#     print_channel_data(t_data)
+    print 'ref:'
+    t_data = modis.get_ref()
+    print_channel_data(t_data)
 
 #     print 'rad:'
 #     t_data = modis.get_rad()
@@ -672,36 +672,36 @@ if __name__ == '__main__':
 #     t_data = modis.get_tbb()
 #     print_channel_data(t_data)
 
-    print 'longitude:'
-    t_data = modis.get_longitude()
-    print_data_status(t_data)
-
-    print 'latitude:'
-    t_data = modis.get_latitude()
-    print_data_status(t_data)
+#     print 'longitude:'
+#     t_data = modis.get_longitude()
+#     print_data_status(t_data)
 #
-    print 'sensor_azimuth:'
-    t_data = modis.get_sensor_azimuth()
-    print_data_status(t_data)
-    print 'sensor_zenith:'
-    t_data = modis.get_sensor_zenith()
-    print_data_status(t_data)
-    print 'solar_azimuth:'
-    t_data = modis.get_solar_azimuth()
-    print_data_status(t_data)
-    print 'solar_zenith:'
-    t_data = modis.get_solar_zenith()
-    print_data_status(t_data)
-
-    print 'hight:'
-    t_data = modis.get_height()
-    print_data_status(t_data)
-    print 'land_sea_mask:'
-    t_data = modis.get_land_sea_mask()
-    print_data_status(t_data)
-
-    print 'timestamp:'
-    t_data = modis.get_timestamp()
-    print_data_status(t_data)
-    print time.gmtime(t_data[0, 0])
-    print time.gmtime(t_data[-1, -1])
+#     print 'latitude:'
+#     t_data = modis.get_latitude()
+#     print_data_status(t_data)
+# #
+#     print 'sensor_azimuth:'
+#     t_data = modis.get_sensor_azimuth()
+#     print_data_status(t_data)
+#     print 'sensor_zenith:'
+#     t_data = modis.get_sensor_zenith()
+#     print_data_status(t_data)
+#     print 'solar_azimuth:'
+#     t_data = modis.get_solar_azimuth()
+#     print_data_status(t_data)
+#     print 'solar_zenith:'
+#     t_data = modis.get_solar_zenith()
+#     print_data_status(t_data)
+#
+#     print 'hight:'
+#     t_data = modis.get_height()
+#     print_data_status(t_data)
+#     print 'land_sea_mask:'
+#     t_data = modis.get_land_sea_mask()
+#     print_data_status(t_data)
+#
+#     print 'timestamp:'
+#     t_data = modis.get_timestamp()
+#     print_data_status(t_data)
+#     print time.gmtime(t_data[0, 0])
+#     print time.gmtime(t_data[-1, -1])

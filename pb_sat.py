@@ -177,7 +177,7 @@ def spec_convolution(WaveNum, WaveRad, RealRad):
     return S
 
 
-def planck_r2t(r, w):
+def planck_r2t_test(r, w):
     '''
     function radiance2tbb: convert radiance data into brightness temperature (i.e., equivalent blackbody temperature)
     r: spectral radiance data in w/m2/sr/um  单位(mW/(m2.cm-1.sr))
@@ -208,19 +208,34 @@ def planck_r2t(r, w):
 #     return Tbb
 
 
-def plank_iras_tb2rad(T, W, a=None, b=None):
-    '''
-    plank for IRAS tb2rad
-    T : TBB
-    W : center wavenums
+# def plank_iras_tb2rad(T, W, a=None, b=None):
+#     '''
+#     plank for IRAS tb2rad
+#     T : TBB
+#     W : center wavenums
+#
+#     '''
+#     c1 = 0.000011910659
+#     c2 = 1.438833
+#     a1 = c1 * W ** 3
+#     a2 = (np.exp(c2 * W / T) - 1.0)
+#     Rad = a1 / a2
+#     return Rad
 
+
+def planck_r2t(R, W):
+    '''
+    plank for IRAS rad2tb
+    R: radiance
+    W: center wavenums
     '''
     c1 = 0.000011910659
     c2 = 1.438833
-    a1 = c1 * W ** 3
-    a2 = (np.exp(c2 * W / T) - 1.0)
-    Rad = a1 / a2
-    return Rad
+    a1 = c2 * W
+    a2 = np.log(1 + (c1 * W ** 3) / R)
+    # a2 = np.log(1 + (c1 * wn[ich] ** 3) / np.array(Rad_array))
+    Tbb = a1 / a2
+    return Tbb
 
 
 def planck_t2r(T, W):
@@ -242,5 +257,5 @@ if __name__ == '__main__':
     #     print getasol6s('20180326', '004500', 105.37498, 81.54135)
     #     print sun_glint_cal(90, 90, -90, 90)
     #     print sun_glint_cal(359, 179, 359, 179)
-
+    print planck_t2r(np.nan, 333.)
     pass
