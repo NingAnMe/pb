@@ -77,7 +77,7 @@ class ReadVissrL1(ReadL1):
         g = re.match(pat, file_name)
         if g:
             self.ymd = g.group(1)
-            self.hms = g.group(2)
+            self.hms = g.group(2) + '00'
         else:
             raise ValueError('Cant get the ymdhms from file name.')
 
@@ -92,7 +92,7 @@ class ReadVissrL1(ReadL1):
                 with h5py.File(self.in_file, 'r') as h5r:
                     NOMCenterLon = h5r.get('NomFileInfo')['NOMCenterLon'][0]
                     a = {}
-                    a['NOMCenterLon'] = float(NOMCenterLon)
+                    a['NOMCenterLon'] = NOMCenterLon
                     self.file_attr = attrs2dict(a)
             else:
                 raise ValueError(
@@ -205,7 +205,7 @@ class ReadVissrL1(ReadL1):
                             data_pre = h5r.get('/NOMChannelVIS').value
                         data_pre = data_pre.astype(np.float32)
                         invalid_index = np.logical_or(
-                            data_pre <= vmin, data_pre > vmax)
+                            data_pre <= vmin, data_pre >= vmax)
                         data_pre[invalid_index] = np.nan
                         data[band] = data_pre
             else:
@@ -545,7 +545,9 @@ class ReadVissrL1(ReadL1):
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
+            print self.ymd + self.hms
             file_date = datetime.strptime(self.ymd + self.hms, '%Y%m%d%H%M%S')
+            print file_date
             timestamp = (
                 file_date - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()
             row_length = self.data_shape[0]
@@ -632,13 +634,7 @@ if __name__ == '__main__':
     print agri.resolution  # 分辨率
     print agri.channels  # 通道数量
     print agri.data_shape
-    print type(agri.file_attr['NOMCenterLon'])
-    a = float(agri.file_attr['NOMCenterLon'])
-    print a, type(a)
-
-    sys.exit()
-
-#     sys.exit(-1)
+    print agri.file_attr['NOMCenterLon']
 
     def print_data_status(datas, name=None):
         data_shape = datas.shape
@@ -665,9 +661,9 @@ if __name__ == '__main__':
 #     t_data = agri.get_ref()
 #     print_channel_data(t_data)
 #
-#     print 'tbb:'
-#     t_data = agri.get_tbb()
-#     print_channel_data(t_data)
+    print 'tbb:'
+    t_data = agri.get_tbb()
+    print_channel_data(t_data)
 
 #     print 'rad:'
 #     t_data = agri.get_rad()
@@ -711,8 +707,8 @@ if __name__ == '__main__':
 #     print 'solar_zenith:'
 #     t_data = agri.get_solar_zenith()
 #     print_data_status(t_data)
-    print 'timestamp:'
-    t_data = agri.get_timestamp()
+#     print 'timestamp:'
+#     t_data = agri.get_timestamp()
 #     print_data_status(t_data)
 #     print time.gmtime(t_data[0, 0])
 #     print time.gmtime(t_data[-1, -1])

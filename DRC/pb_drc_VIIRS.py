@@ -248,13 +248,13 @@ class ReadViirsL1(ReadL1):
                         ary_rad = h5r.get(sds_name1).value
 
                         if i == 13:
-                            a = 1.
-                            b = 0.
+                            k1 = 1.
+                            k0 = 0.
                         else:
                             sds_name2 = '/All_Data/VIIRS-M%d-SDR_All/RadianceFactors' % i
                             ary_coeff = h5r.get(sds_name2).value
-                            a = ary_coeff[0]
-                            b = ary_coeff[0]
+                            k1 = ary_coeff[0]
+                            k0 = ary_coeff[1]
 
                         data_pre = ary_rad
                         data_pre = data_pre.astype(np.float32)
@@ -264,7 +264,7 @@ class ReadViirsL1(ReadL1):
                         # 修正，徐娜提供
                         data_pre = data_pre * \
                             ((10000 / center_wn[band]) ** 2) / 10.
-                        data[band] = data_pre * a + b
+                        data[band] = data_pre * k1 + k0
 
             else:
                 raise ValueError(
@@ -295,20 +295,20 @@ class ReadViirsL1(ReadL1):
                         ary_tbb = h5r.get(sds_name1).value
 
                         if i == 13:
-                            a = 1.
-                            b = 0.
+                            k1 = 1.
+                            k0 = 0.
                         else:
                             sds_name2 = '/All_Data/VIIRS-M%d-SDR_All/BrightnessTemperatureFactors' % i
                             ary_coeff = h5r.get(sds_name2).value
-                            a = ary_coeff[0]
-                            b = ary_coeff[0]
+                            k1 = ary_coeff[0]
+                            k0 = ary_coeff[1]
 
                         data_pre = ary_tbb
                         data_pre = data_pre.astype(np.float32)
                         invalid_index = np.logical_or(
                             data_pre <= vmin, data_pre > vmax)
                         data_pre[invalid_index] = np.nan
-                        data[band] = data_pre * a + b
+                        data[band] = data_pre * k1 + k0
 
             else:
                 raise ValueError(
@@ -501,7 +501,7 @@ class ReadViirsL1(ReadL1):
 if __name__ == '__main__':
     T1 = datetime.now()
 
-    L1File = 'D:/data/npp_viirs_cris/GMODO-SVM01-SVM02-SVM03-SVM04-SVM05-SVM06-SVM07-SVM08-SVM09-SVM10-SVM11-SVM12-SVM13-SVM14-SVM15-SVM16_npp_d20170201_t0746499_e0752303_b27282_c20180524090019614137_noaa_ops.h5'
+    L1File = 'D:/data/VIIRS/GMODO-SVM01-SVM02-SVM03-SVM04-SVM05-SVM06-SVM07-SVM08-SVM09-SVM10-SVM11-SVM12-SVM13-SVM14-SVM15-SVM16_npp_d20170201_t0746499_e0752303_b27282_c20180524090019614137_noaa_ops.h5'
     viirs = ReadViirsL1(L1File)
     print viirs.satellite  # 卫星名
     print viirs.sensor  # 传感器名
@@ -529,14 +529,16 @@ if __name__ == '__main__':
         for t_channel_name in keys:
             channel_data = datas[t_channel_name]
             print_data_status(channel_data, name=t_channel_name)
-
-    print 'timestamp:'
-    t_data = viirs.get_timestamp()
-    print type(t_data)
-    print type(t_data[0, 0])
-    print time.gmtime(t_data[0, 0])
-    print time.gmtime(t_data[-1, -1])
-    print_data_status(t_data)
+    print 'tbb:'
+    t_data = viirs.get_tbb()
+    print_channel_data(t_data)
+#     print 'timestamp:'
+#     t_data = viirs.get_timestamp()
+#     print type(t_data)
+#     print type(t_data[0, 0])
+#     print time.gmtime(t_data[0, 0])
+#     print time.gmtime(t_data[-1, -1])
+#     print_data_status(t_data)
 #
 #     print 'longitude:'
 #     t_data = viirs.get_longitude()
@@ -546,15 +548,15 @@ if __name__ == '__main__':
 #     t_data = viirs.get_latitude()
 #     print_data_status(t_data)
 
-    print 'sensor_azimuth:'
-    t_data1 = viirs.get_sensor_azimuth()
-    print_data_status(t_data1)
-    print 'sensor_zenith:'
-    t_data2 = viirs.get_sensor_zenith()
-    print_data_status(t_data2)
-    print 'solar_azimuth:'
-    t_data3 = viirs.get_solar_azimuth()
-    print_data_status(t_data3)
-    print 'solar_zenith:'
-    t_data4 = viirs.get_solar_zenith()
-    print_data_status(t_data4)
+#     print 'sensor_azimuth:'
+#     t_data1 = viirs.get_sensor_azimuth()
+#     print_data_status(t_data1)
+#     print 'sensor_zenith:'
+#     t_data2 = viirs.get_sensor_zenith()
+#     print_data_status(t_data2)
+#     print 'solar_azimuth:'
+#     t_data3 = viirs.get_solar_azimuth()
+#     print_data_status(t_data3)
+#     print 'solar_zenith:'
+#     t_data4 = viirs.get_solar_zenith()
+#     print_data_status(t_data4)
