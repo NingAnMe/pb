@@ -10,8 +10,9 @@ import re
 
 from PB import pb_time
 
-
 # from PB.CSC.pb_csc_console import LogServer
+
+
 class nameClassManager(object):
     '''
     插件类的装饰器
@@ -105,32 +106,6 @@ class AURA_OMI_L3(satNameBase):
         if g:
             self.ymd = '%s%s' % (g.group(1), g.group(2))
             self.hms = '000000'
-            return True
-        else:
-            return False
-
-
-@nameClassManager.plugin
-class MODDIS_L1L2(satNameBase):
-    '''
-    MYD021KM.A2014031.0555.006.2014032173249.hdf
-    MYD03.A2015335.0410.006.2015335161644.hdf
-    MOD04_L2.A2016059.0040.006.2016099175354.hdf
-    MOD04_3K.A2016007.0000.006.2016008152828.hdf 
-    '''
-
-    def __init__(self):
-        pat = u'\w+.A(\d{4})(\d{3}).(\d{4}).\d{3}.\d+.hdf$'
-        totalSec = 5 * 60
-        satNameBase.__init__(self, pat, totalSec)
-
-    def check(self, infile):
-        g = re.match(self.pat, infile)
-        if g:
-            tt = pb_time.JDay2Datetime(
-                g.group(1), g.group(2), g.group(3) + '00')
-            self.ymd = tt.strftime('%Y%m%d')
-            self.hms = g.group(3) + '00'
             return True
         else:
             return False
@@ -294,28 +269,6 @@ class NPP_L1(satNameBase):
 
 
 @nameClassManager.plugin
-class NPP_L1_VIIRS(satNameBase):
-    '''
-    GDNBO_npp_d20160212_t0700199_e0706003_b22245_c20160212130601292266_noaa_ops.h5
-    GMODO-SVM01-SVM02-SVM03-SVM04-SVM05-SVM06-SVM07-SVM08-SVM09-SVM10-SVM11-SVM12-SVM13-SVM14-SVM15-SVM16_npp_d20141115_t0001028_e0006432_b15799_c20170810221740745607_noaa_ops.h5
-    '''
-
-    def __init__(self):
-        pat = u'(GDNBO|GMODO|GMTCO|SVM\d{2}).*_npp_d(\d{8})_t(\d{7})_e(\d{7})_b\d{5}_c\d{20}_\w{4}_ops.h5$'
-        totalSec = 6 * 60
-        satNameBase.__init__(self, pat, totalSec)
-
-    def check(self, infile):
-        g = re.match(self.pat, infile)
-        if g:
-            self.ymd = g.group(2)
-            self.hms = g.group(3)[:-1]  # 舍弃秒的小数点以后位
-            return True
-        else:
-            return False
-
-
-@nameClassManager.plugin
 class GCOM_L1(satNameBase):
     '''
     GW1AM2_201602251839_130D_L1SGBTBR_2210210.h5
@@ -375,77 +328,6 @@ class CALIPSO_L2(satNameBase):
 #             return True
 #         else:
 #             return False
-
-
-@nameClassManager.plugin
-class FY2_L1(satNameBase):
-    '''
-    FY2E_FDI_ALL_NOM_20160131_0900.hdf
-    FY2F_FDI_ALL_NOM_20160131_0900.hdf
-    FY2G_FDI_ALL_NOM_20160131_0900.hdf
-    '''
-
-    def __init__(self):
-        pat = u'\w{4}_FDI_ALL_NOM_(\d{8})_(\d{4}).hdf$'
-        totalSec = 30 * 60
-        satNameBase.__init__(self, pat, totalSec)
-
-    def check(self, infile):
-        g = re.match(self.pat, infile)
-        if g:
-            self.ymd = g.group(1)
-            self.hms = g.group(2) + '00'
-            return True
-        else:
-            return False
-
-
-@nameClassManager.plugin
-class FY3_L1_5(satNameBase):
-    '''
-    FY3C_VIRRX_GBAL_L1_20160131_1855_1000M_MS.HDF
-    FY3C_MERSI_GBAL_L1_20150530_1015_1000M_MS.HDF
-    FY3C_MERSI_GBAL_L1_20150530_1015_GEO1K_MS.HDF
-    '''
-
-    def __init__(self):
-        pat = u'\w{4}_\w{5}_\w{4}_L1_(\d{8})_(\d{4})_\w{5}_MS.HDF$'
-        totalSec = 5 * 60
-        satNameBase.__init__(self, pat, totalSec)
-
-    def check(self, infile):
-        g = re.match(self.pat, infile)
-        if g:
-            self.ymd = g.group(1)
-            self.hms = g.group(2) + '00'
-            return True
-        else:
-            return False
-
-
-@nameClassManager.plugin
-class FY3_L1_TRACK(satNameBase):
-    '''
-    FY3C_MWRID_GBAL_L1_20160127_1050_010KM_MS.HDF
-    FY3C_MWRIA_GBAL_L1_20160122_0307_010KM_MS.HDF
-    FY3C_MWTSX_GBAL_L1_20141231_0018_033KM_MS.HDF
-    FY3C_MWHSX_GBAL_L1_20160130_2205_015KM_MS.HDF
-    FY3C_IRASX_GBAL_L1_20160129_1215_017KM_MS.HDF
-    '''
-
-    def __init__(self):
-        pat = u'\w{4}_\w{5}_\w{4}_L1_(\d{8})_(\d{4})_\w{5}_MS.HDF$'
-        totalSec = 100 * 60
-        satNameBase.__init__(self, pat, totalSec)
-
-    def check(self, infile):
-        g = re.match(self.pat, infile)
-        if g:
-            self.ymd = g.group(1)
-            self.hms = g.group(2) + '00'
-            return True
-        else:
-            return False
 
 
 @nameClassManager.plugin
@@ -638,7 +520,6 @@ class MCD43C1(satNameBase):
             tt = pb_time.JDay2Datetime(g.group(1), g.group(2), '000000')
             self.ymd = tt.strftime('%Y%m%d')
             self.hms = '000000'
-            print g.group(2), g.group(3)
             return True
         else:
             return False
@@ -673,7 +554,7 @@ class uwnd(satNameBase):
     '''
     uwnd.sig995.2011.nc
     author: huangyejian
-    modify: 2016-09-01   
+    modify: 2016-09-01
     '''
 
     def __init__(self):
@@ -1121,27 +1002,6 @@ class Gomeso2(satNameBase):
 
 
 @nameClassManager.plugin
-class FY4A(satNameBase):
-    '''
-    FY4A-_AGRI--_N_DISK_0995E_L1-_FDI-_MULT_NOM_20170507031500_20170507032959_4000M_V0001.HDF
-    '''
-
-    def __init__(self):
-        totalSec = 60 * 15
-        pat = u'FY4A-_AGRI--_N_DISK_\d{4}E_L1-_\w{3}-_MULT_NOM_(\d{8})(\d{6})_(\d{14})_4000M_V0001.HDF\Z'
-        satNameBase.__init__(self, pat, totalSec)
-
-    def check(self, infile):
-        g = re.match(self.pat, infile)
-        if g:
-            self.ymd = g.group(1)
-            self.hms = g.group(2)
-            return True
-        else:
-            return False
-
-
-@nameClassManager.plugin
 class HIMAWARI_08(satNameBase):
     '''
     AHI8_OBI_2000M_NOM_20171109_0000.hdf
@@ -1162,9 +1022,215 @@ class HIMAWARI_08(satNameBase):
         else:
             return False
 
+
+@nameClassManager.plugin
+class FY1_MVISR_L1(satNameBase):
+    '''
+    FY1D_L1_GDPT_20031231_1347.HDF
+    '''
+
+    def __init__(self):
+        pat = u'\w{4}_L1_GDPT_(\d{8})_(\d{4}).HDF$'
+        totalSec = 90 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(1)
+            self.hms = g.group(2) + '00'
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
+class FY2_VISSR_L1(satNameBase):
+    '''
+    FY2C_FDI_ALL_NOM_20160131_0900.hdf
+    FY2D_FDI_ALL_NOM_20160131_0900.hdf
+    FY2E_FDI_ALL_NOM_20160131_0900.hdf
+    FY2F_FDI_ALL_NOM_20160131_0900.hdf
+    FY2G_FDI_ALL_NOM_20160131_0900.hdf
+    '''
+
+    def __init__(self):
+        pat = u'\w{4}_FDI_ALL_NOM_(\d{8})_(\d{4}).hdf$'
+        totalSec = 30 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(1)
+            self.hms = g.group(2) + '00'
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
+class FY3_MERSI_VIRR_HIRAS_L1(satNameBase):
+    '''
+    FY3C_VIRRX_GBAL_L1_20160131_1855_1000M_MS.HDF
+    FY3C_MERSI_GBAL_L1_20150530_1015_1000M_MS.HDF
+    FY3C_MERSI_GBAL_L1_20150530_1015_GEO1K_MS.HDF
+    FY3D_HIRAS_GBAL_L1_20180515_1045_016KM_MS.HDF
+    '''
+
+    def __init__(self):
+        pat = u'\w{4}_(MERSI|VIRRX|HIRAS)_\w{4}_L1_(\d{8})_(\d{4})_\w{5}_MS.HDF$'
+        totalSec = 5 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(2)
+            self.hms = g.group(3) + '00'
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
+class FY3_IRAS_L1(satNameBase):
+    '''
+    FY3C_IRASX_GBAL_L1_20160129_1215_017KM_MS.HDF
+    '''
+
+    def __init__(self):
+        pat = u'\w{4}_IRASX_\w{4}_L1_(\d{8})_(\d{4})_\w{5}_MS.HDF$'
+        totalSec = 100 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(1)
+            self.hms = g.group(2) + '00'
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
+class FY4_AGRI_L1(satNameBase):
+    '''
+    FY4A-_AGRI--_N_DISK_0995E_L1-_FDI-_MULT_NOM_20170507031500_20170507032959_4000M_V0001.HDF
+    '''
+
+    def __init__(self):
+        totalSec = 60 * 15
+        pat = u'FY4A-_AGRI--_N_DISK_\d{4}E_L1-_\w{3}-_MULT_NOM_(\d{8})(\d{6})_(\d{14})_4000M_V0001.HDF\Z'
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(1)
+            self.hms = g.group(2)
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
+class METOP_IASI_GOME_L1(satNameBase):
+    '''
+    IASI_xxx_1C_M02_20160301052958Z_20160301053254Z_N_O_20160301070539Z__20160301070731
+    GOME_xxx_1B_M01_20160403080255Z_20160403080555Z_N_O_20160403083330Z__20160403083454
+    '''
+
+    def __init__(self):
+        pat = u'\w+_(\d{14})Z_(\d{14})Z_N_O_\d{14}Z__\d{14}$'
+        totalSec = 3 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(1)[:8]
+            self.hms = g.group(1)[8:]
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
+class NPP_CRIS_L1(satNameBase):
+    '''
+    GCRSO-SCRIS_npp_d20160408_t1038089_e1046067_b23041_c20160408205450739096_noaa_ops.h5
+    GCRSO-SCRIS_npp_d20170728_t0501519_e0509497_b29791_c20170729031753478626_noac_ops.h5
+    GCRSO-SCRIF-SCRIS_npp_d20180303_t0016319_e0024297_b32881_c20180308030857410779_noac_ops.h5     
+    '''
+
+    def __init__(self):
+        # - 中划线不匹配 不知道为什么
+        pat = u'\w{5}-.*_npp_d(\d{8})_t(\d{7})_e(\d{7})_b(\d{5})_c(\d{20})_\w{4}_ops.h5$'
+        totalSec = 8 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(1)
+            self.hms = g.group(2)[:-1]  # 舍弃秒的小数点以后位
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
+class NPP_VIIRS_L1(satNameBase):
+    '''
+    GDNBO_npp_d20160212_t0700199_e0706003_b22245_c20160212130601292266_noaa_ops.h5
+    GMODO-SVM01-SVM02-SVM03-SVM04-SVM05-SVM06-SVM07-SVM08-SVM09-SVM10-SVM11-SVM12-SVM13-SVM14-SVM15-SVM16_npp_d20141115_t0001028_e0006432_b15799_c20170810221740745607_noaa_ops.h5
+    '''
+
+    def __init__(self):
+        pat = u'(GDNBO|GMODO|GMTCO|SVM\d{2}).*_npp_d(\d{8})_t(\d{7})_e(\d{7})_b\d{5}_c\d{20}_\w{4}_ops.h5$'
+        totalSec = 6 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(2)
+            self.hms = g.group(3)[:-1]  # 舍弃秒的小数点以后位
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
+class AQUA_MODDIS_L1L2(satNameBase):
+    '''
+    MYD021KM.A2014031.0555.006.2014032173249.hdf
+    MYD03.A2015335.0410.006.2015335161644.hdf
+    MOD04_L2.A2016059.0040.006.2016099175354.hdf
+    MOD04_3K.A2016007.0000.006.2016008152828.hdf 
+    '''
+
+    def __init__(self):
+        pat = u'\w+.A(\d{4})(\d{3}).(\d{4}).\d{3}.\d+.hdf$'
+        totalSec = 5 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            tt = pb_time.JDay2Datetime(
+                g.group(1), g.group(2), g.group(3) + '00')
+            self.ymd = tt.strftime('%Y%m%d')
+            self.hms = g.group(3) + '00'
+            return True
+        else:
+            return False
+
 if __name__ == '__main__':
     allcls = nameClassManager()
-    a = allcls.getInstance('FY1D_L1_GDPT_20040101_0000.OBC.HDF')
+    a = allcls.getInstance('FY1D_L1_GDPT_20031231_1347.HDF')
 #     a = allcls.getInstance('GW1AM2_201610010013_148D_L1SGBTBR_2220220.h5.gz')
 #     a = allcls.getInstance('L3_aersl_omi_20161115.txt')
 #     a = allcls.getInstance('GCRSO-SCRIS_npp_d20161013_t1010409_e1011107_b25708_c20161021051241157665_noaa_ops.h5')

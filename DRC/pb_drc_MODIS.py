@@ -626,7 +626,7 @@ class ReadModisL1(ReadL1):
 
 
 if __name__ == '__main__':
-    L1File = 'D:/data/modis_lst/MYD021KM.A2017003.0750.006.2017004153232.hdf'
+    L1File = 'D:/data/MODIS/MYD021KM.A2017003.0750.006.2017004153232.hdf'
 
     modis = ReadModisL1(L1File)
     print modis.satellite  # 卫星名

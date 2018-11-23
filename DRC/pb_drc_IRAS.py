@@ -124,11 +124,11 @@ class ReadIrasL1(ReadL1):
             satellite_type2 = ['FY3C']
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    lats = h5r.get('Latitude').value
+                    lats = h5r.get('Latitude')[:]
                     self.data_shape = lats.shape
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    lats = h5r.get('/Geolocation/Latitude').value
+                    lats = h5r.get('/Geolocation/Latitude')[:]
                     self.data_shape = lats.shape
             else:
                 raise ValueError(
@@ -163,10 +163,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    ary_ch26_dn = h5r.get('/FY3A_IRAS_DN').value
+                    ary_ch26_dn = h5r.get('/FY3A_IRAS_DN')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    ary_ch26_dn = h5r.get('/Data/IRAS_DN').value
+                    ary_ch26_dn = h5r.get('/Data/IRAS_DN')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -202,10 +202,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    ary_ch26_tb = h5r.get('/FY3A_IRAS_TB').value
+                    ary_ch26_tb = h5r.get('/FY3A_IRAS_TB')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    ary_ch26_tb = h5r.get('/Data/IRAS_TB').value
+                    ary_ch26_tb = h5r.get('/Data/IRAS_TB')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -263,10 +263,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Height').value
+                    data_pre = h5r.get('/Height')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/DEM').value
+                    data_pre = h5r.get('/Geolocation/DEM')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -298,10 +298,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Latitude').value
+                    data_pre = h5r.get('/Latitude')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Latitude').value
+                    data_pre = h5r.get('/Geolocation/Latitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -331,10 +331,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Longitude').value
+                    data_pre = h5r.get('/Longitude')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Longitude').value
+                    data_pre = h5r.get('/Geolocation/Longitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -364,10 +364,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/LandSeaMask').value
+                    data_pre = h5r.get('/LandSeaMask')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/LandSeaMask').value
+                    data_pre = h5r.get('/Geolocation/LandSeaMask')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -397,10 +397,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/LandCover').value
+                    data_pre = h5r.get('/LandCover')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/LandCover').value
+                    data_pre = h5r.get('/Geolocation/LandCover')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -430,10 +430,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/SensorAzimuth').vlaue
+                    data_pre = h5r.get('/SensorAzimuth')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/SensorAzimuth').value
+                    data_pre = h5r.get('/Geolocation/SensorAzimuth')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -463,10 +463,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/SensorZenith').value
+                    data_pre = h5r.get('/SensorZenith')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/SensorZenith').value
+                    data_pre = h5r.get('/Geolocation/SensorZenith')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -495,10 +495,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/SolarAzimuth').value
+                    data_pre = h5r.get('/SolarAzimuth')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/SolarAzimuth').value
+                    data_pre = h5r.get('/Geolocation/SolarAzimuth')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -528,10 +528,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/SolarZenith').value
+                    data_pre = h5r.get('/SolarZenith')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/SolarZenith').value
+                    data_pre = h5r.get('/Geolocation/SolarZenith')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -558,10 +558,10 @@ class ReadIrasL1(ReadL1):
                     'Data file is not exist. {}'.format(data_file))
             if self.satellite in satellite_type1:
                 with h5py.File(data_file, 'r') as h5r:
-                    scnlin_mscnt = h5r.get('/Scnlin_mscnt').value
+                    scnlin_mscnt = h5r.get('/Scnlin_mscnt')[:]
             elif self.satellite in satellite_type2:
                 with h5py.File(data_file, 'r') as h5r:
-                    scnlin_mscnt = h5r.get('/Data/Scnlin_mscnt').value
+                    scnlin_mscnt = h5r.get('/Data/Scnlin_mscnt')[:]
             else:
                 raise ValueError(
                     'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -645,7 +645,7 @@ class ReadIrasL1(ReadL1):
 
 if __name__ == '__main__':
     t_in_file = 'd:/data/IRAS/FY3B_IRASX_GBAL_L1_20160808_0840_017KM_MS.HDF'
-    t_in_file = 'd:/data/IRAS/FY3C_IRASX_GBAL_L1_20180310_1514_017KM_MS.HDF'
+#     t_in_file = 'd:/data/IRAS/FY3C_IRASX_GBAL_L1_20180310_1514_017KM_MS.HDF'
     t_read_l1 = ReadIrasL1(t_in_file)
     print t_read_l1.satellite  # 卫星名
     print t_read_l1.sensor  # 传感器名
@@ -684,9 +684,9 @@ if __name__ == '__main__':
 #     t_data = t_read_l1.get_tbb()
 #     print_channel_data(t_data)
 
-    print 'rad'
-    t_data = t_read_l1.get_rad()
-    print_channel_data(t_data)
+#     print 'rad'
+#     t_data = t_read_l1.get_rad()
+#     print_channel_data(t_data)
 
 #     t_data = t_read_l1.get_central_wave_number()
 #     print 'central_wave_number:', t_data
@@ -716,9 +716,9 @@ if __name__ == '__main__':
 #     print 'land_cover:'
 #     print_data_status(t_data)
 
-#     t_data = t_read_l1.get_sensor_azimuth()
-#     print 'sensor_azimuth:'
-#     print_data_status(t_data)
+    t_data = t_read_l1.get_sensor_azimuth()
+    print 'sensor_azimuth:'
+    print_data_status(t_data)
 #
 #     t_data = t_read_l1.get_sensor_zenith()
 #     print 'sensor_zenith:'
@@ -732,13 +732,13 @@ if __name__ == '__main__':
 #     print 'solar_zenith:'
 #     print_data_status(t_data)
 
-    t_data = t_read_l1.get_timestamp()
-    print 'timestamp:'
-    print_data_status(t_data)
-    datetime_timestamp = datetime.utcfromtimestamp(t_data[-1][-1])
-    print datetime_timestamp
-    datetime_file = datetime.strptime(
-        t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')
+#     t_data = t_read_l1.get_timestamp()
+#     print 'timestamp:'
+#     print_data_status(t_data)
+#     datetime_timestamp = datetime.utcfromtimestamp(t_data[-1][-1])
+#     print datetime_timestamp
+#     datetime_file = datetime.strptime(
+#         t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')
 #     if datetime_timestamp != datetime_file:
 #         print 'Error', '-' * 100
 #         print t_data[0][0], datetime_timestamp

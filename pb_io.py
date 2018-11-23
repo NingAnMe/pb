@@ -20,35 +20,12 @@ __date__ = '2018-01-25'
 __version__ = '1.0.0_beat'
 
 
-def makeYamlCfg(yaml_dict, oFile):
-    # 投影程序需要的配置文件名称
-    cfgPath = os.path.dirname(oFile)
-    if not os.path.isdir(cfgPath):
-        os.makedirs(cfgPath)
-    with open(oFile, 'w') as stream:
+def write_yaml_file(yaml_dict, file_yaml):
+    path_yaml = os.path.dirname(file_yaml)
+    if not os.path.isdir(path_yaml):
+        os.makedirs(path_yaml)
+    with open(file_yaml, 'w') as stream:
         yaml.dump(yaml_dict, stream, default_flow_style=False)
-
-
-def loadYamlCfg(iFile):
-
-    if not os.path.isfile(iFile):
-        print("No yaml: %s" % (iFile))
-        return None
-    try:
-        with open(iFile, 'r') as stream:
-            plt_cfg = yaml.load(stream)
-
-        # check yaml
-        if 'chan' in plt_cfg and 'plot' in plt_cfg and 'days' in plt_cfg:
-            pass
-        else:
-            print ('plt yaml lack some keys')
-            plt_cfg = None
-    except:
-        print('plt yaml not valid: %s' % iFile)
-        plt_cfg = None
-
-    return plt_cfg
 
 
 def make_sure_path_exists(path):
@@ -57,31 +34,6 @@ def make_sure_path_exists(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
-
-
-def FindFile(ipath, pat):
-    '''
-    # 要查找符合文件正则的文件
-    '''
-    FileLst = []
-
-    if not os.path.isdir(ipath):
-        return FileLst
-    Lst = sorted(os.listdir(ipath), reverse=False)
-    for Line in Lst:
-        FullPath = os.path.join(ipath, Line)
-        if os.path.isdir(FullPath):
-            continue
-        # 如果是文件则进行正则判断，并把符合规则的所有文件保存到List中
-        elif os.path.isfile(FullPath):
-            FileName = Line
-            m = re.match(pat, FileName)
-            if m:
-                FileLst.append(FullPath)
-    if len(FileLst) == 0:
-        return FileLst
-    else:
-        return FileLst
 
 
 def find_file(path, reg):
@@ -123,26 +75,6 @@ def path_replace_ymd(path, ymd):
     path = path.replace('%JJJ', jj)
 
     return path
-
-
-def load_yaml_config(in_file):
-    """
-    加载 Yaml 文件
-    :param in_file:
-    :return: Yaml 类
-    """
-    if not os.path.isfile(in_file):
-        print "File is not exist: {}".format(in_file)
-        return None
-    try:
-        with open(in_file, 'r') as stream:
-            yaml_data = yaml.load(stream)
-    except IOError as why:
-        print why
-        print "Load yaml file error."
-        yaml_data = None
-
-    return yaml_data
 
 
 def is_none(*args):

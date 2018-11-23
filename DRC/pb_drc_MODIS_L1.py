@@ -263,11 +263,11 @@ def radiance2tbb(r):
 
 
 if __name__ == '__main__':
-    L1File = 'D:/data/modis_lst/MYD021KM.A2017003.0750.006.2017004153232.hdf'
+    L1File = 'D:/data/MODIS/MYD021KM.A2017003.0750.006.2017004153232.hdf'
     modis = CLASS_MODIS_L1()
     modis.Load(L1File)
-    for key in sorted(modis.Tbb.keys()):
-        print key, np.nanmin(modis.Tbb[key]), np.nanmax(modis.Tbb[key])
+    for key in sorted(modis.Ref.keys()):
+        print key, np.nanmin(modis.Ref[key]), np.nanmax(modis.Ref[key])
 #     print sorted(modis.Tbb.keys())
 #     print np.nanmin(modis.Rad['CH_20']), np.nanmax(modis.Rad['CH_20'])
 #     print np.argwhere(np.isclose(modis.Rad['CH_21'], -0.140680938789))
