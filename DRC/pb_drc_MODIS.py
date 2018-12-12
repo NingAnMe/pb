@@ -349,7 +349,7 @@ class ReadModisL1(ReadL1):
                         central_wave_number = central_wave_numbers[band]
                         rad = rads[band]
                         tbb = planck_r2t(rad, central_wave_number)
-                        data[band] = tbb * k0 + k1
+                        data[band] = tbb * k1 + k0
 
         return data
 

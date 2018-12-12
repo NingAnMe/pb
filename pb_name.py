@@ -7,12 +7,10 @@ Created on 2015年8月13日
 from abc import ABCMeta, abstractmethod
 from datetime import datetime, timedelta
 import re
-
 from PB import pb_time
 
+
 # from PB.CSC.pb_csc_console import LogServer
-
-
 class nameClassManager(object):
     '''
     插件类的装饰器
@@ -441,34 +439,6 @@ class M10A1(satNameBase):
             self.ymd = tt.strftime('%Y%m%d')
             self.hms = '000000'
 #             print g.group(2), g.group(3)
-            return True
-        else:
-            return False
-
-
-@nameClassManager.plugin
-class AQUAAIRSL1B(satNameBase):
-    '''
-    AIRS.2012.07.19.074.L1B.AIRS_Rad.v5.0.0.0.G12201105939.hdf
-    '''
-
-    def __init__(self):
-        pat = u'AIRS.(\d{4}).(\d{2}).(\d{2}).(\d{3}).L1B.AIRS_Rad.v5.0.(0|\d{2}).0.G(\d{11}).hdf$'
-        totalSec = 6 * 60
-        satNameBase.__init__(self, pat, totalSec)
-
-    def check(self, infile):
-        g = re.match(self.pat, infile)
-        if g:
-            #             tt = pb_time.JDay2Datetime(g.group(2), g.group(3), '000000')
-            self.ymd = g.group(1) + g.group(2) + g.group(3)
-            self.hms = '000000'
-            # 074 表示一天中产生的第几个文件，每6分钟产生一个文件。60取证为小时，取余为分钟
-            hour = (int(g.group(4)) - 1) * 6 / 60
-            mina = (int(g.group(4)) - 1) * 6 % 60
-            hm = "%02d%02d" % (hour, mina)
-            self.hms = hm + '00'
-
             return True
         else:
             return False
@@ -1022,6 +992,8 @@ class HIMAWARI_08(satNameBase):
         else:
             return False
 
+# gsics
+
 
 @nameClassManager.plugin
 class FY1_MVISR_L1(satNameBase):
@@ -1228,13 +1200,44 @@ class AQUA_MODDIS_L1L2(satNameBase):
         else:
             return False
 
+
+@nameClassManager.plugin
+class AQUA_AIRS_L1(satNameBase):
+    '''
+    AIRS.2012.07.19.074.L1B.AIRS_Rad.v5.0.0.0.G12201105939.hdf
+    '''
+
+    def __init__(self):
+        pat = u'AIRS.(\d{4}).(\d{2}).(\d{2}).(\d{3}).L1B.AIRS_Rad.v5.0.(0|\d{2}).0.G(\d{11}).hdf$'
+        pat = u'AIRS.(\d{4}).(\d{2}).(\d{2}).(\d{3}).L1B.AIRS_Rad.*.G(\d{11}).hdf$'
+        totalSec = 6 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            #             tt = pb_time.JDay2Datetime(g.group(2), g.group(3), '000000')
+            self.ymd = g.group(1) + g.group(2) + g.group(3)
+            self.hms = '000000'
+            # 074 表示一天中产生的第几个文件，每6分钟产生一个文件。60取证为小时，取余为分钟
+            hour = (int(g.group(4)) - 1) * 6 / 60
+            mina = (int(g.group(4)) - 1) * 6 % 60
+            hm = "%02d%02d" % (hour, mina)
+            self.hms = hm + '00'
+
+            return True
+        else:
+            return False
+
+
 if __name__ == '__main__':
     allcls = nameClassManager()
     a = allcls.getInstance('FY1D_L1_GDPT_20031231_1347.HDF')
 #     a = allcls.getInstance('GW1AM2_201610010013_148D_L1SGBTBR_2220220.h5.gz')
 #     a = allcls.getInstance('L3_aersl_omi_20161115.txt')
 #     a = allcls.getInstance('GCRSO-SCRIS_npp_d20161013_t1010409_e1011107_b25708_c20161021051241157665_noaa_ops.h5')
-#     a = allcls.getInstance('AIRS.2011.11.01.100.L1B.AIRS_Rad.v5.0.0.0.G11306114408.hdf')
+    a = allcls.getInstance(
+        'AIRS.2011.11.01.100.L1B.AIRS_Rad.v5.0.0.0.G11306114408.hdf')
 #     a = allcls.getInstance('AIRS.2011.11.01.051.L1B.AIRS_Rad.v5.0.0.0.G11305115409.hdf')
 #     a = allcls.getInstance('GCRSO-SCRIS_npp_d20170903_t0048559_e0056537_b30314_c20170903222528718864_nobc_ops.h5')
 #     a = allcls.getInstance('S-O3M_GOME_NAR_02_M02_20171017052357Z_20171017052657Z_N_O_20171017070631Z.hdf5.gz')

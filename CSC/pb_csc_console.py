@@ -1,4 +1,17 @@
 # coding: utf-8
+
+from datetime import datetime
+from posixpath import join as urljoin
+import email
+import imaplib
+import logging
+import os
+import poplib
+import socket
+import sys
+from dateutil.relativedelta import relativedelta
+
+
 __author__ = 'wangpeng'
 
 '''
@@ -10,23 +23,30 @@ version:      1.0.0.050821_beat
 Input:        args1:开始时间  args2:结束时间  [YYYYMMDD-YYYYMMDD]
 Output:       (^_^)
 '''
-import os, sys, poplib, email, imaplib
-import socket
-import logging
-from posixpath import join as urljoin
 '''
 初始化日志
 '''
+
+
+def mail_date2date(mail_str_date):
+    str_date = mail_str_date.split(',')[1].split('+')[0]
+    fmt_datetime = datetime.strptime(
+        str_date.strip(), '%d %b %Y %H:%M:%S')
+    return fmt_datetime
+
+
 def whoImportMe():
     return sys._getframe(2).f_code.co_filename  # .f_code.co_name
 
+
 class LogServer:
+
     def __init__(self, logPath, loggerName=None):
 
         if logPath != '' and not os.path.isdir(logPath):
             os.makedirs(logPath)
 
-        if loggerName == None:
+        if loggerName is None:
             loggerName = whoImportMe()
 
         logFile = os.path.splitext(os.path.basename(loggerName))[0] + '.log'
@@ -56,6 +76,8 @@ class LogServer:
 '''
 socket服务器
 '''
+
+
 class SocketServer(object):
 
     def __init__(self):
@@ -94,6 +116,7 @@ class SocketServer(object):
             except Exception, e:
                 print e
 
+
 class MailServer_pop3(poplib.POP3):
 
     def __init__(self, host, ordernumber):
@@ -106,10 +129,10 @@ class MailServer_pop3(poplib.POP3):
 
     def connect(self, user, password):
         try:
-#             print("Attempting APOP authentication")
+            #             print("Attempting APOP authentication")
             self.apop(user, password)
         except poplib.error_proto:
-#             print("Attempting standard authentication")
+            #             print("Attempting standard authentication")
             try:
                 self.user(user)
                 self.pass_(password)
@@ -154,9 +177,9 @@ class MailServer_pop3(poplib.POP3):
 #                     return True
 
                 elif (u'CLASS Order %s Verification' % self.ordernumber) in title:
-#                     self.title = title
-#                     self.mailnumber = number
-#                     self.lines = lines
+                    #                     self.title = title
+                    #                     self.mailnumber = number
+                    #                     self.lines = lines
                     self.dele(number)
 #                     return False
         if len(self.title) > 0:
@@ -165,7 +188,7 @@ class MailServer_pop3(poplib.POP3):
             return False
 
     def savemail(self, MAIL_SAVE_PATH, delete_after_save=False):
-#         print ('save the mail NO. %s' % (self.ordernumber))
+        #         print ('save the mail NO. %s' % (self.ordernumber))
         msg = email.message_from_string('\n'.join(self.lines))
         if not os.path.dirname(MAIL_SAVE_PATH):
             os.makedirs(os.path.dirname(MAIL_SAVE_PATH))
@@ -182,6 +205,7 @@ class MailServer_pop3(poplib.POP3):
         # 删除该邮件
         if delete_after_save:
             self.dele(self.mailnumber)
+
 
 class MailServer_imap(imaplib.IMAP4):
 
@@ -212,21 +236,29 @@ class MailServer_imap(imaplib.IMAP4):
         self.select()
         typ, data = self.search(None, 'ALL')
         assert(typ) == 'OK'
-        for number in data[0].split():
+        numlist = [int(e) for e in data[0].split()]
+        for number in sorted(numlist, reverse=False):
+            print number
             typ, data1 = self.fetch(number, "(UID BODY[HEADER])")
 #             typ, data1 = self.fetch(number, "(UID RFC822)")
             rawmail = data1[0][1]
             email_message = email.message_from_string(rawmail)
             title = email_message['Subject']
+            print title
             if (u'Your Langley ASDC FTP Order <%s>' % self.ordernumber) in title:
-                print title
                 self.title = title
                 self.mailnumber = number
                 typ, data2 = self.fetch(number, "(UID BODY[TEXT])")
                 self.lines = data2[0][1]
                 return True
             elif (u'CLASS Order %s Processing Complete' % self.ordernumber) in title:
-                print title
+                self.title = title
+                self.mailnumber = number
+                typ, data2 = self.fetch(number, "(UID BODY[TEXT])")
+                self.lines = data2[0][1]
+                return True
+            # yushuai  20181018修改： 邮件内会出现包含多个订单号的返回结果的情况
+            elif ('%s' % self.ordernumber) in title and 'Verification' not in title:
                 self.title = title
                 self.mailnumber = number
                 typ, data2 = self.fetch(number, "(UID BODY[TEXT])")
@@ -242,7 +274,6 @@ class MailServer_imap(imaplib.IMAP4):
             rawmail = data1[0][1]
             email_message = email.message_from_string(rawmail)
             title = email_message['Subject']
-#             print title
             if 'Verification' in title:
                 self.mailnumber = number
                 self.demail()
@@ -252,28 +283,49 @@ class MailServer_imap(imaplib.IMAP4):
             elif 'Expired' in title:
                 self.mailnumber = number
                 self.demail()
+
+            # wangpeng add 2018-12-05 添加了清理邮件功能，7天之前的邮件自动删除
+            fmt_datetime = mail_date2date(email_message['Date'])
+            fmt_date_time_now = datetime.now() - relativedelta(days=5)
+
+            if fmt_datetime < fmt_date_time_now:
+                print fmt_datetime, fmt_date_time_now
+                self.mailnumber = number
+                self.demail()
+            else:
+                break
+
         return False
 
-    def savemail(self, savefile, save_after_delete=False):
+    def savemail(self, savefile):
         if not os.path.dirname(savefile):
             os.makedirs(os.path.dirname(savefile))
         # 在保存路径建立新文件
+        # 多个订单在同一封邮件就用这个关键字分割；
+        order_lines = self.lines.split(
+            'NOTE: You must pick up your data within 96 hours of this notice.')
         mail = open(savefile, 'w')
-        # 写入
-        mail.write(self.lines)
-        # 结束
-        mail.write('\n')
-        # 关闭文件
+        # 最后一个是thank you 丢弃
+        for line in order_lines[:-1]:
+            if 'CLASS has processed your order number %s' % self.ordernumber in line:
+                # 写入
+                mail.write(line + '\n')
         mail.close()
-        if save_after_delete:
-            self.demail()
+
 
 if __name__ == '__main__':
-    Log = LogServer('D:/111.log')
-    Log.info('testinfo')
-#     m = MailServer_imap('imap.exmail.qq.com', '123')
+    #     Log = LogServer('D:/111.log')
+    #     Log.info('testinfo')
+    m = MailServer_imap('imap.exmail.qq.com', '3566799134')
 #     m = MailServer_imap('imap.aliyun.cimap.aliyun.cnom', '123')
 #     m = MailServer_imap('imap.kingweather.cn', '123')
 
-#     m.connect('FY3gsics@kingtansin.com', 'Kts123')
+    m.connect('FY3gsics@kingtansin.com', 'Kts123')
+    # 清理7天之前的所有邮件
+    m.findspam()
+    if (m.findmail()):
+        print '3'
+        m.savemail('./3566799134.txt')
 
+    m.close()
+    m.logout()

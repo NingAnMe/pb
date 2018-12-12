@@ -154,8 +154,15 @@ class ReadIasiL1(ReadL1):
                     s = response.shape
                     response = response.reshape(s[0], 1, s[1])
                     # 会随机产生nan值，(导致卷积)目前定位在投影代码段后，或是输出一次这个变量都会有影响
-                    response = np.nan_to_num(response)
-#                     idx = np.where(np.isnan(response))
+                    data_pre = np.nan_to_num(response)
+                    condition = np.logical_or(data_pre < -10, data_pre > 200)
+                    idx = np.where(condition)
+#                     print len(idx[0])
+                    if len(idx[0] > 0):
+                        data_pre[idx] = 0.
+                    response = data_pre
+#                     idx = np.where(response < -10)
+#                     print len(idx[0])
 #                     if len(idx[0] > 0):
 #                         response[idx] = 0.
                     # 暂时取一个观测的光谱波数
@@ -530,7 +537,7 @@ if __name__ == '__main__':
     BandLst = ['CH_20', 'CH_21', 'CH_22', 'CH_23', 'CH_24', 'CH_25']
     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20180502060857Z_20180502061152Z_N_O_20180502072426Z__20180502072755'
     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20180809140252Z_20180809140556Z_N_O_20180809150225Z__20180809150600'
-    L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20120126084152Z_20120126084456Z_N_O_20120126094147Z__20120126094311'
+#     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20120126084152Z_20120126084456Z_N_O_20120126094147Z__20120126094311'
     iasi1 = ReadIasiL1(L1File)
 #     L1File = 'D:/data/METOP/IASI_xxx_1C_M02_20180502061153Z_20180502061456Z_N_O_20180502072518Z__20180502072850'
 #     iasi2 = ReadIasiL1(L1File)

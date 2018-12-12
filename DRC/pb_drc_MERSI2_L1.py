@@ -40,6 +40,7 @@ class CLASS_MERSI2_L1():
         self.Rad = {}
         self.Tbb = {}
 
+        self.CloudMask = []
         self.satAzimuth = []
         self.satZenith = []
         self.sunAzimuth = []
@@ -83,6 +84,8 @@ class CLASS_MERSI2_L1():
         ipath = os.path.dirname(L1File)
         iname = os.path.basename(L1File)
         geoFile = os.path.join(ipath, iname[0:-12] + 'GEO1K_MS.HDF')
+        clm_name = iname.replace('GBAL_L1', 'ORBT_L2_CLM_MLT_NUL')
+        clm_file = os.path.join(ipath, clm_name)
         print (u'读取 L1 %s' % L1File)
         try:
             h5File_R = h5py.File(L1File, 'r')
@@ -134,6 +137,78 @@ class CLASS_MERSI2_L1():
         finally:
             h5File_R.close()
 
+        print (u'读取 L1 %s' % L1File)
+        try:
+            h5File_R = h5py.File(clm_file, 'r')
+            data_pre = h5File_R.get('Cloud_Mask')[0, :, :]
+
+            clm_flag = np.full(data_pre.shape, -999)
+
+            z = data_pre
+
+            # 0 表示无效值
+            z0 = z & 0b1
+            z12 = (z >> 1) & 0b11
+            z4 = (z >> 4) & 0b1
+            z67 = (z >> 6) & 0b11
+
+            # Invalid  0
+            mask = (z == 0)
+            idx = np.where(mask)
+            clm_flag[idx] = 0
+
+            # Coastlines
+            mask = (z67 == 0b01)
+            idx = np.where(mask)
+            clm_flag[idx] = 1
+
+            # Uncertain
+            mask = (z12 == 0b01) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 2
+
+            # Cloud
+            mask = (z12 == 0b00) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 3
+
+            # Poss Land Clear
+            mask = ((z67 == 0b11) | (z67 == 0b10)) & (
+                z12 == 0b10) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 4
+
+            # Land Clear
+            mask = ((z67 == 0b11) | (z67 == 0b10)) & (
+                z12 == 0b11) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 5
+
+            # Poss Sea Clear
+            mask = (z67 == 0b00) & (z12 == 0b10) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 6
+
+            # Sea Clear
+            mask = (z67 == 0b00) & (z12 == 0b11) & (z4 == 0b1) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 7
+
+            # Sun Glint
+            mask = (z67 == 0b00) & (z12 == 0b11) & (z4 == 0b0) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 8
+#             print clm_flag
+            data = clm_flag
+            if self.CloudMask == []:
+                self.CloudMask = data
+            else:
+                self.CloudMask = np.concatenate((self.CloudMask, data))
+        except Exception as e:
+            print str(e)
+            return
+        finally:
+            h5File_R.close()
         # 通道的中心波数和光谱响应
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)
@@ -370,7 +445,10 @@ if __name__ == '__main__':
     L1File = 'D:/data/MERSI/FY3D_MERSI_GBAL_L1_20181001_0020_1000M_MS.HDF'
     mersi = CLASS_MERSI2_L1()
     mersi.Load(L1File)
-    print mersi.Tbb['CH_24'][1000, 1000]
+    print mersi.CloudMask
+#     for key in mersi.Rad.keys():
+#         tt = mersi.Rad[key]
+#         print key, np.nanmin(tt), np.nanmax(tt)
 #     print np.nanmin(mersi.BB['CH_20'])
 #     print np.nanmax(mersi.BB['CH_20'])
 #     print type(mersi.orbit_num)

@@ -63,6 +63,7 @@ self.get_tbb_k0(self)  # 亮温修正系数，shape = （1，）
 self.get_tbb_k1(self)  # 亮温修正系数，shape = （1，）
 
 # 3非通道数据获取方法
+self.get_cloudmask(self) # 云检测结果
 self.get_height(self)  # 高度
 self.get_latitude(self)  # 纬度
 self.get_longitude(self)  # 经度
@@ -211,4 +212,7 @@ class ReadL1(object):
         return
 
     def get_spectral_response(self):
+        return
+
+    def get_cloudmask(self):
         return

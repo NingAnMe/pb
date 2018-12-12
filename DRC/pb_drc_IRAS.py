@@ -185,6 +185,84 @@ class ReadIrasL1(ReadL1):
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
 
+    def get_tbb_k1(self):
+        """
+        return tbb_k1  dict one value
+        """
+
+        data = dict()
+        if self.resolution == 17000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+
+            if self.satellite in satellite_type1:
+                data['CH_01'] = 1.
+                data['CH_02'] = 1.
+                data['CH_03'] = 1.
+                data['CH_04'] = 1.
+                data['CH_05'] = 1.
+                data['CH_06'] = 1.
+                data['CH_07'] = 1.
+                data['CH_08'] = 1.
+                data['CH_09'] = 1.
+                data['CH_10'] = 1.
+                data['CH_11'] = 1.
+                data['CH_12'] = 1.
+                data['CH_13'] = 1.
+                data['CH_14'] = 1.
+                data['CH_15'] = 1.
+                data['CH_16'] = 1.
+                data['CH_17'] = 1.
+                data['CH_18'] = 1.
+                data['CH_19'] = 1.
+                data['CH_20'] = 1.
+
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
+    def get_tbb_k0(self):
+        """
+        return tbb_k1  dict one value
+        """
+
+        data = dict()
+        if self.resolution == 17000:  # 分辨率为 1000
+            satellite_type1 = ['FY3A', 'FY3B', 'FY3C']
+
+            if self.satellite in satellite_type1:
+                data['CH_01'] = 0
+                data['CH_02'] = 0
+                data['CH_03'] = 0
+                data['CH_04'] = 0
+                data['CH_05'] = 0
+                data['CH_06'] = 0
+                data['CH_07'] = 0
+                data['CH_08'] = 0
+                data['CH_09'] = 0
+                data['CH_10'] = 0
+                data['CH_11'] = 0
+                data['CH_12'] = 0
+                data['CH_13'] = 0
+                data['CH_14'] = 0
+                data['CH_15'] = 0
+                data['CH_16'] = 0
+                data['CH_17'] = 0
+                data['CH_18'] = 0
+                data['CH_19'] = 0
+                data['CH_20'] = 0
+
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
+
     def get_tbb(self):
         """
               从数据文件中获取 DNTBB值, set self.tbb
@@ -716,9 +794,9 @@ if __name__ == '__main__':
 #     print 'land_cover:'
 #     print_data_status(t_data)
 
-    t_data = t_read_l1.get_sensor_azimuth()
-    print 'sensor_azimuth:'
-    print_data_status(t_data)
+#     t_data = t_read_l1.get_sensor_azimuth()
+#     print 'sensor_azimuth:'
+#     print_data_status(t_data)
 #
 #     t_data = t_read_l1.get_sensor_zenith()
 #     print 'sensor_zenith:'
@@ -732,10 +810,11 @@ if __name__ == '__main__':
 #     print 'solar_zenith:'
 #     print_data_status(t_data)
 
-#     t_data = t_read_l1.get_timestamp()
-#     print 'timestamp:'
-#     print_data_status(t_data)
-#     datetime_timestamp = datetime.utcfromtimestamp(t_data[-1][-1])
+    t_data = t_read_l1.get_timestamp()
+    print 'timestamp:'
+    print_data_status(t_data)
+    print datetime.utcfromtimestamp(t_data[0][0])
+    print datetime.utcfromtimestamp(t_data[-1][-1])
 #     print datetime_timestamp
 #     datetime_file = datetime.strptime(
 #         t_read_l1.ymd + t_read_l1.hms, '%Y%m%d%H%M%S')

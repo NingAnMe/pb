@@ -154,6 +154,100 @@ class ReadMersiL1(ReadL1):
                 "Cant handle this resolution: ".format(self.resolution))
         return geo_file
 
+    def __get_clm_file(self):
+        """
+        return 定位文件
+        """
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3C', 'FY3D']
+            if self.satellite in satellite_type1:
+                clm_file = self.in_file.replace(
+                    'GBAL_L1', 'ORBT_L2_CLM_MLT_NUL')
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                "Cant handle this resolution: ".format(self.resolution))
+        return clm_file
+
+    def get_cloudmask(self):
+
+        clm_flag = np.full(self.data_shape, -999)
+        if self.resolution == 1000:
+            satellite_type1 = ['FY3A', 'FY3B']
+            satellite_type2 = ['FY3C', 'FY3D']
+            if self.satellite in satellite_type1:
+                pass
+            elif self.satellite in satellite_type2:
+                in_file = self.__get_clm_file()
+                with h5py.File(in_file, 'r') as h5r:
+                    data_pre = h5r.get('Cloud_Mask').value
+
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+
+            # 过滤无效值
+
+            z = data_pre[0, :, :]
+            # 0 表示无效值
+            z0 = z & 0b1
+            z12 = (z >> 1) & 0b11
+            z4 = (z >> 4) & 0b1
+            z67 = (z >> 6) & 0b11
+
+            # Invalid  0
+            mask = (z == 0)
+            idx = np.where(mask)
+            clm_flag[idx] = 0
+
+            # Coastlines
+            mask = (z67 == 0b01)
+            idx = np.where(mask)
+            clm_flag[idx] = 1
+
+            # Uncertain
+            mask = (z12 == 0b01) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 2
+
+            # Cloud
+            mask = (z12 == 0b00) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 3
+
+            # Poss Land Clear
+            mask = ((z67 == 0b11) | (z67 == 0b10)) & (
+                z12 == 0b10) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 4
+
+            # Land Clear
+            mask = ((z67 == 0b11) | (z67 == 0b10)) & (
+                z12 == 0b11) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 5
+
+            # Poss Sea Clear
+            mask = (z67 == 0b00) & (z12 == 0b10) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 6
+
+            # Sea Clear
+            mask = (z67 == 0b00) & (z12 == 0b11) & (z4 == 0b1) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 7
+
+            # Sun Glint
+            mask = (z67 == 0b00) & (z12 == 0b11) & (z4 == 0b0) & (z0 == 0b1)
+            idx = np.where(mask)
+            clm_flag[idx] = 8
+            print clm_flag
+            data = clm_flag
+
+        return data
+
     def get_dn(self):
         """
         return DN
@@ -230,7 +324,7 @@ class ReadMersiL1(ReadL1):
                     ary_ch20_23 = h5r.get('/Data/EV_1KM_Emissive')[:]
                     ary_ch24_25 = h5r.get('/Data/EV_250_Aggr.1KM_Emissive')[:]
                     vmin = 0
-                    vmax = 4095
+                    vmax = 65000
                     # 逐个通道处理
                     for i in xrange(self.channels):
                         band = 'CH_{:02d}'.format(i + 1)
@@ -1198,7 +1292,8 @@ if __name__ == '__main__':
         for t_channel_name in keys:
             channel_data = datas[t_channel_name]
             print_data_status(channel_data, name=t_channel_name)
-
+    print 'cloud mask'
+    t_data = mersi.get_cloudmask()
 #     print 'dn:'
 #     t_data = mersi.get_dn()
 #     print_channel_data(t_data)
@@ -1218,7 +1313,7 @@ if __name__ == '__main__':
 #     print 'rad:'
 #     t_data = mersi.get_rad()
 #     print_channel_data(t_data)
-#
+
 #     print 'tbb:'
 #     t_data = mersi.get_tbb()
 #     print_channel_data(t_data)

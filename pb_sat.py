@@ -257,5 +257,6 @@ if __name__ == '__main__':
     #     print getasol6s('20180326', '004500', 105.37498, 81.54135)
     #     print sun_glint_cal(90, 90, -90, 90)
     #     print sun_glint_cal(359, 179, 359, 179)
-    print planck_t2r(np.nan, 333.)
+    tt = planck_r2t(np.array([-0.003225115, -1]), 2634.359)
+    print tt
     pass

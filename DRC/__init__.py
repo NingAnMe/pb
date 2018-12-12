@@ -4,7 +4,9 @@
 @Author  : AnNing
 """
 from pb_drc_AGRI import ReadAgriL1
+from pb_drc_AIRS import ReadAirsL1
 from pb_drc_CRIS import ReadCrisL1
+from pb_drc_HIRAS import ReadHirasL1
 from pb_drc_IASI import ReadIasiL1
 from pb_drc_IRAS import ReadIrasL1
 from pb_drc_MERSI import ReadMersiL1
