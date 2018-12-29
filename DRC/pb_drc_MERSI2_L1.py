@@ -206,9 +206,11 @@ class CLASS_MERSI2_L1():
                 self.CloudMask = np.concatenate((self.CloudMask, data))
         except Exception as e:
             print str(e)
-            return
+            if hasattr(self, 'CloudMask'):
+                delattr(self, 'CloudMask')
         finally:
             h5File_R.close()
+
         # 通道的中心波数和光谱响应
         for i in xrange(self.Band):
             BandName = 'CH_%02d' % (i + 1)

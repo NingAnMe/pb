@@ -283,8 +283,8 @@ class ReadCrisL1(ReadL1):
         data = dict()
         if self.resolution == 16000:
             satellite_type1 = ['NPP']
-            print a, b
-            print lut
+#             print a, b
+#             print lut
 
             if self.satellite in satellite_type1:
                 # 获取iasi的光谱响应 服务器上这个日期开始下载全分辨率cris
@@ -296,11 +296,11 @@ class ReadCrisL1(ReadL1):
                     wave_spec2 = spec_interp(
                         wave_nums1, wave_spec1, wave_nums2)
                     # 对应FY的响应值，大小一致就可以和FY比较了，响应是IASI的
-                    print wave_spec2
+#                     print wave_spec2
                     rads = spec_convolution(wave_nums2, wave_spec2, response)
 #                     data[band] = rads
                     # 过滤<=0的结果
-                    print rads
+#                     print rads
                     idx = np.where(rads <= 0.)
                     rads[idx] = np.nan
 #                     data[band] = rads.reshape(rads.size, 1)

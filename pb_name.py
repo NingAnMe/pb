@@ -992,6 +992,32 @@ class HIMAWARI_08(satNameBase):
         else:
             return False
 
+# tmp
+
+
+@nameClassManager.plugin
+class POLDER3_L1B(satNameBase):
+    '''
+    POLDER3_L1B-BG1-120055M_2010-02-24T16-22-17_V1-01.h5
+    '''
+
+    def __init__(self):
+        pat = u'POLDER3_L1B-\w{3}-\w{7}_(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})_V1-01.h5$'
+#         pat = u'POLDER3_L1B-\w{3}-\w{7}.*.h5$'
+        totalSec = 100 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        print self.pat, infile
+        g = re.match(self.pat, infile)
+        if g:
+            print '22'
+            self.ymd = g.group(1) + g.group(2) + g.group(3)
+            self.hms = g.group(4) + g.group(5) + g.group(6)
+            return True
+        else:
+            return False
+
 # gsics
 
 
@@ -1232,12 +1258,12 @@ class AQUA_AIRS_L1(satNameBase):
 
 if __name__ == '__main__':
     allcls = nameClassManager()
-    a = allcls.getInstance('FY1D_L1_GDPT_20031231_1347.HDF')
+#     a = allcls.getInstance('FY1D_L1_GDPT_20031231_1347.HDF')
 #     a = allcls.getInstance('GW1AM2_201610010013_148D_L1SGBTBR_2220220.h5.gz')
 #     a = allcls.getInstance('L3_aersl_omi_20161115.txt')
 #     a = allcls.getInstance('GCRSO-SCRIS_npp_d20161013_t1010409_e1011107_b25708_c20161021051241157665_noaa_ops.h5')
     a = allcls.getInstance(
-        'AIRS.2011.11.01.100.L1B.AIRS_Rad.v5.0.0.0.G11306114408.hdf')
+        'POLDER3_L1B-BG1-120055M_2010-02-24T16-22-17_V1-01.h5')
 #     a = allcls.getInstance('AIRS.2011.11.01.051.L1B.AIRS_Rad.v5.0.0.0.G11305115409.hdf')
 #     a = allcls.getInstance('GCRSO-SCRIS_npp_d20170903_t0048559_e0056537_b30314_c20170903222528718864_nobc_ops.h5')
 #     a = allcls.getInstance('S-O3M_GOME_NAR_02_M02_20171017052357Z_20171017052657Z_N_O_20171017070631Z.hdf5.gz')

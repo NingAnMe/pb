@@ -225,6 +225,54 @@ class ReadViirsL1(ReadL1):
 #             raise ValueError(
 #                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
 #         return data
+    def get_rad_test(self):
+        """
+        return rad
+        """
+
+        data = dict()
+        if self.resolution == 750:  # 分辨率为 1000
+            satellite_type1 = ['NPP']
+            # NPP
+            if self.satellite in satellite_type1:
+                data_file = self.in_file
+                with h5py.File(data_file, 'r') as h5r:
+                    vmin = 0
+                    vmax = 65000
+                    center_wn = self.get_central_wave_number()
+                    # 逐个通道处理
+                    for i in xrange(1, 12, 1):
+                        band = 'CH_{:02d}'.format(i)
+                        sds_name1 = '/All_Data/VIIRS-M%d-SDR_All/Radiance' % i
+                        ary_rad = h5r.get(sds_name1).value
+
+                        if i == 3 or i == 4 or i == 5 or i == 7:
+                            k1 = 1.
+                            k0 = 0.
+                        else:
+                            sds_name2 = '/All_Data/VIIRS-M%d-SDR_All/RadianceFactors' % i
+                            print sds_name2
+                            ary_coeff = h5r.get(sds_name2).value
+                            k1 = ary_coeff[0]
+                            k0 = ary_coeff[1]
+
+                        data_pre = ary_rad
+                        data_pre = data_pre.astype(np.float32)
+                        invalid_index = np.logical_or(
+                            data_pre <= vmin, data_pre > vmax)
+                        data_pre[invalid_index] = np.nan
+                        # 修正，徐娜提供
+#                         data_pre = data_pre * \
+#                             ((10000 / center_wn[band]) ** 2) / 10.
+                        data[band] = data_pre * k1 + k0
+
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        else:
+            raise ValueError(
+                'Cant read this data, please check its resolution: {}'.format(self.in_file))
+        return data
 
     def get_rad(self):
         """
@@ -287,7 +335,7 @@ class ReadViirsL1(ReadL1):
                 data_file = self.in_file
                 with h5py.File(data_file, 'r') as h5r:
                     vmin = 0
-                    vmax = 60000
+                    vmax = 65000
                     # 逐个通道处理
                     for i in xrange(12, 17, 1):
                         band = 'CH_{:02d}'.format(i)
@@ -529,9 +577,9 @@ if __name__ == '__main__':
         for t_channel_name in keys:
             channel_data = datas[t_channel_name]
             print_data_status(channel_data, name=t_channel_name)
-    print 'tbb:'
-    t_data = viirs.get_tbb()
-    print_channel_data(t_data)
+#     print 'tbb:'
+#     t_data = viirs.get_tbb()
+#     print_channel_data(t_data)
 #     print 'timestamp:'
 #     t_data = viirs.get_timestamp()
 #     print type(t_data)
@@ -560,3 +608,22 @@ if __name__ == '__main__':
 #     print 'solar_zenith:'
 #     t_data4 = viirs.get_solar_zenith()
 #     print_data_status(t_data4)
+
+    print 'ref:'
+    ref = viirs.get_ref()
+    print_channel_data(ref)
+
+    print 'rad:'
+    rad = viirs.get_rad_test()
+    print_channel_data(rad)
+    src_band = ['CH_02', 'CH_05', 'CH_06', 'CH_07', 'CH_08',
+                'CH_09', 'CH_10', 'CH_12', 'CH_14', 'CH_15']
+    des_band = ['CH_04', 'CH_09', 'CH_10', 'CH_11', 'CH_01',
+                'CH_02', 'CH_03', 'CH_05', 'CH_06', 'CH_07']
+
+    dict_value = {}
+    for key1, key2 in zip(src_band, des_band):
+        #         print key1, key2
+        tt = rad[key2] / ref[key2]
+#         print rad[key][1000, 1000], ref[key][1000, 1000]
+        print 'FY3D/MERSI band: %s' % key1, tt[1000, 1000]

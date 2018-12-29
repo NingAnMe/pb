@@ -827,19 +827,24 @@ class ReadMersiL1(ReadL1):
             if self.satellite in satellite_type1:
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/SV_DN_average').value
+                    try:
+                        data_pre = h5r.get('/SV_DN_average').value
 
-                # 过滤无效值
-                invalid_index = np.logical_or(data_pre <= 0, data_pre > 4095)
-                data_pre = data_pre.astype(np.float32)
-                data_pre[invalid_index] = np.nan
-                # 逐个通道处理
-                for i in xrange(self.channels):
-                    band = 'CH_{:02d}'.format(i + 1)
-                    channel_data = np.full(
-                        self.data_shape, np.nan, dtype=np.float32)
-                    channel_data[:] = data_pre[i, :].reshape(-1, 1)
-                    data[band] = channel_data
+                        # 过滤无效值
+                        invalid_index = np.logical_or(
+                            data_pre <= 0, data_pre > 4095)
+                        data_pre = data_pre.astype(np.float32)
+                        data_pre[invalid_index] = np.nan
+                        # 逐个通道处理
+                        for i in xrange(self.channels):
+                            band = 'CH_{:02d}'.format(i + 1)
+                            channel_data = np.full(
+                                self.data_shape, np.nan, dtype=np.float32)
+                            channel_data[:] = data_pre[i, :].reshape(-1, 1)
+                            data[band] = channel_data
+
+                    except Exception as e:
+                        print str(e)
 
             elif self.satellite in satellite_type2:
                 with h5py.File(self.in_file, 'r') as h5r:
@@ -880,19 +885,22 @@ class ReadMersiL1(ReadL1):
             if self.satellite in satellite_type1:
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/BB_DN_average').value
-
-                # 过滤无效值
-                invalid_index = np.logical_or(data_pre <= 0, data_pre > 4095)
-                data_pre = data_pre.astype(np.float32)
-                data_pre[invalid_index] = np.nan
-                # 逐个通道处理
-                for i in xrange(self.channels):
-                    band = 'CH_{:02d}'.format(i + 1)
-                    channel_data = np.full(
-                        self.data_shape, np.nan, dtype=np.float32)
-                    channel_data[:] = data_pre[i, :].reshape(-1, 1)
-                    data[band] = channel_data
+                    try:
+                        data_pre = h5r.get('/BB_DN_average').value
+                        # 过滤无效值
+                        invalid_index = np.logical_or(
+                            data_pre <= 0, data_pre > 4095)
+                        data_pre = data_pre.astype(np.float32)
+                        data_pre[invalid_index] = np.nan
+                        # 逐个通道处理
+                        for i in xrange(self.channels):
+                            band = 'CH_{:02d}'.format(i + 1)
+                            channel_data = np.full(
+                                self.data_shape, np.nan, dtype=np.float32)
+                            channel_data[:] = data_pre[i, :].reshape(-1, 1)
+                            data[band] = channel_data
+                    except Exception as e:
+                        print str(e)
 
             elif self.satellite in satellite_type2:
                 with h5py.File(self.in_file, 'r') as h5r:
