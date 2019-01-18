@@ -1,7 +1,10 @@
 # coding: utf-8
+from __future__ import division
+
 from datetime import datetime
 
 import numpy as np
+
 
 __author__ = 'wangpeng'
 
@@ -53,10 +56,10 @@ def getasol6s(ymd, hms, lons, lats):
     Description: 计算太阳天顶角
     author:      陈林提供C源码( wangpeng转)
     date:        2017-03-22
-    Input:       ymd hms : 20180101 030400 
-    Output:      
+    Input:       ymd hms : 20180101 030400
+    Output:
     Return:      太阳天顶角弧度类型(修改为度类型 2018年4月28日)
-    Others: 
+    Others:
     '''
     # jays(儒略日,当年的第几天), GMT(世界时 小时浮点计数方式 )
     dtime = datetime.strptime('%s %s' % (ymd, hms), '%Y%m%d %H%M%S')
@@ -104,6 +107,42 @@ def sun_earth_dis_correction(ymd):
     OM = (0.9856 * (jjj - 4)) * np.pi / 180.
     dsol = 1. / ((1. - 0.01673 * np.cos(OM)) ** 2)
     return dsol
+
+
+def sun_glint_cal_old(obs_a, obs_z, sun_a, sun_z):
+    '''
+    计算太阳耀斑角
+    '''
+#      https://svn.ssec.wisc.edu/repos/cloud_team_cr/trunk/viewing_geometry_module.f90
+#      glint_angle = cos ( sol_zen * DTOR ) * cos ( sen_zen * DTOR )
+#                +   sin ( sol_zen * DTOR ) * sin ( sen_zen * DTOR )
+#                * cos ( rel_az * DTOR )
+#
+#      glint_angle = max(-1.0 , min( glint_angle ,1.0 ) )
+#
+#      glint_angle = acos(glint_angle) / DTOR
+
+    ti = np.deg2rad(sun_z)
+    tv = np.deg2rad(obs_z)
+    phi = np.deg2rad(sun_a - obs_a)
+    cos_phi = np.cos(phi)
+
+    cos_tv = np.cos(tv)
+    cos_ti = np.cos(ti)
+    sin_tv = np.sin(tv)
+    sin_ti = np.sin(ti)
+    cos_res = cos_ti * cos_tv + sin_ti * sin_tv * cos_phi
+#     cos_res = cos_ti * cos_tv - sin_ti * sin_tv * cos_phi  # 徐寒冽修正
+    v_arrayMin = np.vectorize(arrayMin)
+    Min = v_arrayMin(-cos_res, 1.0)
+#     Min = v_arrayMin(cos_res, 1.0)  # 徐寒冽修正
+
+    v_arrayMax = np.vectorize(arrayMax)
+    Max = v_arrayMax(Min, -1.)
+    res = np.arccos(Max)
+    glint = np.rad2deg(res)
+
+    return glint
 
 
 def sun_glint_cal(obs_a, obs_z, sun_a, sun_z):
@@ -251,11 +290,48 @@ def planck_t2r(T, W):
     Rad = a1 / a2
     return Rad
 
+
+def is_ad_orbit(lats):
+    '''
+    lats: input latitude  range: -90 ~ 90.
+
+    '''
+    diff_list = []
+    if not isinstance(lats, np.ndarray):
+        print 'lats must be ndarray'
+    if lats.ndim != 2:
+        print 'lats shape must be 2'
+
+    # change 0-180
+    lats = lats + 90.
+    row, col = lats.shape
+#     print row, col
+    mcol = col // 2
+    for i in xrange(row - 1):
+        diff = lats[i + 1, mcol] - lats[i, mcol]
+        diff_list.append(diff)
+    diff_array = np.array(diff_list)
+    d_idx = np.where(diff_array < 0.)
+    a_idx = np.where(diff_array >= 0.)
+    d_100 = len(d_idx[0]) / row * 100
+    a_100 = len(a_idx[0]) / row * 100
+    print a_100, d_100
+    if a_100 >= d_100:
+        return 'A'
+    else:
+        return 'D'
+
 if __name__ == '__main__':
     #     print solar_zen(2018, 3, 26, 00, 105.37498, 81.54135)
-    #     print getasol6s('20180326', '004500', 105.37498, 81.54135)
-    #     print sun_glint_cal(90, 90, -90, 90)
-    #     print sun_glint_cal(359, 179, 359, 179)
-    tt = planck_r2t(np.array([-0.003225115, -1]), 2634.359)
-    print tt
+    #     print getasol6s('20120124', '064605', 77.12, 70.61)
+    print sun_glint_cal(333, 99, 333, 13)
+    print sun_glint_cal(153, 99, 153, 13)
+#     print sun_glint_cal(90, 90, -90, 90)
+    print sun_glint_cal_old(153, 99, 153, 13)
+    print sun_glint_cal_old(-27, 99, -27, 13)
+#     print sun_glint_cal_old(90, 90, -90, 90)
+#     print sun_glint_cal(359, 179, 359, 179)
+#     print sun_glint_cal_old(359, 179, 359, 179)
+    #     tt = planck_r2t(np.array([-0.003225115, -1]), 2634.359)
+
     pass

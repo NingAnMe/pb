@@ -165,7 +165,7 @@ class ReadViirsL1(ReadL1):
                     for i in xrange(1, 12, 1):
                         band = 'CH_{:02d}'.format(i)
                         sds_name = '/All_Data/VIIRS-M%d-SDR_All/Reflectance' % i
-                        ary_ref = h5r.get(sds_name).value
+                        ary_ref = h5r.get(sds_name)[:]
 
                         data_pre = ary_ref
                         data_pre = data_pre.astype(np.float32)
@@ -207,7 +207,7 @@ class ReadViirsL1(ReadL1):
 #                     for i in xrange(1, 12, 1):
 #                         band = 'CH_{:02d}'.format(i)
 #                         sds_name = '/All_Data/VIIRS-M%d-SDR_All/Reflectance' % i
-#                         ary_ref = h5r.get(sds_name).value
+#                         ary_ref = h5r.get(sds_name)[:]
 #
 #                         data_pre = ary_ref
 #                         data_pre = data_pre.astype(np.float32)
@@ -244,7 +244,7 @@ class ReadViirsL1(ReadL1):
                     for i in xrange(1, 12, 1):
                         band = 'CH_{:02d}'.format(i)
                         sds_name1 = '/All_Data/VIIRS-M%d-SDR_All/Radiance' % i
-                        ary_rad = h5r.get(sds_name1).value
+                        ary_rad = h5r.get(sds_name1)[:]
 
                         if i == 3 or i == 4 or i == 5 or i == 7:
                             k1 = 1.
@@ -252,7 +252,7 @@ class ReadViirsL1(ReadL1):
                         else:
                             sds_name2 = '/All_Data/VIIRS-M%d-SDR_All/RadianceFactors' % i
                             print sds_name2
-                            ary_coeff = h5r.get(sds_name2).value
+                            ary_coeff = h5r.get(sds_name2)[:]
                             k1 = ary_coeff[0]
                             k0 = ary_coeff[1]
 
@@ -293,14 +293,14 @@ class ReadViirsL1(ReadL1):
                     for i in xrange(12, 17, 1):
                         band = 'CH_{:02d}'.format(i)
                         sds_name1 = '/All_Data/VIIRS-M%d-SDR_All/Radiance' % i
-                        ary_rad = h5r.get(sds_name1).value
+                        ary_rad = h5r.get(sds_name1)[:]
 
                         if i == 13:
                             k1 = 1.
                             k0 = 0.
                         else:
                             sds_name2 = '/All_Data/VIIRS-M%d-SDR_All/RadianceFactors' % i
-                            ary_coeff = h5r.get(sds_name2).value
+                            ary_coeff = h5r.get(sds_name2)[:]
                             k1 = ary_coeff[0]
                             k0 = ary_coeff[1]
 
@@ -340,14 +340,14 @@ class ReadViirsL1(ReadL1):
                     for i in xrange(12, 17, 1):
                         band = 'CH_{:02d}'.format(i)
                         sds_name1 = '/All_Data/VIIRS-M%d-SDR_All/BrightnessTemperature' % i
-                        ary_tbb = h5r.get(sds_name1).value
+                        ary_tbb = h5r.get(sds_name1)[:]
 
                         if i == 13:
                             k1 = 1.
                             k0 = 0.
                         else:
                             sds_name2 = '/All_Data/VIIRS-M%d-SDR_All/BrightnessTemperatureFactors' % i
-                            ary_coeff = h5r.get(sds_name2).value
+                            ary_coeff = h5r.get(sds_name2)[:]
                             k1 = ary_coeff[0]
                             k0 = ary_coeff[1]
 
@@ -376,7 +376,7 @@ class ReadViirsL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/VIIRS-MOD-GEO_All/Longitude').value
+                        '/All_Data/VIIRS-MOD-GEO_All/Longitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -399,7 +399,7 @@ class ReadViirsL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/VIIRS-MOD-GEO_All/Latitude').value
+                        '/All_Data/VIIRS-MOD-GEO_All/Latitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -422,7 +422,7 @@ class ReadViirsL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/VIIRS-MOD-GEO_All/SatelliteAzimuthAngle').value
+                        '/All_Data/VIIRS-MOD-GEO_All/SatelliteAzimuthAngle')[:]
                 vmin = -180.
                 vmax = 180.
             else:
@@ -449,7 +449,7 @@ class ReadViirsL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/VIIRS-MOD-GEO_All/SatelliteZenithAngle').value
+                        '/All_Data/VIIRS-MOD-GEO_All/SatelliteZenithAngle')[:]
 
             else:
                 raise ValueError(
@@ -473,7 +473,7 @@ class ReadViirsL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/VIIRS-MOD-GEO_All/SolarAzimuthAngle').value
+                        '/All_Data/VIIRS-MOD-GEO_All/SolarAzimuthAngle')[:]
 
                 vmin = -180.
                 vmax = 180.
@@ -502,7 +502,7 @@ class ReadViirsL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/VIIRS-MOD-GEO_All/SolarZenithAngle').value
+                        '/All_Data/VIIRS-MOD-GEO_All/SolarZenithAngle')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -525,7 +525,7 @@ class ReadViirsL1(ReadL1):
             if self.satellite in satellite_type1:
                 with h5py.File(self.in_file, 'r') as h5r:
                     sds_name = '/All_Data/VIIRS-MOD-GEO_All/StartTime'
-                    ary_time = h5r.get(sds_name).value
+                    ary_time = h5r.get(sds_name)[:]
                     ary_time = ary_time / 1000000.
                     # npp VIIRS和 CRIS 数据的时间单位是距离 1958年1月1日 UTC时间的microseconds 微秒
                     # ymdhms/1000000 = 秒  （距离1958年1月1日 UTC时间）

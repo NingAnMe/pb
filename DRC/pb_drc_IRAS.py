@@ -722,7 +722,7 @@ class ReadIrasL1(ReadL1):
 
 
 if __name__ == '__main__':
-    t_in_file = 'd:/data/IRAS/FY3B_IRASX_GBAL_L1_20160808_0840_017KM_MS.HDF'
+    t_in_file = 'd:/data/IRAS/FY3C_IRASX_GBAL_L1_20150101_0141_017KM_MS.HDF'
 #     t_in_file = 'd:/data/IRAS/FY3C_IRASX_GBAL_L1_20180310_1514_017KM_MS.HDF'
     t_read_l1 = ReadIrasL1(t_in_file)
     print t_read_l1.satellite  # 卫星名

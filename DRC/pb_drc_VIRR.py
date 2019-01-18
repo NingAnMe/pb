@@ -11,7 +11,7 @@ import re
 import h5py
 
 from PB.pb_io import attrs2dict
-from PB.pb_sat import planck_r2t
+from PB.pb_sat import planck_r2t, is_ad_orbit
 from PB.pb_time import get_ymd, get_hm
 from pb_drc_base import ReadL1
 import numpy as np
@@ -147,9 +147,9 @@ class ReadVirrL1(ReadL1):
             elif self.satellite in satellite_type2:
                 data_file = self.in_file
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    emissive = hdf5_file.get('/Data/EV_Emissive').value
+                    emissive = hdf5_file.get('/Data/EV_Emissive')[:]
                     valid_range_emissive = (0, 32767)
-                    ref_sb = hdf5_file.get('/Data/EV_RefSB').value
+                    ref_sb = hdf5_file.get('/Data/EV_RefSB')[:]
                     valid_range_ref = (0, 32767)
             else:
                 raise ValueError(
@@ -215,9 +215,9 @@ class ReadVirrL1(ReadL1):
             elif self.satellite in satellite_type2:
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
-                    # k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales').value
+                    # k1_ir = hdf5_file.get('/Data/Emissive_Radiance_Scales')[:]
                     k0_ir = hdf5_file.get(
-                        '/Data/Emissive_Radiance_Offsets').value
+                        '/Data/Emissive_Radiance_Offsets')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -271,8 +271,8 @@ class ReadVirrL1(ReadL1):
                 k0_k1_vis = self.file_attr['RefSB_Cal_Coefficients']
                 with h5py.File(self.in_file, 'r') as hdf5_file:
                     k1_ir = hdf5_file.get(
-                        '/Data/Emissive_Radiance_Scales').value
-                    # k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets').value
+                        '/Data/Emissive_Radiance_Scales')[:]
+                    # k0_ir = hdf5_file.get('/Data/Emissive_Radiance_Offsets')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -320,7 +320,11 @@ class ReadVirrL1(ReadL1):
                         continue
                     channel_data = dn[channel_name] * \
                         k1[channel_name] + k0[channel_name]
-                    data[channel_name] = channel_data
+                    # wangpeng add 20190109 过滤<0的ref
+                    invalid_index = np.ma.where(channel_data <= 0.)
+                    if len(invalid_index[0] > 0):
+                        channel_data[invalid_index] = np.nan
+                    data[channel_name] = channel_data / 100.
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -507,7 +511,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Calibration/Space_View').value
+                    data_pre = hdf5_file.get('/Calibration/Space_View')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -548,7 +552,7 @@ class ReadVirrL1(ReadL1):
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get(
-                        '/Calibration/Blackbody_View').value
+                        '/Calibration/Blackbody_View')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -589,7 +593,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Geolocation/DEM').value
+                    data_pre = hdf5_file.get('/Geolocation/DEM')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -624,7 +628,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Geolocation/Latitude').value
+                    data_pre = hdf5_file.get('/Geolocation/Latitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -659,7 +663,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Geolocation/Longitude').value
+                    data_pre = hdf5_file.get('/Geolocation/Longitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -694,7 +698,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Geolocation/LandSeaMask').value
+                    data_pre = hdf5_file.get('/Geolocation/LandSeaMask')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -729,7 +733,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Geolocation/LandCover').value
+                    data_pre = hdf5_file.get('/Geolocation/LandCover')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -765,7 +769,7 @@ class ReadVirrL1(ReadL1):
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
                     data_pre = hdf5_file.get(
-                        '/Geolocation/SensorAzimuth').value
+                        '/Geolocation/SensorAzimuth')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -800,7 +804,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Geolocation/SensorZenith').value
+                    data_pre = hdf5_file.get('/Geolocation/SensorZenith')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -835,7 +839,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Geolocation/SolarAzimuth').value
+                    data_pre = hdf5_file.get('/Geolocation/SolarAzimuth')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -870,7 +874,7 @@ class ReadVirrL1(ReadL1):
                     raise ValueError(
                         'Data file is not exist. {}'.format(data_file))
                 with h5py.File(data_file, 'r') as hdf5_file:
-                    data_pre = hdf5_file.get('/Geolocation/SolarZenith').value
+                    data_pre = hdf5_file.get('/Geolocation/SolarZenith')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -987,7 +991,7 @@ class ReadVirrL1(ReadL1):
 
 
 if __name__ == '__main__':
-    t_in_file = r'D:\data\VIRR\FY3C_VIRRX_GBAL_L1_20180404_0850_1000M_MS.HDF'
+    t_in_file = r'D:\data\VIRR\FY3C_VIRRX_GBAL_L1_20140101_0120_1000M_MS.HDF'
     t_read_l1 = ReadVirrL1(t_in_file)
     print 'attribute', '-' * 50
     print t_read_l1.satellite  # 卫星名
@@ -1021,9 +1025,9 @@ if __name__ == '__main__':
 
 #     t_data = t_read_l1.get_lut_bt()
 #     print t_data
-#     print 'dn:'
-#     t_data = t_read_l1.get_dn()
-#     print_channel_data(t_data)
+    print 'dn:'
+    t_data = t_read_l1.get_dn()
+    print_channel_data(t_data)
 #
 #     print 'k0:'
 #     t_data = t_read_l1.get_k0()
@@ -1037,14 +1041,14 @@ if __name__ == '__main__':
 #     t_data = t_read_l1.get_k2()
 #     print_channel_data(t_data)
 #
-#     print 'ref:'
-#     t_data = t_read_l1.get_ref()
-#     print_channel_data(t_data)
-
-    print 'rad'
-    t_data = t_read_l1.get_rad()
+    print 'ref:'
+    t_data = t_read_l1.get_ref()
     print_channel_data(t_data)
-    print t_data['CH_04'][100, 100]
+
+#     print 'rad'
+#     t_data = t_read_l1.get_rad()
+#     print_channel_data(t_data)
+#     print t_data['CH_04'][100, 100]
 #     print 'tbb:'
 #     t_data = t_read_l1.get_tbb()
 #     print_channel_data(t_data)
@@ -1073,9 +1077,10 @@ if __name__ == '__main__':
 #     print 'height'
 #     print_data_status(t_data)
 #
-#     t_data = t_read_l1.get_latitude()
-#     print 'latitude:'
-#     print_data_status(t_data)
+    t_data = t_read_l1.get_latitude()
+    print 'latitude:'
+    print_data_status(t_data)
+    print is_ad_orbit(t_data)
 #
 #     t_data = t_read_l1.get_longitude()
 #     print 'longitude:'

@@ -539,6 +539,7 @@ if __name__ == '__main__':
     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20180809140252Z_20180809140556Z_N_O_20180809150225Z__20180809150600'
 #     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20120126084152Z_20120126084456Z_N_O_20120126094147Z__20120126094311'
     iasi1 = ReadIasiL1(L1File)
+    print iasi1.record
 #     L1File = 'D:/data/METOP/IASI_xxx_1C_M02_20180502061153Z_20180502061456Z_N_O_20180502072518Z__20180502072850'
 #     iasi2 = ReadIasiL1(L1File)
     with time_block('>>>>>>>>>>>>read iasi', True):

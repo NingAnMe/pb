@@ -207,7 +207,7 @@ class ReadAgriL1(ReadL1):
                 with h5py.File(data_file, 'r') as h5r:
                     for i in xrange(self.channels):
                         band = 'CH_{:02d}'.format(i + 1)
-                        ary_dn = h5r.get('/NOMChannel%02d' % (i + 1)).value
+                        ary_dn = h5r.get('/NOMChannel%02d' % (i + 1))[:]
 
                         data_pre = ary_dn.astype(np.float32)
                         invalid_index = np.logical_or(
@@ -241,7 +241,7 @@ class ReadAgriL1(ReadL1):
                         if i <= 5:
                             band = 'CH_{:02d}'.format(i + 1)
                             ary_lut = h5r.get(
-                                '/CALChannel%02d' % (i + 1)).value
+                                '/CALChannel%02d' % (i + 1))[:]
                             data_pre = np.full(self.data_shape, np.nan)
                             valid_index = np.logical_and(
                                 True, np.isfinite(dn[band]))
@@ -422,7 +422,7 @@ class ReadAgriL1(ReadL1):
                             k0 = tbb_k0[band]
                             k1 = tbb_k1[band]
                             ary_lut = h5r.get(
-                                '/CALChannel%02d' % (i + 1)).value
+                                '/CALChannel%02d' % (i + 1))[:]
                             data_pre = np.full(self.data_shape, np.nan)
                             valid_index = np.logical_and(
                                 True, np.isfinite(dn[band]))
@@ -488,7 +488,7 @@ class ReadAgriL1(ReadL1):
                 data_file = self.__get_lonlat_file()
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('Longitude').value
+                    data_pre = h5r.get('Longitude')[:]
 
             else:
                 raise ValueError(
@@ -515,7 +515,7 @@ class ReadAgriL1(ReadL1):
                 data_file = self.__get_lonlat_file()
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('Latitude').value
+                    data_pre = h5r.get('Latitude')[:]
 
             else:
                 raise ValueError(
@@ -541,7 +541,7 @@ class ReadAgriL1(ReadL1):
                 data_file = self.__get_geo_file()
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/NOMSatelliteAzimuth').value
+                    data_pre = h5r.get('/NOMSatelliteAzimuth')[:]
                 vmin = 0.
                 vmax = 360.
 
@@ -568,7 +568,7 @@ class ReadAgriL1(ReadL1):
                 data_file = self.__get_geo_file()
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/NOMSatelliteZenith').value
+                    data_pre = h5r.get('/NOMSatelliteZenith')[:]
 
                 vmin = 0.
                 vmax = 180.
@@ -596,7 +596,7 @@ class ReadAgriL1(ReadL1):
                 data_file = self.__get_geo_file()
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/NOMSunAzimuth').value
+                    data_pre = h5r.get('/NOMSunAzimuth')[:]
 
                 vmin = 0.
                 vmax = 360.
@@ -624,7 +624,7 @@ class ReadAgriL1(ReadL1):
                 data_file = self.__get_geo_file()
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/NOMSunZenith').value
+                    data_pre = h5r.get('/NOMSunZenith')[:]
 
                 vmin = 0.
                 vmax = 180.

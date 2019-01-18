@@ -189,6 +189,7 @@ class ReadModisL1(ReadL1):
         """
 
         data = dict()
+        dsl = sun_earth_dis_correction(self.ymd)
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type = ['AQUA', 'TERRA']
             data_file = self.in_file
@@ -243,7 +244,7 @@ class ReadModisL1(ReadL1):
                             dn[band] - ary_ch8_19and26_b[k]) * ary_ch8_19and26_a[k]
                     else:
                         continue
-                    data[band] = data_pre
+                    data[band] = data_pre * dsl
 
         return data
 
@@ -266,7 +267,7 @@ class ReadModisL1(ReadL1):
                     'EV_1KM_Emissive').attributes()['radiance_offsets']
 
                 h4r.end()
-                dsl = sun_earth_dis_correction(self.ymd)
+
                 center_wn = self.get_central_wave_number()
                 # 逐个通道处理
                 for i in xrange(self.channels):
@@ -280,7 +281,7 @@ class ReadModisL1(ReadL1):
                             dn[band] - ary_ch20_36_b[k]) * ary_ch20_36_a[k]
 
                         data[band] = data_pre * \
-                            ((10000 / center_wn[band]) ** 2) / 10. * dsl
+                            ((10000 / center_wn[band]) ** 2) / 10.  # * dsl
 
         return data
 

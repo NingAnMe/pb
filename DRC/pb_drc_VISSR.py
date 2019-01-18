@@ -198,11 +198,11 @@ class ReadVissrL1(ReadL1):
                             vmin = 0
                             vmax = 1023
                             data_pre = h5r.get(
-                                '/NOMChannelIR%d' % (i + 1)).value
+                                '/NOMChannelIR%d' % (i + 1))[:]
                         else:
                             vmin = 0
                             vmax = 63
-                            data_pre = h5r.get('/NOMChannelVIS').value
+                            data_pre = h5r.get('/NOMChannelVIS')[:]
                         data_pre = data_pre.astype(np.float32)
                         invalid_index = np.logical_or(
                             data_pre <= vmin, data_pre >= vmax)
@@ -366,7 +366,7 @@ class ReadVissrL1(ReadL1):
                 data_file = self.__get_lonlat_file()
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('pixel_longitude').value
+                    data_pre = h5r.get('pixel_longitude')[:]
 
             else:
                 raise ValueError(
@@ -393,7 +393,7 @@ class ReadVissrL1(ReadL1):
                 data_file = self.__get_lonlat_file()
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('pixel_latitude').value
+                    data_pre = h5r.get('pixel_latitude')[:]
 
             else:
                 raise ValueError(
@@ -419,7 +419,7 @@ class ReadVissrL1(ReadL1):
                 data_file = self.in_file
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/NOMAzimuth').value
+                    data_pre = h5r.get('/NOMAzimuth')[:]
                 vmin = 0.
                 vmax = 6.2831855
 
@@ -446,7 +446,7 @@ class ReadVissrL1(ReadL1):
                 data_file = self.in_file
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/NOMSatelliteZenith').value
+                    data_pre = h5r.get('/NOMSatelliteZenith')[:]
 
                 vmin = 0.
                 vmax = 1.5707964
@@ -474,7 +474,7 @@ class ReadVissrL1(ReadL1):
                 data_file = self.in_file
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/NOMSunGlintAngle').value
+                    data_pre = h5r.get('/NOMSunGlintAngle')[:]
 
                 vmin = 0.
                 vmax = 3.1415927
@@ -501,7 +501,7 @@ class ReadVissrL1(ReadL1):
                 data_file = self.in_file
 
                 with h5py.File(data_file, 'r') as h5r:
-                    data_pre = h5r.get('/NOMSunZenith').value
+                    data_pre = h5r.get('/NOMSunZenith')[:]
 
                 vmin = 0.
                 vmax = 3.1415927
@@ -528,8 +528,8 @@ class ReadVissrL1(ReadL1):
                 #                 data_file = self.in_file
                 seconds_of_file = 30 * 60  # 一个时次持续 30分钟
 #                 with h5py.File(data_file, 'r') as h5r:
-#                     obs_time = h5r.get('/NOMOBSTIME').value
-#                     grid_space = h5r.get('/NOMOBSTimeGridSpace').value
+#                     obs_time = h5r.get('/NOMOBSTIME')[:]
+#                     grid_space = h5r.get('/NOMOBSTimeGridSpace')[:]
 #                     t1 = obs_time[:, 1] * 24. * 3600.
 #                     t2 = obs_time[:, 2] * 24. * 3600.
 #                     t3 = obs_time[:, 3] * 24. * 3600.

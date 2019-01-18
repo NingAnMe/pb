@@ -139,13 +139,13 @@ class ReadCrisL1(ReadL1):
                 data_file = self.in_file
                 with h5py.File(data_file, 'r') as h5r:
                     sds_name = '/All_Data/CrIS-FS-SDR_All/ES_RealLW'
-                    real_lw = h5r.get(sds_name).value
+                    real_lw = h5r.get(sds_name)[:]
 
                     sds_name = '/All_Data/CrIS-FS-SDR_All/ES_RealMW'
-                    real_mw = h5r.get(sds_name).value
+                    real_mw = h5r.get(sds_name)[:]
 
                     sds_name = '/All_Data/CrIS-FS-SDR_All/ES_RealSW'
-                    real_sw = h5r.get(sds_name).value
+                    real_sw = h5r.get(sds_name)[:]
 
                 # 切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值
                 # 开头和结尾不参与计算
@@ -231,13 +231,13 @@ class ReadCrisL1(ReadL1):
                 data_file = self.in_file
                 with h5py.File(data_file, 'r') as h5r:
                     sds_name = '/All_Data/CrIS-SDR_All/ES_RealLW'
-                    real_lw = h5r.get(sds_name).value
+                    real_lw = h5r.get(sds_name)[:]
 
                     sds_name = '/All_Data/CrIS-SDR_All/ES_RealMW'
-                    real_mw = h5r.get(sds_name).value
+                    real_mw = h5r.get(sds_name)[:]
 
                     sds_name = '/All_Data/CrIS-SDR_All/ES_RealSW'
-                    real_sw = h5r.get(sds_name).value
+                    real_sw = h5r.get(sds_name)[:]
 
                 # 切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值
                 # 开头和结尾不参与计算
@@ -360,7 +360,7 @@ class ReadCrisL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/CrIS-SDR-GEO_All/Longitude').value
+                        '/All_Data/CrIS-SDR-GEO_All/Longitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -383,7 +383,7 @@ class ReadCrisL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/CrIS-SDR-GEO_All/Latitude').value
+                        '/All_Data/CrIS-SDR-GEO_All/Latitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -406,7 +406,7 @@ class ReadCrisL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/CrIS-SDR-GEO_All/SatelliteAzimuthAngle').value
+                        '/All_Data/CrIS-SDR-GEO_All/SatelliteAzimuthAngle')[:]
                 vmin = -180.
                 vmax = 180.
             else:
@@ -433,7 +433,7 @@ class ReadCrisL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/CrIS-SDR-GEO_All/SatelliteZenithAngle').value
+                        '/All_Data/CrIS-SDR-GEO_All/SatelliteZenithAngle')[:]
 
             else:
                 raise ValueError(
@@ -457,7 +457,7 @@ class ReadCrisL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/CrIS-SDR-GEO_All/SolarAzimuthAngle').value
+                        '/All_Data/CrIS-SDR-GEO_All/SolarAzimuthAngle')[:]
 
                 vmin = -180.
                 vmax = 180.
@@ -486,7 +486,7 @@ class ReadCrisL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/CrIS-SDR-GEO_All/SolarZenithAngle').value
+                        '/All_Data/CrIS-SDR-GEO_All/SolarZenithAngle')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -511,7 +511,7 @@ class ReadCrisL1(ReadL1):
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
                     data_pre = h5r.get(
-                        '/All_Data/CrIS-SDR-GEO_All/SatelliteRange').value
+                        '/All_Data/CrIS-SDR-GEO_All/SatelliteRange')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -534,7 +534,7 @@ class ReadCrisL1(ReadL1):
             if self.satellite in satellite_type1:
                 with h5py.File(self.in_file, 'r') as h5r:
                     sds_name = '/All_Data/CrIS-SDR-GEO_All/FORTime'
-                    ary_time = h5r.get(sds_name).value
+                    ary_time = h5r.get(sds_name)[:]
                     ary_time = ary_time / 1000000.
                     # npp cris 数据的时间单位是距离 1958年1月1日 UTC时间的microseconds 微秒
                     # ymdhms/1000000 = 秒  （距离1958年1月1日 UTC时间）

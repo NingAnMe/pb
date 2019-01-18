@@ -140,11 +140,11 @@ class ReadHirasL1(ReadL1):
                 data_file = self.in_file
                 with h5py.File(data_file, 'r') as h5r:
                     sds_name = '/Data/ES_RealLW'
-                    real_lw = h5r.get(sds_name).value
+                    real_lw = h5r.get(sds_name)[:]
                     sds_name = '/Data/ES_RealMW1'
-                    real_mw = h5r.get(sds_name).value
+                    real_mw = h5r.get(sds_name)[:]
                     sds_name = '/Data/ES_RealMW2'
-                    real_sw = h5r.get(sds_name).value
+                    real_sw = h5r.get(sds_name)[:]
 
                 # 切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值
                 # 开头和结尾不参与计算
@@ -230,13 +230,13 @@ class ReadHirasL1(ReadL1):
 #                 data_file = self.in_file
 #                 with h5py.File(data_file, 'r') as h5r:
 #                     sds_name = '/All_Data/CrIS-SDR_All/ES_RealLW'
-#                     real_lw = h5r.get(sds_name).value
+#                     real_lw = h5r.get(sds_name)[:]
 #
 #                     sds_name = '/All_Data/CrIS-SDR_All/ES_RealMW'
-#                     real_mw = h5r.get(sds_name).value
+#                     real_mw = h5r.get(sds_name)[:]
 #
 #                     sds_name = '/All_Data/CrIS-SDR_All/ES_RealSW'
-#                     real_sw = h5r.get(sds_name).value
+#                     real_sw = h5r.get(sds_name)[:]
 #
 #                 # 切趾计算 w0*n-1 + w1*n + w2*n+1 当作n位置的修正值
 #                 # 开头和结尾不参与计算
@@ -354,7 +354,7 @@ class ReadHirasL1(ReadL1):
             if self.satellite in satellite_type1:
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Longitude').value
+                    data_pre = h5r.get('/Geolocation/Longitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -376,7 +376,7 @@ class ReadHirasL1(ReadL1):
             if self.satellite in satellite_type1:
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Latitude').value
+                    data_pre = h5r.get('/Geolocation/Latitude')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -398,7 +398,7 @@ class ReadHirasL1(ReadL1):
             if self.satellite in satellite_type1:
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Sensor_Azimuth').value
+                    data_pre = h5r.get('/Geolocation/Sensor_Azimuth')[:]
                 vmin = 0.
                 vmax = 36000.
             else:
@@ -425,7 +425,7 @@ class ReadHirasL1(ReadL1):
                 vmax = 18000.
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Sensor_Zenith').value
+                    data_pre = h5r.get('/Geolocation/Sensor_Zenith')[:]
 
             else:
                 raise ValueError(
@@ -449,7 +449,7 @@ class ReadHirasL1(ReadL1):
             if self.satellite in satellite_type1:
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Solar_Azimuth').value
+                    data_pre = h5r.get('/Geolocation/Solar_Azimuth')[:]
 
                 vmin = 0.
                 vmax = 36000.
@@ -478,7 +478,7 @@ class ReadHirasL1(ReadL1):
                 vmax = 18000.
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Solar_Zenith').value
+                    data_pre = h5r.get('/Geolocation/Solar_Zenith')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -503,7 +503,7 @@ class ReadHirasL1(ReadL1):
                 vmax = 10000  # unit km  一般极轨卫星高度840km 左右，这里最大值设置3000km
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Height').value
+                    data_pre = h5r.get('/Geolocation/Height')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -527,9 +527,9 @@ class ReadHirasL1(ReadL1):
             if self.satellite in satellite_type1:
                 with h5py.File(self.in_file, 'r') as h5r:
                     sds_name = '/Geolocation/Daycnt'
-                    ary_day = h5r.get(sds_name).value
+                    ary_day = h5r.get(sds_name)[:]
                     sds_name = '/Geolocation/Mscnt'
-                    ary_time = h5r.get(sds_name).value
+                    ary_time = h5r.get(sds_name)[:]
                     # npp cris 数据的时间单位是距离 1958年1月1日 UTC时间的microseconds 微秒
                     # ymdhms/1000000 = 秒  （距离1958年1月1日 UTC时间）
 
@@ -557,7 +557,7 @@ class ReadHirasL1(ReadL1):
             satellite_type1 = ['FY3D']
             if self.satellite in satellite_type1:
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/LandSeaMask').value
+                    data_pre = h5r.get('/Geolocation/LandSeaMask')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -579,7 +579,7 @@ class ReadHirasL1(ReadL1):
             if self.satellite in satellite_type1:
                 # s = self.data_shape  # FY3A数据不规整，存在 1810,2048 的数据，取 1800,2048
                 with h5py.File(self.in_file, 'r') as h5r:
-                    data_pre = h5r.get('/Geolocation/Land_Cover').value
+                    data_pre = h5r.get('/Geolocation/Land_Cover')[:]
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))

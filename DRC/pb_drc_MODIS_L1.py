@@ -165,7 +165,7 @@ class CLASS_MODIS_L1():
 
         for i in xrange(16):
             newRad[i] = data_ch36[i + 20] * \
-                ((10000 / cwn[i]) ** 2) / 10. * dsol
+                ((10000 / cwn[i]) ** 2) / 10.  # * dsol
             if i <= 5:
                 self.Rad['CH_%02d' % (i + 20)] = newRad[i]
             else:

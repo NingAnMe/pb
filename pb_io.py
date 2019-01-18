@@ -490,9 +490,12 @@ def CombineTimeList(TimeList):
 
 if __name__ == '__main__':
     pass
-
-
-#     path_replace_ymd('/abc/%YYYY/%MM%DD/%JJJ', '20180101')
+    path_out_map = str_format('/abc/%YYYY%MM%DD', {
+        'YYYY': '20180101',
+        'MM': '01',
+        'DD': '01',
+    })
+    print path_out_map
 #     path1 = "E:/projects/ocrs/cfg/global.cfg"
 #     path2 = "E:/projects/ocrs/cfg/FY3B+MERSI.yaml"
     # c = Config(path1)
@@ -510,8 +513,8 @@ if __name__ == '__main__':
 #     read_data = ReadOrbitCrossFile.read_cross_file(leo_area_name, 'leo_area')
 
     # LEO_LEO
-    leo_leo_name = r'C:\Users\wangpeng\Desktop\tmp\cross\FENGYUN-3D_NPP_LEO_LEO_20180901.txt'
-    read_data = ReadOrbitCrossFile.read_cross_file(leo_leo_name, 'leo_leo')
+#     leo_leo_name = r'C:\Users\wangpeng\Desktop\tmp\cross\FENGYUN-3D_NPP_LEO_LEO_20180901.txt'
+#     read_data = ReadOrbitCrossFile.read_cross_file(leo_leo_name, 'leo_leo')
 
     # LEO_FIX
 #     leo_fix_name = r'C:\Users\wangpeng\Desktop\tmp\cross\AQUA_FIX_LEO_FIX_20181101.txt'
@@ -521,7 +524,7 @@ if __name__ == '__main__':
 #     geo_leo_name = r'C:\Users\wangpeng\Desktop\tmp\cross\FENGYUN-2F_METOP-A_GEO_LEO20181101.txt'
 #     read_data = ReadOrbitCrossFile.read_cross_file(geo_leo_name, 'geo_leo')
 
-    keys = read_data.keys()
-    keys.sort()
-    for data_name in keys:
-        print data_name, type(read_data[data_name]), read_data[data_name]
+#     keys = read_data.keys()
+#     keys.sort()
+#     for data_name in keys:
+#         print data_name, type(read_data[data_name]), read_data[data_name]

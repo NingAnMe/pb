@@ -1008,10 +1008,8 @@ class POLDER3_L1B(satNameBase):
         satNameBase.__init__(self, pat, totalSec)
 
     def check(self, infile):
-        print self.pat, infile
         g = re.match(self.pat, infile)
         if g:
-            print '22'
             self.ymd = g.group(1) + g.group(2) + g.group(3)
             self.hms = g.group(4) + g.group(5) + g.group(6)
             return True
