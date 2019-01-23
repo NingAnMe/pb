@@ -5,6 +5,7 @@ import os
 import re
 import time
 
+from netCDF4 import Dataset
 import beatl2
 import coda
 
@@ -40,8 +41,10 @@ class ReadIasiL1(ReadL1):
         use filename set self.resolution
         """
         file_name = os.path.basename(self.in_file)
-        if 'IASI' in file_name:
+        if 'IASI_xxx_1C' in file_name:
             self.resolution = 24000
+        elif 'MetOpA+IASI' in file_name:
+            self.resolution = 24001
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -52,10 +55,12 @@ class ReadIasiL1(ReadL1):
         """
         file_name = os.path.basename(self.in_file)
 
-        if 'M02' in file_name:
+        if 'IASI_xxx_1C_M02' in file_name:
             self.satellite = 'METOP-A'
-        elif 'M01' in file_name:
+        elif 'IASI_xxx_1C_M01' in file_name:
             self.satellite = 'METOP-B'
+        elif 'MetOpA+IASI' in file_name:
+            self.satellite = 'METOP-A'
         else:
             raise ValueError('Cant get the satellite name from file name.')
 
@@ -64,7 +69,10 @@ class ReadIasiL1(ReadL1):
         use filename  set self.ymd self.hms
         """
         file_name = os.path.basename(self.in_file)
-        pat = u'\w+_(\d{14})Z_(\d{14})Z_N_O_\d{14}Z__\d{14}$'
+        if self.resolution == 24000:
+            pat = u'\w+_(\d{14})Z_(\d{14})Z_N_O_\d{14}Z__\d{14}$'
+        elif self.resolution == 24001:
+            pat = u'.*_(\d{14})_(\d{5})_.*.nc$'
         g = re.match(pat, file_name)
         if g:
             self.ymd = g.group(1)[:8]
@@ -74,7 +82,7 @@ class ReadIasiL1(ReadL1):
 
     def set_file_attr(self):
         """
-        seft self.file_att is dict 
+        seft self.file_att is dict
         """
         data = dict()
         if self.resolution == 24000:
@@ -102,6 +110,25 @@ class ReadIasiL1(ReadL1):
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
+
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+
+                try:
+                    # 'NCETCDF4'
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data = ncr.ncattrs()
+                    ncr.close()
+
+                except Exception as e:
+                    print str(e)
+                    return
+
+                self.file_attr = data
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 "Cant handle this resolution: ".format(self.resolution))
@@ -114,6 +141,10 @@ class ReadIasiL1(ReadL1):
             satellite_type1 = ['METOP-A', 'METOP-B']
             if self.satellite in satellite_type1:
                 self.channels = 8461
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+                self.channels = 8700
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -129,13 +160,25 @@ class ReadIasiL1(ReadL1):
                     self.record = beatl2.ingest(self.in_file)
                     # iasi 的观测点会变化 2640 2760等，所以根据数据长度获取，另外统一转成2维
                     self.data_shape = (self.record.time.shape[0], 1)
+                    print self.data_shape
                 except Exception as e:
                     print 'Open file error {}'.format(e)
                     return
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
-        # elif self.resolution == 250:
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+                try:
+                    # 'NCETCDF4'
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data = ncr.variables['lat'][:]
+                    ncr.close()
+                    self.data_shape = (data.reshape(data.size, 1)).shape
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
         else:
             raise ValueError(
                 "Cant handle this resolution: ".format(self.resolution))
@@ -171,6 +214,37 @@ class ReadIasiL1(ReadL1):
                 except Exception as e:
                     print 'Open file error {}'.format(e)
                     return
+
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+                try:
+                    ncr = Dataset(
+                        self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    wavenumber = ncr.variables['wavenumber'][:]
+                    factor = ncr.variables['scale_factor'][:]
+                    radiance = ncr.variables['spectral_radiance'][:]
+                    ncr.close()
+
+                    # 过滤无效值
+                    radiance = radiance.astype(np.float32)
+                    invalid_index = np.where(radiance <= 0)
+                    radiance[invalid_index] = np.nan
+
+                    factor = factor.reshape(1, 1, factor.size)
+
+                    data = radiance * 100000 / factor
+                    # 单位转换
+
+                    s1, s2 = self.data_shape
+                    s3 = radiance.shape[2]
+
+                    response = data.reshape(s1, s2, s3)
+                    wave_number = wavenumber / 100.
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
@@ -190,7 +264,7 @@ class ReadIasiL1(ReadL1):
         return channel rad
         """
         data = dict()
-        if self.resolution == 24000:
+        if self.resolution == 24000 or self.resolution == 24001:
             satellite_type1 = ['METOP-A', 'METOP-B']
 
             if self.satellite in satellite_type1:
@@ -229,7 +303,7 @@ class ReadIasiL1(ReadL1):
         return channel rad
         """
         data = dict()
-        if self.resolution == 24000:
+        if self.resolution == 24000 or self.resolution == 24001:
             satellite_type1 = ['METOP-A', 'METOP-B']
 
             if self.satellite in satellite_type1:
@@ -283,6 +357,26 @@ class ReadIasiL1(ReadL1):
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+
+                try:
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data_pre = ncr.variables['lon'][:]
+                    ncr.close()
+                    invalid_index = np.logical_or(
+                        data_pre < -180, data_pre > 180)
+                    data_pre = data_pre.astype(np.float32)
+                    data_pre[invalid_index] = np.nan
+                    data = data_pre.reshape(data_pre.size, 1)
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -297,8 +391,28 @@ class ReadIasiL1(ReadL1):
             if self.satellite in satellite_type1:
 
                 try:
-                    #                     record = beatl2.ingest(self.in_file)
+                    # record = beatl2.ingest(self.in_file)
                     data_pre = self.record.latitude
+                    invalid_index = np.logical_or(
+                        data_pre < -90, data_pre > 90)
+                    data_pre = data_pre.astype(np.float32)
+                    data_pre[invalid_index] = np.nan
+                    data = data_pre.reshape(data_pre.size, 1)
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+
+                try:
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data_pre = ncr.variables['lat'][:]
+                    ncr.close()
                     invalid_index = np.logical_or(
                         data_pre < -90, data_pre > 90)
                     data_pre = data_pre.astype(np.float32)
@@ -357,6 +471,29 @@ class ReadIasiL1(ReadL1):
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
+
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+                try:
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data_pre = ncr.variables['satellite_azimuth_angle'][:]
+                    ncr.close()
+
+                    # 过滤无效值
+                    invalid_index = np.logical_or(
+                        data_pre < 0, data_pre > 360)
+                    data_pre = data_pre.astype(np.float32)
+                    data_pre[invalid_index] = np.nan
+
+                    data = data_pre.reshape(self.data_shape)
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -392,11 +529,34 @@ class ReadIasiL1(ReadL1):
 
                     # 过滤无效值
                     invalid_index = np.logical_or(
-                        data_pre < -180, data_pre > 180)
+                        data_pre < 0, data_pre > 180)
                     data_pre = data_pre.astype(np.float32)
                     data_pre[invalid_index] = np.nan
 
                     data = data_pre
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+
+                try:
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data_pre = ncr.variables['satellite_azimuth_angle'][:]
+                    ncr.close()
+
+                    # 过滤无效值
+                    invalid_index = np.logical_or(
+                        data_pre < 0, data_pre > 180)
+                    data_pre = data_pre.astype(np.float32)
+                    data_pre[invalid_index] = np.nan
+
+                    data = data_pre.reshape(self.data_shape)
 
                 except Exception as e:
                     print 'Open file error {}'.format(e)
@@ -450,6 +610,28 @@ class ReadIasiL1(ReadL1):
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+
+                try:
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data_pre = ncr.variables['solar_azimuth_angle'][:]
+                    ncr.close()
+
+                    # 过滤无效值
+                    invalid_index = np.logical_or(
+                        data_pre < 0, data_pre > 360)
+                    data_pre = data_pre.astype(np.float32)
+                    data_pre[invalid_index] = np.nan
+                    data = data_pre.reshape(self.data_shape)
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
@@ -485,11 +667,34 @@ class ReadIasiL1(ReadL1):
 
                     # 过滤无效值
                     invalid_index = np.logical_or(
-                        data_pre < -180, data_pre > 180)
+                        data_pre < 0, data_pre > 180)
                     data_pre = data_pre.astype(np.float32)
                     data_pre[invalid_index] = np.nan
 
                     data = data_pre
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+
+                try:
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data_pre = ncr.variables['solar_zenith_angle'][:]
+                    ncr.close()
+
+                    # 过滤无效值
+                    invalid_index = np.logical_or(
+                        data_pre < 0, data_pre > 180)
+                    data_pre = data_pre.astype(np.float32)
+                    data_pre[invalid_index] = np.nan
+
+                    data = data_pre.reshape(self.data_shape)
 
                 except Exception as e:
                     print 'Open file error {}'.format(e)
@@ -527,21 +732,52 @@ class ReadIasiL1(ReadL1):
             else:
                 raise ValueError(
                     'Cant read this satellite`s data.: {}'.format(self.satellite))
+        elif self.resolution == 24001:
+            satellite_type1 = ['METOP-A', 'METOP-B']
+            if self.satellite in satellite_type1:
+                try:
+                    ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
+                    data_pre = ncr.variables['time'][:]
+                    ncr.close()
+                    v_ymd2ymd = np.vectorize(ymd2ymd)
+                    data = v_ymd2ymd(self.ymd, data_pre)
+                    data = data.reshape(data.size, 1)
+                    s = self.data_shape
+                    s2 = s[0] / data.size
+                    data = np.repeat(data, s2, 1)
+                    data = data.reshape(s)
+
+                except Exception as e:
+                    print 'Open file error {}'.format(e)
+                    return
+            else:
+                raise ValueError(
+                    'Cant read this satellite`s data.: {}'.format(self.satellite))
+
         else:
             raise ValueError(
                 'Cant read this data, please check its resolution: {}'.format(self.in_file))
         return data
+
+
+def ymd2ymd(ymd, data):
+
+    hour_point, hour = np.modf(data / 3600.)
+    mins_point, mins = np.modf(hour_point * 60.)
+    _, secs = np.modf(mins_point * 60.)
+
+    times = datetime.strptime(
+        "%s%02d%02d%02d" % (ymd, hour, mins, secs), '%Y%m%d%H%M%S')
+    ymdhms = (times - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()
+    return ymdhms
 
 if __name__ == '__main__':
     T1 = datetime.now()
     BandLst = ['CH_20', 'CH_21', 'CH_22', 'CH_23', 'CH_24', 'CH_25']
     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20180502060857Z_20180502061152Z_N_O_20180502072426Z__20180502072755'
     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20180809140252Z_20180809140556Z_N_O_20180809150225Z__20180809150600'
-#     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20120126084152Z_20120126084456Z_N_O_20120126094147Z__20120126094311'
+#     L1File = 'D:/data/IASI_NC/W_XX-EUMETSAT-Darmstadt,HYPERSPECT+SOUNDING,MetOpA+IASI_C_EUMP_20181127014334_62814_eps_o_l1.nc'
     iasi1 = ReadIasiL1(L1File)
-    print iasi1.record
-#     L1File = 'D:/data/METOP/IASI_xxx_1C_M02_20180502061153Z_20180502061456Z_N_O_20180502072518Z__20180502072850'
-#     iasi2 = ReadIasiL1(L1File)
     with time_block('>>>>>>>>>>>>read iasi', True):
         print iasi1.satellite  # 卫星名
         print iasi1.sensor  # 传感器名
@@ -567,34 +803,34 @@ if __name__ == '__main__':
         print_data_status(wavenums)
         print_data_status(response)
 
-#         print 'longitude:'
-#         t_data = iasi1.get_longitude()
-#         print_data_status(t_data)
-#
-#         print 'longitude:'
-#         t_data = iasi1.get_latitude()
-#         print_data_status(t_data)
-#
-#         print 'sensor_azimuth:'
-#         t_data = iasi1.get_sensor_azimuth()
-#         print_data_status(t_data)
-#         print 'sensor_zenith:'
-#         t_data = iasi1.get_sensor_zenith()
-#         print_data_status(t_data)
-#         print 'solar_azimuth:'
-#         t_data = iasi1.get_solar_azimuth()
-#         print_data_status(t_data)
-#         print 'solar_zenith:'
-#         t_data = iasi1.get_solar_zenith()
-#         print_data_status(t_data)
-#
-#         print 'sv:'
-#         t_data = iasi1.get_dn()
-#
-#         print 'timestamp:'
-#         t_data = iasi1.get_timestamp()
-#         print type(t_data)
-#         print type(t_data[0, 0])
-#         print time.gmtime(t_data[0, 0])
-#         print time.gmtime(t_data[-1, -1])
-#         print_data_status(t_data)
+        print 'longitude:'
+        t_data = iasi1.get_longitude()
+        print_data_status(t_data)
+
+        print 'longitude:'
+        t_data = iasi1.get_latitude()
+        print_data_status(t_data)
+
+        print 'sensor_azimuth:'
+        t_data = iasi1.get_sensor_azimuth()
+        print_data_status(t_data)
+        print 'sensor_zenith:'
+        t_data = iasi1.get_sensor_zenith()
+        print_data_status(t_data)
+        print 'solar_azimuth:'
+        t_data = iasi1.get_solar_azimuth()
+        print_data_status(t_data)
+        print 'solar_zenith:'
+        t_data = iasi1.get_solar_zenith()
+        print_data_status(t_data)
+
+        print 'sv:'
+        t_data = iasi1.get_dn()
+
+        print 'timestamp:'
+        t_data = iasi1.get_timestamp()
+        print type(t_data)
+        print type(t_data[0, 0])
+        print time.gmtime(t_data[0, 0])
+        print time.gmtime(t_data[-1, -1])
+        print_data_status(t_data)

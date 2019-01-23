@@ -1,11 +1,12 @@
 # coding: utf-8
+from contextlib import contextmanager
+from datetime import datetime
+import calendar
+import math
 import re
 import time
-import calendar
-from datetime import datetime
+
 from dateutil.relativedelta import relativedelta
-import math
-from contextlib import contextmanager
 __author__ = 'wangpeng'
 
 '''
@@ -212,9 +213,9 @@ def days2hms(days):
     author:      wangpeng
     date:        2017-03-21
     Input:       days 天的计数数值(0-1)的浮点数
-    Output：              
+    Output:
     Return:      类型：字符串   格式:HH:MM:SS:MS  实例: 09:00:00:999  (异常返回 None)
-    Others: 
+    Others:
     '''
     if days >= 1:
         return None

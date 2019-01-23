@@ -1132,6 +1132,27 @@ class FY4_AGRI_L1(satNameBase):
 
 
 @nameClassManager.plugin
+class METOP_IASI_GOME_L1_NC(satNameBase):
+    '''
+    W_XX-EUMETSAT-Darmstadt,HYPERSPECT+SOUNDING,MetOpA+IASI_C_EUMP_20181127014334_62814_eps_o_l1.nc
+    '''
+
+    def __init__(self):
+        pat = u'.*_(\d{14})_(\d{5})_.*.nc$'
+        totalSec = 25 * 60
+        satNameBase.__init__(self, pat, totalSec)
+
+    def check(self, infile):
+        g = re.match(self.pat, infile)
+        if g:
+            self.ymd = g.group(1)[:8]
+            self.hms = g.group(1)[8:]
+            return True
+        else:
+            return False
+
+
+@nameClassManager.plugin
 class METOP_IASI_GOME_L1(satNameBase):
     '''
     IASI_xxx_1C_M02_20160301052958Z_20160301053254Z_N_O_20160301070539Z__20160301070731
@@ -1261,7 +1282,7 @@ if __name__ == '__main__':
 #     a = allcls.getInstance('L3_aersl_omi_20161115.txt')
 #     a = allcls.getInstance('GCRSO-SCRIS_npp_d20161013_t1010409_e1011107_b25708_c20161021051241157665_noaa_ops.h5')
     a = allcls.getInstance(
-        'POLDER3_L1B-BG1-120055M_2010-02-24T16-22-17_V1-01.h5')
+        'W_XX-EUMETSAT-Darmstadt,HYPERSPECT+SOUNDING,MetOpA+IASI_C_EUMP_20181127014334_62814_eps_o_l1.nc')
 #     a = allcls.getInstance('AIRS.2011.11.01.051.L1B.AIRS_Rad.v5.0.0.0.G11305115409.hdf')
 #     a = allcls.getInstance('GCRSO-SCRIS_npp_d20170903_t0048559_e0056537_b30314_c20170903222528718864_nobc_ops.h5')
 #     a = allcls.getInstance('S-O3M_GOME_NAR_02_M02_20171017052357Z_20171017052657Z_N_O_20171017070631Z.hdf5.gz')

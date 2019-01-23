@@ -312,7 +312,7 @@ def is_ad_orbit(lats):
         diff_list.append(diff)
     diff_array = np.array(diff_list)
     d_idx = np.where(diff_array < 0.)
-    a_idx = np.where(diff_array >= 0.)
+    a_idx = np.where(diff_array > 0.)
     d_100 = len(d_idx[0]) / row * 100
     a_100 = len(a_idx[0]) / row * 100
     print a_100, d_100

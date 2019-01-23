@@ -355,6 +355,7 @@ class ReadVirrL1(ReadL1):
 #                     print b0, b1, b2
                     rad_pre = dn[channel_name] * \
                         k1[channel_name] + k0[channel_name]
+                    print 'b', b0, b1, b2
                     rad_nonlinear = rad_pre ** 2 * b2 + rad_pre * b1 + b0
                     rad = rad_pre + rad_nonlinear
                     # 过滤无效值
@@ -991,7 +992,7 @@ class ReadVirrL1(ReadL1):
 
 
 if __name__ == '__main__':
-    t_in_file = r'D:\data\VIRR\FY3C_VIRRX_GBAL_L1_20140101_0120_1000M_MS.HDF'
+    t_in_file = r'D:\data\VIRR\FY3C_VIRRX_GBAL_L1_20140103_0240_1000M_MS.HDF'
     t_read_l1 = ReadVirrL1(t_in_file)
     print 'attribute', '-' * 50
     print t_read_l1.satellite  # 卫星名
@@ -1028,6 +1029,8 @@ if __name__ == '__main__':
     print 'dn:'
     t_data = t_read_l1.get_dn()
     print_channel_data(t_data)
+    print t_data['CH_04'][99, 100]
+    print np.where(np.isclose(t_data['CH_04'], 997.))
 #
 #     print 'k0:'
 #     t_data = t_read_l1.get_k0()
@@ -1041,14 +1044,14 @@ if __name__ == '__main__':
 #     t_data = t_read_l1.get_k2()
 #     print_channel_data(t_data)
 #
-    print 'ref:'
-    t_data = t_read_l1.get_ref()
-    print_channel_data(t_data)
-
-#     print 'rad'
-#     t_data = t_read_l1.get_rad()
+#     print 'ref:'
+#     t_data = t_read_l1.get_ref()
 #     print_channel_data(t_data)
-#     print t_data['CH_04'][100, 100]
+
+    print 'rad'
+    t_data = t_read_l1.get_rad()
+    print_channel_data(t_data)
+    print t_data['CH_04'][99, 100]
 #     print 'tbb:'
 #     t_data = t_read_l1.get_tbb()
 #     print_channel_data(t_data)
@@ -1077,10 +1080,10 @@ if __name__ == '__main__':
 #     print 'height'
 #     print_data_status(t_data)
 #
-    t_data = t_read_l1.get_latitude()
-    print 'latitude:'
-    print_data_status(t_data)
-    print is_ad_orbit(t_data)
+#     t_data = t_read_l1.get_latitude()
+#     print 'latitude:'
+#     print_data_status(t_data)
+#     print is_ad_orbit(t_data)
 #
 #     t_data = t_read_l1.get_longitude()
 #     print 'longitude:'
