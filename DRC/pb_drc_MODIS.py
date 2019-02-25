@@ -9,7 +9,7 @@ from pyhdf.SD import SD, SDC
 
 from PB.pb_io import attrs2dict
 from PB.pb_sat import planck_r2t, spec_interp, spec_convolution
-from PB.pb_sat import sun_earth_dis_correction
+from PB.pb_sat import sun_earth_dis_correction, planck_r2t_test, radiance2tbb
 from PB.pb_time import JDay2Datetime
 from pb_drc_base import ReadL1
 import numpy as np
@@ -252,7 +252,6 @@ class ReadModisL1(ReadL1):
         """
         return rad
         """
-
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type = ['AQUA', 'TERRA']
@@ -281,7 +280,43 @@ class ReadModisL1(ReadL1):
                             dn[band] - ary_ch20_36_b[k]) * ary_ch20_36_a[k]
 
                         data[band] = data_pre * \
-                            ((10000 / center_wn[band]) ** 2) / 10.  # * dsl
+                            ((10000 / center_wn[band]) ** 2) / 10.
+
+        return data
+
+    def get_rad1(self):
+        """
+        return rad
+        """
+#         dsl = sun_earth_dis_correction(self.ymd)
+        data = dict()
+        if self.resolution == 1000:  # 分辨率为 1000
+            satellite_type = ['AQUA', 'TERRA']
+            data_file = self.in_file
+            if self.satellite in satellite_type:
+                dn = self.get_dn()
+                h4r = SD(data_file, SDC.READ)
+
+                ary_ch20_36_a = h4r.select(
+                    'EV_1KM_Emissive').attributes()['radiance_scales']
+                ary_ch20_36_b = h4r.select(
+                    'EV_1KM_Emissive').attributes()['radiance_offsets']
+
+                h4r.end()
+
+#                 center_wn = self.get_central_wave_number()
+                # 逐个通道处理
+                for i in xrange(self.channels):
+                    band = 'CH_{:02d}'.format(i + 1)
+
+                    if i >= 20:
+                        k = i - 20
+                        if i <= 25:
+                            band = 'CH_{:02d}'.format(i)
+                        data_pre = (
+                            dn[band] - ary_ch20_36_b[k]) * ary_ch20_36_a[k]
+
+                        data[band] = data_pre
 
         return data
 
@@ -339,7 +374,7 @@ class ReadModisL1(ReadL1):
                 # rad转tbb的修正系数，所有时次都是固定值
                 tbb_k0 = self.get_tbb_k0()
                 tbb_k1 = self.get_tbb_k1()
-                rads = self.get_rad()
+                rads = self.get_rad1()
                 central_wave_numbers = self.get_central_wave_number()
                 # 逐个通道处理
                 for i in xrange(self.channels):
@@ -349,8 +384,10 @@ class ReadModisL1(ReadL1):
                         k1 = tbb_k1[band]
                         central_wave_number = central_wave_numbers[band]
                         rad = rads[band]
-                        tbb = planck_r2t(rad, central_wave_number)
-                        data[band] = tbb * k1 + k0
+#                         tbb = planck_r2t(rad, central_wave_number)
+#                         data[band] = tbb * k1 + k0
+                        tbb = radiance2tbb(rad, central_wave_number)
+                        data[band] = (tbb - k0) / k1
 
         return data
 
@@ -663,15 +700,18 @@ if __name__ == '__main__':
 
     print 'ref:'
     t_data = modis.get_ref()
-    print_channel_data(t_data)
+    for key in sorted(t_data.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(t_data[key]), np.nanmax(t_data[key]))
 
-#     print 'rad:'
-#     t_data = modis.get_rad()
-#     print_channel_data(t_data)
+    print 'rad:'
+    t_data = modis.get_rad()
+    for key in sorted(t_data.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(t_data[key]), np.nanmax(t_data[key]))
 
-#     print 'tbb:'
-#     t_data = modis.get_tbb()
-#     print_channel_data(t_data)
+    print 'tbb:'
+    t_data = modis.get_tbb()
+    for key in sorted(t_data.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(t_data[key]), np.nanmax(t_data[key]))
 
 #     print 'longitude:'
 #     t_data = modis.get_longitude()

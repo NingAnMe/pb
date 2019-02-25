@@ -291,6 +291,44 @@ def planck_t2r(T, W):
     return Rad
 
 
+def radiance2tbb(r, cnw):
+    '''
+    function radiance2tbb: convert radiance data into brightness temperature (i.e., equivalent blackbody temperature)
+    r: spectral radiance data in w/m2/sr/um
+    w: wavelength in micro
+    return: reture value, brightness temperature in K (absolute temperature)
+    '''
+
+#     cwn = [2.647409E+03, 2.511760E+03, 2.517908E+03, 2.462442E+03,
+#            2.248296E+03, 2.209547E+03, 1.474262E+03, 1.361626E+03,
+#            1.169626E+03, 1.028740E+03, 9.076813E+02, 8.308411E+02,
+#            7.482978E+02, 7.307766E+02, 7.182094E+02, 7.035007E+02]
+#
+#     tcs = [9.993363E-01, 9.998626E-01, 9.998627E-01, 9.998707E-01,
+#            9.998737E-01, 9.998770E-01, 9.995694E-01, 9.994867E-01,
+#            9.995270E-01, 9.997382E-01, 9.995270E-01, 9.997271E-01,
+#            9.999173E-01, 9.999070E-01, 9.999198E-01, 9.999233E-01]
+#
+#     tci = [4.818401E-01, 9.426663E-02, 9.458604E-02, 8.736613E-02,
+#            7.873285E-02, 7.550804E-02, 1.848769E-01, 2.064384E-01,
+#            1.674982E-01, 8.304364E-02, 1.343433E-01, 7.135051E-02,
+#            1.948513E-02, 2.131043E-02, 1.804156E-02, 1.683156E-02]
+
+    h = 6.62606876e-34  # Planck constant (Joule second)
+    c = 2.99792458e+8
+    k = 1.3806503e-23
+
+    c1 = 2.0 * h * c * c
+    c2 = (h * c) / k
+    w = 1.0e+4 / cnw
+    ws = 1.0e-6 * w
+
+    tbb = c2 / (ws * np.log(c1 / (1.0e+6 * r * ws ** 5) + 1.0))
+#     r = (r - i) / s
+
+    return tbb
+
+
 def is_ad_orbit(lats):
     '''
     lats: input latitude  range: -90 ~ 90.
@@ -315,7 +353,6 @@ def is_ad_orbit(lats):
     a_idx = np.where(diff_array > 0.)
     d_100 = len(d_idx[0]) / row * 100
     a_100 = len(a_idx[0]) / row * 100
-    print a_100, d_100
     if a_100 >= d_100:
         return 'A'
     else:

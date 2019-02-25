@@ -234,6 +234,11 @@ class ReadIasiL1(ReadL1):
                     factor = factor.reshape(1, 1, factor.size)
 
                     data = radiance * 100000 / factor
+
+                    # 防止卷积带入nan值
+                    idx = np.where(np.isnan(data))
+#                     print idx
+                    data[idx] = 0.
                     # 单位转换
 
                     s1, s2 = self.data_shape
@@ -547,7 +552,7 @@ class ReadIasiL1(ReadL1):
 
                 try:
                     ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
-                    data_pre = ncr.variables['satellite_azimuth_angle'][:]
+                    data_pre = ncr.variables['satellite_zenith_angle'][:]
                     ncr.close()
 
                     # 过滤无效值
@@ -739,6 +744,12 @@ class ReadIasiL1(ReadL1):
                     ncr = Dataset(self.in_file, 'r', format='NETCDF3_CLASSIC')
                     data_pre = ncr.variables['time'][:]
                     ncr.close()
+
+                    data_pre = data_pre.astype(np.float32)
+                    unvalid_idx = np.logical_and(True, data_pre < 0)
+                    # 设置成0，保证在执行ymd2ymd时不出错，这样的时间会被过滤掉,diff_time会很大
+                    data_pre[unvalid_idx] = 0.
+#                     print ymd2ymd('20181111', -999.)
                     v_ymd2ymd = np.vectorize(ymd2ymd)
                     data = v_ymd2ymd(self.ymd, data_pre)
                     data = data.reshape(data.size, 1)
@@ -748,6 +759,7 @@ class ReadIasiL1(ReadL1):
                     data = data.reshape(s)
 
                 except Exception as e:
+
                     print 'Open file error {}'.format(e)
                     return
             else:
@@ -776,7 +788,7 @@ if __name__ == '__main__':
     BandLst = ['CH_20', 'CH_21', 'CH_22', 'CH_23', 'CH_24', 'CH_25']
     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20180502060857Z_20180502061152Z_N_O_20180502072426Z__20180502072755'
     L1File = 'D:/data/IASI/IASI_xxx_1C_M02_20180809140252Z_20180809140556Z_N_O_20180809150225Z__20180809150600'
-#     L1File = 'D:/data/IASI_NC/W_XX-EUMETSAT-Darmstadt,HYPERSPECT+SOUNDING,MetOpA+IASI_C_EUMP_20181127014334_62814_eps_o_l1.nc'
+    L1File = 'D:/data/IASI_NC/W_XX-EUMETSAT-Darmstadt,HYPERSPECT+SOUNDING,MetOpA+IASI_C_EUMP_20181111053809_62589_eps_o_l1.nc'
     iasi1 = ReadIasiL1(L1File)
     with time_block('>>>>>>>>>>>>read iasi', True):
         print iasi1.satellite  # 卫星名
@@ -797,40 +809,38 @@ if __name__ == '__main__':
             print "{}: shape: {}, min: {}, max: {}, mean: {}, median: {}".format(
                 name, data_shape, data_min, data_max, data_mean, data_median)
 
-        print 'get_spectral_response:'
-        wavenums, response = iasi1.get_spectral_response()
-        print '222', response.shape
-        print_data_status(wavenums)
-        print_data_status(response)
+#         print 'get_spectral_response:'
+#         wavenums, response = iasi1.get_spectral_response()
+#         print '222', response.shape
+#         print_data_status(wavenums)
+#         print_data_status(response)
 
-        print 'longitude:'
-        t_data = iasi1.get_longitude()
-        print_data_status(t_data)
-
-        print 'longitude:'
-        t_data = iasi1.get_latitude()
-        print_data_status(t_data)
-
-        print 'sensor_azimuth:'
-        t_data = iasi1.get_sensor_azimuth()
-        print_data_status(t_data)
-        print 'sensor_zenith:'
-        t_data = iasi1.get_sensor_zenith()
-        print_data_status(t_data)
-        print 'solar_azimuth:'
-        t_data = iasi1.get_solar_azimuth()
-        print_data_status(t_data)
-        print 'solar_zenith:'
-        t_data = iasi1.get_solar_zenith()
-        print_data_status(t_data)
-
-        print 'sv:'
-        t_data = iasi1.get_dn()
-
+#         print 'longitude:'
+#         t_data = iasi1.get_longitude()
+#         print_data_status(t_data)
+#
+#         print 'longitude:'
+#         t_data = iasi1.get_latitude()
+#         print_data_status(t_data)
+#
+#         print 'sensor_azimuth:'
+#         t_data = iasi1.get_sensor_azimuth()
+#         print_data_status(t_data)
+#         print 'sensor_zenith:'
+#         t_data = iasi1.get_sensor_zenith()
+#         print_data_status(t_data)
+#         print 'solar_azimuth:'
+#         t_data = iasi1.get_solar_azimuth()
+#         print_data_status(t_data)
+#         print 'solar_zenith:'
+#         t_data = iasi1.get_solar_zenith()
+#         print_data_status(t_data)
+#
+#         print 'sv:'
+#         t_data = iasi1.get_dn()
+#
         print 'timestamp:'
         t_data = iasi1.get_timestamp()
-        print type(t_data)
-        print type(t_data[0, 0])
-        print time.gmtime(t_data[0, 0])
+        print t_data.shape
+        print time.gmtime(t_data[11 * 120, 0])
         print time.gmtime(t_data[-1, -1])
-        print_data_status(t_data)

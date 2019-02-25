@@ -445,15 +445,13 @@ class CLASS_MERSI2_L1():
 
 if __name__ == '__main__':
     L1File = 'D:/data/MERSI/FY3D_MERSI_GBAL_L1_20181001_0020_1000M_MS.HDF'
-    mersi = CLASS_MERSI2_L1()
-    mersi.Load(L1File)
-    print mersi.CloudMask
-#     for key in mersi.Rad.keys():
-#         tt = mersi.Rad[key]
-#         print key, np.nanmin(tt), np.nanmax(tt)
-#     print np.nanmin(mersi.BB['CH_20'])
-#     print np.nanmax(mersi.BB['CH_20'])
-#     print type(mersi.orbit_num)
-#     print time.gmtime(mersi.Time[0, 0])
-#     print time.gmtime(mersi.Time[-1, -1])
-    pass
+    modis = CLASS_MERSI2_L1()
+    modis.Load(L1File)
+    for key in sorted(modis.Ref.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(modis.Ref[key]), np.nanmax(modis.Ref[key]))
+
+    for key in sorted(modis.Rad.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(modis.Rad[key]), np.nanmax(modis.Rad[key]))
+
+    for key in sorted(modis.Tbb.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(modis.Tbb[key]), np.nanmax(modis.Tbb[key]))

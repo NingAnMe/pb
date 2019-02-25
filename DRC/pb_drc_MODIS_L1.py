@@ -165,7 +165,7 @@ class CLASS_MODIS_L1():
 
         for i in xrange(16):
             newRad[i] = data_ch36[i + 20] * \
-                ((10000 / cwn[i]) ** 2) / 10.  # * dsol
+                ((10000 / cwn[i]) ** 2) / 10. * dsol
             if i <= 5:
                 self.Rad['CH_%02d' % (i + 20)] = newRad[i]
             else:
@@ -266,10 +266,12 @@ if __name__ == '__main__':
     L1File = 'D:/data/MODIS/MYD021KM.A2017003.0750.006.2017004153232.hdf'
     modis = CLASS_MODIS_L1()
     modis.Load(L1File)
+
     for key in sorted(modis.Ref.keys()):
-        print key, np.nanmin(modis.Ref[key]), np.nanmax(modis.Ref[key])
-#     print sorted(modis.Tbb.keys())
-#     print np.nanmin(modis.Rad['CH_20']), np.nanmax(modis.Rad['CH_20'])
-#     print np.argwhere(np.isclose(modis.Rad['CH_21'], -0.140680938789))
-#     pass
-#     print modis.Rad['CH_36']
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(modis.Ref[key]), np.nanmax(modis.Ref[key]))
+
+    for key in sorted(modis.Rad.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(modis.Rad[key]), np.nanmax(modis.Rad[key]))
+
+    for key in sorted(modis.Tbb.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(modis.Tbb[key]), np.nanmax(modis.Tbb[key]))

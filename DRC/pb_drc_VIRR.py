@@ -355,7 +355,6 @@ class ReadVirrL1(ReadL1):
 #                     print b0, b1, b2
                     rad_pre = dn[channel_name] * \
                         k1[channel_name] + k0[channel_name]
-                    print 'b', b0, b1, b2
                     rad_nonlinear = rad_pre ** 2 * b2 + rad_pre * b1 + b0
                     rad = rad_pre + rad_nonlinear
                     # 过滤无效值
@@ -992,7 +991,7 @@ class ReadVirrL1(ReadL1):
 
 
 if __name__ == '__main__':
-    t_in_file = r'D:\data\VIRR\FY3C_VIRRX_GBAL_L1_20140103_0240_1000M_MS.HDF'
+    t_in_file = r'D:\data\VIRR\FY3C_VIRRX_GBAL_L1_20141003_0240_1000M_MS.HDF'
     t_read_l1 = ReadVirrL1(t_in_file)
     print 'attribute', '-' * 50
     print t_read_l1.satellite  # 卫星名
@@ -1026,11 +1025,13 @@ if __name__ == '__main__':
 
 #     t_data = t_read_l1.get_lut_bt()
 #     print t_data
-    print 'dn:'
+
     t_data = t_read_l1.get_dn()
-    print_channel_data(t_data)
-    print t_data['CH_04'][99, 100]
-    print np.where(np.isclose(t_data['CH_04'], 997.))
+    print 'dn: CH_03 100行 101列', t_data['CH_03'][99, 100]
+    print 'dn: CH_04 100行 101列', t_data['CH_04'][99, 100]
+    print 'dn: CH_05 100行 101列', t_data['CH_05'][99, 100]
+#     print_channel_data(t_data)
+#     print np.where(np.isclose(t_data['CH_04'], 997.))
 #
 #     print 'k0:'
 #     t_data = t_read_l1.get_k0()
@@ -1048,10 +1049,11 @@ if __name__ == '__main__':
 #     t_data = t_read_l1.get_ref()
 #     print_channel_data(t_data)
 
-    print 'rad'
     t_data = t_read_l1.get_rad()
-    print_channel_data(t_data)
-    print t_data['CH_04'][99, 100]
+#     print_channel_data(t_data)
+    print 'rad: CH_03 100行 101列', t_data['CH_03'][99, 100]
+    print 'rad: CH_04 100行 101列', t_data['CH_04'][99, 100]
+    print 'rad: CH_05 100行 101列', t_data['CH_05'][99, 100]
 #     print 'tbb:'
 #     t_data = t_read_l1.get_tbb()
 #     print_channel_data(t_data)

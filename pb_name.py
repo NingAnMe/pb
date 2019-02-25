@@ -1253,7 +1253,7 @@ class AQUA_AIRS_L1(satNameBase):
     '''
 
     def __init__(self):
-        pat = u'AIRS.(\d{4}).(\d{2}).(\d{2}).(\d{3}).L1B.AIRS_Rad.v5.0.(0|\d{2}).0.G(\d{11}).hdf$'
+        #         pat = u'AIRS.(\d{4}).(\d{2}).(\d{2}).(\d{3}).L1B.AIRS_Rad.v5.0.(0|\d{2}).0.G(\d{11}).hdf$'
         pat = u'AIRS.(\d{4}).(\d{2}).(\d{2}).(\d{3}).L1B.AIRS_Rad.*.G(\d{11}).hdf$'
         totalSec = 6 * 60
         satNameBase.__init__(self, pat, totalSec)

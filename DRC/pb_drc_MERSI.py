@@ -1270,9 +1270,9 @@ class ReadMersiL1(ReadL1):
         return data1, data2
 
 if __name__ == '__main__':
-    L1File = 'D:/data/MERSI/FY3A_MERSI_GBAL_L1_20141230_1145_1000M_MS.HDF'
-#     L1File = 'D:/data/MERSI/FY3B_MERSI_GBAL_L1_20130101_0005_1000M_MS.HDF'
-#     L1File = 'D:/data/MERSI/FY3D_MERSI_GBAL_L1_20181001_0020_1000M_MS.HDF'
+    #     L1File = 'D:/data/MERSI/FY3A_MERSI_GBAL_L1_20141230_1145_1000M_MS.HDF'
+    #     L1File = 'D:/data/MERSI/FY3B_MERSI_GBAL_L1_20130101_0005_1000M_MS.HDF'
+    L1File = 'D:/data/MERSI/FY3D_MERSI_GBAL_L1_20181001_0020_1000M_MS.HDF'
     mersi = ReadMersiL1(L1File)
     print mersi.satellite  # 卫星名
     print mersi.sensor  # 传感器名
@@ -1360,9 +1360,9 @@ if __name__ == '__main__':
 #     print 'solar_azimuth:'
 #     t_data = mersi.get_solar_azimuth()
 #     print_data_status(t_data)
-    print 'solar_zenith:'
-    t_data = mersi.get_solar_zenith()
-    print_data_status(t_data)
+#     print 'solar_zenith:'
+#     t_data = mersi.get_solar_zenith()
+#     print_data_status(t_data)
 #     print 'timestamp:'
 #     t_data = mersi.get_timestamp()
 #     print_data_status(t_data)
@@ -1371,3 +1371,18 @@ if __name__ == '__main__':
 #     wavenums, wave_spec = mersi.get_spectral_response()
 #     print_channel_data(wavenums)
 #     print_channel_data(wave_spec)
+
+    print 'ref:'
+    t_data = mersi.get_ref()
+    for key in sorted(t_data.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(t_data[key]), np.nanmax(t_data[key]))
+
+    print 'rad:'
+    t_data = mersi.get_rad()
+    for key in sorted(t_data.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(t_data[key]), np.nanmax(t_data[key]))
+
+    print 'tbb:'
+    t_data = mersi.get_tbb()
+    for key in sorted(t_data.keys()):
+        print "%s, %0.6f %0.6f" % (key, np.nanmin(t_data[key]), np.nanmax(t_data[key]))
