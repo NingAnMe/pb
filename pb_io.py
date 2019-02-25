@@ -13,7 +13,6 @@ import yaml
 
 import numpy as np
 
-
 __description__ = u'IO处理的函数'
 __author__ = 'wangpeng'
 __date__ = '2018-01-25'
