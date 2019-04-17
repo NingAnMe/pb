@@ -125,7 +125,7 @@ class ReadMvisrL1(ReadL1):
         if self.resolution == 1000:
             satellite_type1 = ['FY1C', 'FY1D']
             if self.satellite in satellite_type1:
-                self.channels = 4
+                self.channels = 10
         # elif self.resolution == 250:
         else:
             raise ValueError(
@@ -246,7 +246,7 @@ class ReadMvisrL1(ReadL1):
         data = dict()
         if self.resolution == 1000:  # 分辨率为 1000
             satellite_type1 = ['FY1C', 'FY1D']
-            ref_channels = ['CH_{:02d}'.format(i) for i in [1, 2, 3, 4]]
+            ref_channels = ['CH_{:02d}'.format(i) for i in [1, 2, 6, 7, 8, 9, 10]]
             if self.satellite in satellite_type1:
                 dn = self.get_dn()
                 k0 = self.get_k0()
